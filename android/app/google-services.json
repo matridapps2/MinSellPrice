@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "998485099147",
+    "project_id": "msp-project-215c5",
+    "storage_bucket": "msp-project-215c5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:998485099147:android:f3ac761ef709a87130ca8e",
+        "android_client_info": {
+          "package_name": "com.example.msp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "998485099147-rdsnf84n5clptdvvddpie00hee6k9kcr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.msp",
+            "certificate_hash": "8cde4359e2b4459a80a633cd328a3e2a6c27c0ca"
+          }
+        },
+        {
+          "client_id": "998485099147-ipfldvpkc6mdj8rq342f8ii0hgb6ts4a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCghL5nKLSkTwQQT1yU475SS7vhVpjdZnA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "998485099147-ipfldvpkc6mdj8rq342f8ii0hgb6ts4a.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "998485099147-7cc66t71qcknt34k07dgpkp74vgqhfbk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.matrid.msp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:998485099147:android:33fb6ec6672e62b830ca8e",
+        "android_client_info": {
+          "package_name": "com.matrid.shoppingmegamart"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "998485099147-ipfldvpkc6mdj8rq342f8ii0hgb6ts4a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCghL5nKLSkTwQQT1yU475SS7vhVpjdZnA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "998485099147-ipfldvpkc6mdj8rq342f8ii0hgb6ts4a.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "998485099147-7cc66t71qcknt34k07dgpkp74vgqhfbk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.matrid.msp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
