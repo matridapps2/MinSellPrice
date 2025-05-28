@@ -83,6 +83,12 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
       // Map to BrandProduct
       brandProducts = jsonList.map((e) => BrandProduct.fromJson(e)).toList();
 
+      // Build uniqueVendors list
+      uniqueVendors = brandProducts
+          .map((e) => e.vendorName.isNotEmpty ? e.vendorName : 'Default Vendor')
+          .toSet()
+          .toList();
+
       tempProductList = brandProducts;
       startIndex = currentPage * itemsPerPage;
       endIndex = (startIndex + itemsPerPage > tempProductList.length)
@@ -744,18 +750,14 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
 
   void sortingOfList({required List<BrandProduct> mainList}) {
     setState(() {
-      // Filter by vendor if needed (if you have vendor info in BrandProduct)
       if (filterVendor.isNotEmpty) {
         tempProductList = mainList.where((product) {
-          // Example: return filterVendor.contains(product.vendorName);
-          // If BrandProduct does not have vendorName, skip this filter or add the field
-          return true;
+          return filterVendor.contains(product.vendorName);
         }).toList();
       } else {
         tempProductList = mainList;
       }
 
-      // Sort by price if needed
       if (priceSorting != null) {
         if (priceSorting == 1) {
           tempProductList.sort((a, b) => double.tryParse(a.vendorPricePrice)!
@@ -926,8 +928,6 @@ class _FilterMenuState extends State<FilterMenu> {
                                 : filterVendor.add(widget.uniqueVendors[index]
                                     .split('Total')[0]
                                     .trimRight());
-                            // _discountEnabled =
-                            // !_discountEnabled;
                           });
                         },
                         child: SizedBox(
@@ -966,8 +966,12 @@ class _FilterMenuState extends State<FilterMenu> {
                                         fontWeight: FontWeight.bold),
                                     children: [
                                       TextSpan(
-                                        text:
-                                            '\n${widget.uniqueVendors[index].split('Total')[1].trimLeft().split(':')[0]}: ',
+                                        text: widget.uniqueVendors[index]
+                                                    .split('Total')
+                                                    .length >
+                                                1
+                                            ? '\n${widget.uniqueVendors[index].split('Total')[1].trimLeft().split(':')[0]}: '
+                                            : '',
                                         style: const TextStyle(
                                           color: Colors.blue,
                                           fontWeight: FontWeight.normal,
@@ -975,8 +979,13 @@ class _FilterMenuState extends State<FilterMenu> {
                                       ),
                                       TextSpan(
                                         text: widget.uniqueVendors[index]
-                                            .split(':')[1]
-                                            .trimLeft(),
+                                                    .split(':')
+                                                    .length >
+                                                1
+                                            ? widget.uniqueVendors[index]
+                                                .split(':')[1]
+                                                .trimLeft()
+                                            : '',
                                         style: const TextStyle(
                                           color: Colors.blue,
                                           fontWeight: FontWeight.bold,
@@ -1010,7 +1019,6 @@ class _FilterMenuState extends State<FilterMenu> {
                                           color: Colors.white,
                                           fontSize: w * .03,
                                           letterSpacing: 0,
-
                                           // fontFamily: 'JT Marnie Light',
                                         ),
                                       ),
@@ -1239,6 +1247,7 @@ class BrandProduct {
   final String productImage;
   final int vendorProductId;
   final String vendorPricePrice;
+  final String vendorName;
 
   BrandProduct({
     required this.productId,
@@ -1248,6 +1257,7 @@ class BrandProduct {
     required this.productImage,
     required this.vendorProductId,
     required this.vendorPricePrice,
+    required this.vendorName,
   });
 
   factory BrandProduct.fromJson(Map<String, dynamic> json) {
@@ -1259,6 +1269,7 @@ class BrandProduct {
       productImage: json['product_image'] ?? '',
       vendorProductId: json['vendor_product_id'] ?? 0,
       vendorPricePrice: json['vendorprice_price']?.toString() ?? 'null',
+      vendorName: json['vendor_name'] ?? 'Default Vendor',
     );
   }
 }

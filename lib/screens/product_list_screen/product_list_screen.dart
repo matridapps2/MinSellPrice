@@ -73,6 +73,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   List<VendorProduct> productList = [];
   List<VendorProduct> tempProductList = [];
   List<VendorProduct> finalList = [];
+
   // Map<String, GetOtherSeller> getOtherSeller = {};
 
   @override
@@ -639,7 +640,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                                                       horizontalSpace:
                                                                           3),
                                                                   AutoSizeText(
-                                                                    finalList[index].firstVendorPriceShipping == '--' ||
+                                                                    finalList[index].firstVendorPriceShipping ==
+                                                                                '--' ||
                                                                             finalList[index].firstVendorPriceShipping ==
                                                                                 '\$0.00'
                                                                         ? ' Free Shipping'
@@ -732,23 +734,37 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                                         Center(
                                                           child: InkWell(
                                                             onTap: () async =>
-                                                                await MyInAppBrowser().openUrlRequest(
-                                                              urlRequest: URLRequest(
+                                                                await MyInAppBrowser()
+                                                                    .openUrlRequest(
+                                                              urlRequest:
+                                                                  URLRequest(
                                                                 url: WebUri(
                                                                   // finalList[index].firstVendorUrl == '--' ? getOtherSeller.containsKey('${finalList[index].productId}') ? getOtherSeller['${finalList[index].productId}']!.firstVendorUrl : '--' :
-                                                                  finalList[index].firstVendorUrl + '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
+                                                                  finalList[index]
+                                                                          .firstVendorUrl +
+                                                                      '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
                                                                 ),
                                                               ),
-                                                              options: InAppBrowserClassOptions(
-                                                                crossPlatform: InAppBrowserOptions(
-                                                                  toolbarTopBackgroundColor: const Color.fromARGB(255, 237, 63, 69),
+                                                              options:
+                                                                  InAppBrowserClassOptions(
+                                                                crossPlatform:
+                                                                    InAppBrowserOptions(
+                                                                  toolbarTopBackgroundColor:
+                                                                      const Color
+                                                                          .fromARGB(
+                                                                          255,
+                                                                          237,
+                                                                          63,
+                                                                          69),
                                                                 ),
                                                               ),
                                                             ),
                                                             child: BuyAtButton(
                                                                 imageUrl:
                                                                     // finalList[index].firstVendorName == '--' ? getOtherSeller.containsKey('${finalList[index].productId}') ? getOtherSeller['${finalList[index].productId}']!.firstVendorName : '--' :
-                                                                    finalList[index].firstVendorName)
+                                                                    finalList[
+                                                                            index]
+                                                                        .firstVendorName)
                                                             /*Container(
                                                                           width:
                                                                               w * .42,
@@ -868,13 +884,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                           : () {
                                               setState(() {
                                                 currentPage--;
-                                                startIndex = currentPage * itemsPerPage;
-                                                endIndex = (startIndex + itemsPerPage > tempProductList.length)
+                                                startIndex =
+                                                    currentPage * itemsPerPage;
+                                                endIndex = (startIndex +
+                                                            itemsPerPage >
+                                                        tempProductList.length)
                                                     ? tempProductList.length
                                                     : startIndex + itemsPerPage;
-                                                finalList = tempProductList.sublist(startIndex, endIndex);
+                                                finalList =
+                                                    tempProductList.sublist(
+                                                        startIndex, endIndex);
                                               });
-                                          },
+                                            },
                                       child: Text(
                                         'Previous ($currentPage)',
                                         maxLines: 1,
@@ -944,7 +965,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                     ),
                                   ),
                                 ],
-                            )
+                              )
                             : const SizedBox(),
                         verticalSpace(verticalSpace: 5),
                       ],
@@ -1022,7 +1043,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
     }
   }
 
-  void sortingOfList({required List< /*ProductListModel*/ VendorProduct> mainList}) {
+  void sortingOfList(
+      {required List< /*ProductListModel*/ VendorProduct> mainList}) {
     setState(() {
       if (filterVendor.isNotEmpty) {
         tempProductList = mainList.where((product) {
@@ -1060,7 +1082,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
     });
   }
 
-  showBottomModalDialog({required BuildContext context, required List<Widget> children,}) {showCupertinoModalPopup(
+  showBottomModalDialog({
+    required BuildContext context,
+    required List<Widget> children,
+  }) {
+    showCupertinoModalPopup(
         barrierDismissible: false,
         context: context,
         builder: (BuildContext modalContext) => Container(
@@ -1291,7 +1317,6 @@ class _FilterMenuState extends State<FilterMenu> {
                                           color: Colors.white,
                                           fontSize: w * .03,
                                           letterSpacing: 0,
-
                                           // fontFamily: 'JT Marnie Light',
                                         ),
                                       ),
