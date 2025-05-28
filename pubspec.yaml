@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=2.19.6 <3.0.0'
+  sdk: '>=3.1.3 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -34,64 +34,66 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
+  cupertino_icons: ^1.0.8
   auto_size_text: ^3.0.0
-  google_fonts: ^4.0.4
-  syncfusion_flutter_charts:
-  flutter_bloc: ^8.1.2
-  equatable: ^2.0.5
-  http: ^0.13.6
+  google_fonts: ^6.2.1
+  syncfusion_flutter_charts: ^29.2.4
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.7
+  http: ^1.4.0
 #  cached_network_image:
   shimmer: ^3.0.0
-  retry:
-  fluttertoast:
+  retry: ^3.1.2
+  fluttertoast: ^8.2.12
   flutter_carousel_slider: ^1.1.0
-  flutter_inappwebview: ^5.7.2+3
-  flutter_downloader: 1.10.2
-  path_provider: 2.0.15
-  permission_handler: ^10.4.3
-  url_launcher: ^6.1.11
-  pointer_interceptor: ^0.9.3+4
-  lottie:
+  flutter_inappwebview: ^6.1.5
+  flutter_downloader: ^1.12.0
+  path_provider: ^2.1.5
+  permission_handler: ^12.0.0+1
+  url_launcher: ^6.3.1
+  pointer_interceptor: ^0.10.1+2
+  lottie: ^3.3.0
   validators: ^3.0.0
-  flutter_background_service:
-  flutter_background_service_ios:
-  flutter_background_service_android:
-  device_info_plus: ^9.0.2
-  shared_preferences: ^2.1.2
+  flutter_background_service: ^5.1.0
+  flutter_background_service_ios: ^5.0.3
+  flutter_background_service_android: ^6.3.0
+  device_info_plus: ^11.4.0
+  shared_preferences: ^2.5.3
 
   # optional if you wish to use a custom foreground service notification
-  flutter_local_notifications: ^14.1.1
-  animated_notch_bottom_bar: ^1.0.0
+  flutter_local_notifications: ^19.2.0
+  animated_notch_bottom_bar: ^1.0.3
   dot_navigation_bar: ^1.0.2
-  flutter_side_menu: ^0.3.2
-  flutter_advanced_drawer: ^1.3.5
+  flutter_side_menu: ^0.5.41
+  flutter_advanced_drawer: ^1.5.0
   card_swiper:
-  fading_edge_scrollview: ^3.0.0
-  flutter_flip_card: ^0.0.4
+  fading_edge_scrollview: ^4.1.1
+  flutter_flip_card: ^0.0.6
   screenshot:
-  share: ^2.0.4
+  share_plus: ^11.0.0
   delayed_display: ^2.0.0
   firebase_messaging:
   firebase_in_app_messaging:
   firebase_app_installations:
   firebase_analytics:
   #  google_sign_in:
-  #  firebase_auth:
-  fl_chart:
-  flutter_animated_icons: ^1.0.1
+  firebase_auth: ^5.5.3
+  fl_chart: ^1.0.0
+  #flutter_animated_icons: ^1.0.1
   sqflite:
-  path: ^1.8.3
+  path: ^1.9.1
   internet_connectivity_checker: ^1.0.2
   connection_notifier: ^2.0.1
-  cached_network_image: ^3.3.1
-  flutter_animate: ^4.5.0
+  cached_network_image: ^3.4.1
+  flutter_animate: ^4.5.2
   salomon_bottom_bar: ^3.3.2
-  palette_generator: ^0.3.3+3
-  firebase_core: ^2.24.2
-  firebase_remote_config: ^4.3.18
-  flutter_launcher_icons: ^0.13.1
+  palette_generator: ^0.3.3+7
+  firebase_core: ^3.13.0
+  firebase_remote_config: ^5.4.3
+  flutter_launcher_icons: ^0.14.3
   dropdown_button2:
+  archive: ^4.0.7
+  motion_toast: ^2.13.0
 
 dev_dependencies:
 #  flutter_test:
@@ -102,7 +104,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -149,6 +151,7 @@ flutter:
     - assets/shopping_mega_mart_logo.png
 
     - assets/images/background.jpeg
+    - assets/images/no_image.png
     - assets/lottie_animations/notification_animation.json
     - assets/images/world-wide-web.png
     - assets/lottie_animations/animation/
@@ -159,6 +162,8 @@ flutter:
     - assets/lottie_animations/custom_loader_for_msp_ecommerce.json
     - assets/shoppingmegamart_app_icon.png
     - assets/No_Image_Available.jpg
+    - assets/shop_by_grills/
+    - assets/grills_outdoor_cooking/
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 
@@ -167,7 +172,7 @@ flutter:
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
+  # "family" key with the  font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
@@ -228,6 +233,10 @@ flutter:
     - family: Espar Arial Alt
       fonts:
         - asset: fonts/esparaa.ttf
+
+    - family: RobotoMono
+      fonts:
+        - asset: fonts/RobotoMono-Regular.ttf
   # fonts:
   #   - family: Schyler
   #     fonts:

@@ -16,7 +16,7 @@ import 'package:shoppingmegamart/screens/widgets/custom_loader.dart';
 import 'package:shoppingmegamart/size.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'product_screen_2.dart';
@@ -31,23 +31,23 @@ Color fromHex(String hexString) {
 class ContentScreen extends StatefulWidget {
   const ContentScreen(
       {super.key,
-      this.fromSearchScreen,
-      required this.vendorName,
-      required this.vendorImage,
-      required this.vendorId,
-      required this.date,
-      required this.loadingData,
-      required this.database,
-      this.id,
-      this.brandKey,
-      this.loadingString,
-      required this.isVendorPriceAnalysis,
-      required this.isVendorTable,
-      this.afSku,
-      this.aiValue,
-      this.hpSku,
-      this.productMpn,
-      this.productName});
+        this.fromSearchScreen,
+        required this.vendorName,
+        required this.vendorImage,
+        required this.vendorId,
+        required this.date,
+        required this.loadingData,
+        required this.database,
+        this.id,
+        this.brandKey,
+        this.loadingString,
+        required this.isVendorPriceAnalysis,
+        required this.isVendorTable,
+        this.afSku,
+        this.aiValue,
+        this.hpSku,
+        this.productMpn,
+        this.productName});
 
   // final ProductListModel dataModel;
   final String vendorName, vendorImage, vendorId, date, loadingData;
@@ -78,25 +78,25 @@ class _ContentScreenState extends State<ContentScreen> {
     // context.read<DatabaseBloc>().add(DatabaseInitEvent());
     getData();
     context.read<ProductListByIdBloc>().add(
-          ProductListByIdLoadingEvent(
-              vendorId: widget.vendorId,
-              featuredProducts: false,
-              date: widget.date,
-              dataId: widget.id ?? '',
-              brandKey: widget.isVendorPriceAnalysis == true
-                  ? widget.vendorName
-                      .toLowerCase()
-                      .replaceAll(' ', '_')
-                      .replaceAll('-', '_')
-                      .replaceAll('%', '')
-                  : widget.brandKey,
-              productName: widget.productName,
-              productMpn: widget.productMpn,
-              fromSearchScreen: widget.fromSearchScreen ?? false,
-              brandProductsEnabled: false,
-              aiEngineData: widget.aiValue,
-              isCategory: false),
-        );
+      ProductListByIdLoadingEvent(
+          vendorId: widget.vendorId,
+          featuredProducts: false,
+          date: widget.date,
+          dataId: widget.id ?? '',
+          brandKey: widget.isVendorPriceAnalysis == true
+              ? widget.vendorName
+              .toLowerCase()
+              .replaceAll(' ', '_')
+              .replaceAll('-', '_')
+              .replaceAll('%', '')
+              : widget.brandKey,
+          productName: widget.productName,
+          productMpn: widget.productMpn,
+          fromSearchScreen: widget.fromSearchScreen ?? false,
+          brandProductsEnabled: false,
+          aiEngineData: widget.aiValue,
+          isCategory: false),
+    );
     super.initState();
   }
 
@@ -105,10 +105,10 @@ class _ContentScreenState extends State<ContentScreen> {
 
   void getData() async {
     List<Map<String, dynamic>> temp =
-        await DatabaseHelper().getData(db: widget.database);
+    await DatabaseHelper().getData(db: widget.database);
 
     final loginData =
-        await DatabaseHelper().getUserInformation(db: widget.database);
+    await DatabaseHelper().getUserInformation(db: widget.database);
     setState(() {
       databaseData = temp;
       _vendorShortName = loginData[vendor_short_nameKey];
@@ -124,51 +124,51 @@ class _ContentScreenState extends State<ContentScreen> {
           builder: (context, state) {
             return state is ProductListByIdLoading
                 ? Center(
-                    child: CustomLoader(
-                      vendorName: widget.loadingData,
-                      imageString: widget.vendorImage,
-                      isAssetImage: widget.isVendorTable,
-                      loaderString: widget.loadingString,
-                    ),
-                  )
+              child: CustomLoader(
+                vendorName: widget.loadingData,
+                imageString: widget.vendorImage,
+                isAssetImage: widget.isVendorTable,
+                loaderString: widget.loadingString,
+              ),
+            )
                 : state is ProductListByIdErrorState
-                    ? Center(
-                        child: AutoSizeText(state.errorMessage.toString()),
-                      )
-                    : state is ProductListByIdLoadedState
-                        ? Swiper(
-                            controller: _controller,
-                            // allowImplicitScrolling: true,
-                            // curve: Curves.elasticInOut,
-                            axisDirection: AxisDirection.right,
-                            loop: false,
-                            scrollDirection: Axis.vertical,
-                            itemCount: state.productList.length,
-                            viewportFraction: 1,
-                            itemBuilder: (context, index) =>
-                                /*CustomProductCard2(data: state.productList[index], showAllCompetitors: true, showRT: false, showPrice: false, vendorId: int.parse(widget.vendorId),)*/
-                                SizedBox(
-                                  width: w,
-                                  height: h,
-                                  child: CurrentProductScreen(
-                                    prevData: state.productList[index],
-                                    vendorId: int.parse(widget.vendorId),
-                                    database: widget.database,
-                                    likedValue: 0,
-                                    notifiedValue: 0,
-                                    databaseData: databaseData,
-                                    vendorShortname: _vendorShortName,
-                                    sisterVendorShortName:
-                                        _sisterVendorShortName,
-                                  ),
-                                )
-                            //   (
-                            //   state: state,
-                            //   index: index,
-                            //   vendorId: int.parse(widget.vendorId),
-                            // ),
-                            )
-                        : const SizedBox();
+                ? Center(
+              child: AutoSizeText(state.errorMessage.toString()),
+            )
+                : state is ProductListByIdLoadedState
+                ? Swiper(
+                controller: _controller,
+                // allowImplicitScrolling: true,
+                // curve: Curves.elasticInOut,
+                axisDirection: AxisDirection.right,
+                loop: false,
+                scrollDirection: Axis.vertical,
+                itemCount: state.productList.length,
+                viewportFraction: 1,
+                itemBuilder: (context, index) =>
+                /*CustomProductCard2(data: state.productList[index], showAllCompetitors: true, showRT: false, showPrice: false, vendorId: int.parse(widget.vendorId),)*/
+                SizedBox(
+                  width: w,
+                  height: h,
+                  child: CurrentProductScreen(
+                    prevData: state.productList[index],
+                    vendorId: int.parse(widget.vendorId),
+                    database: widget.database,
+                    likedValue: 0,
+                    notifiedValue: 0,
+                    databaseData: databaseData,
+                    vendorShortname: _vendorShortName,
+                    sisterVendorShortName:
+                    _sisterVendorShortName,
+                  ),
+                )
+              //   (
+              //   state: state,
+              //   index: index,
+              //   vendorId: int.parse(widget.vendorId),
+              // ),
+            )
+                : const SizedBox();
           },
         ),
       ),
@@ -179,9 +179,9 @@ class _ContentScreenState extends State<ContentScreen> {
 class ContentScreenMain extends StatefulWidget {
   const ContentScreenMain(
       {super.key,
-      required this.state,
-      required this.index,
-      required this.vendorId});
+        required this.state,
+        required this.index,
+        required this.vendorId});
 
   final ProductListByIdLoadedState state;
 
@@ -216,15 +216,15 @@ class _ContentScreenMainState extends State<ContentScreenMain>
         gradient: RadialGradient(
             colors: index % 2 == 0
                 ? [
-                    fromHex('#fde7e7'),
-                    fromHex('#e2e7ed'),
-                    fromHex('#d5dde3'),
-                  ]
+              fromHex('#fde7e7'),
+              fromHex('#e2e7ed'),
+              fromHex('#d5dde3'),
+            ]
                 : [
-                    fromHex('#e9dbdc'),
-                    fromHex('#dce8f0'),
-                    fromHex('#f4e4e5'),
-                  ],
+              fromHex('#e9dbdc'),
+              fromHex('#dce8f0'),
+              fromHex('#f4e4e5'),
+            ],
             transform: const GradientRotation(.3)),
       ),
 
@@ -290,7 +290,7 @@ class _ContentScreenMainState extends State<ContentScreenMain>
             child: Container(
               width: w * .5,
               decoration:
-                  BoxDecoration(border: Border.all(color: Colors.black)),
+              BoxDecoration(border: Border.all(color: Colors.black)),
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -355,7 +355,7 @@ class _ContentScreenMainState extends State<ContentScreenMain>
             child: Container(
               width: w * .5,
               decoration:
-                  BoxDecoration(border: Border.all(color: Colors.black)),
+              BoxDecoration(border: Border.all(color: Colors.black)),
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -438,7 +438,7 @@ class _ContentScreenMainState extends State<ContentScreenMain>
           color: Colors.white.withOpacity(.3),
           shadowColor: Colors.white.withOpacity(.5),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           child: SizedBox(
             width: w,
             // height: h * .,
@@ -548,8 +548,8 @@ class _ContentScreenMainState extends State<ContentScreenMain>
                           style: GoogleFonts.montserrat(
                             fontSize: 0.04 * w,
                             color: _allCompetitorFlipped == false &&
-                                    _priceFlipped == false &&
-                                    data.rt != '--'
+                                _priceFlipped == false &&
+                                data.rt != '--'
                                 ? Colors.blue
                                 : Colors.black,
                             fontWeight: FontWeight.bold,
@@ -1436,7 +1436,7 @@ class _ContentScreenMainState extends State<ContentScreenMain>
         await imagePath.writeAsBytes(image);
 
         ///
-        await Share.shareFiles([imagePath.path]);
+        await Share.shareXFiles([XFile(imagePath.path)]);
       }
     });
   }
@@ -1451,8 +1451,8 @@ class _ContentScreenMainState extends State<ContentScreenMain>
 
 String returnVariation(
     {required String rp,
-    required String vendorPrice,
-    required String shipping}) {
+      required String vendorPrice,
+      required String shipping}) {
   try {
     final double rpPrice = double.parse(rp);
     final double vendorPriceFinal = double.parse(vendorPrice);
@@ -1469,7 +1469,7 @@ String returnVariation(
 
 Widget animation({required AnimationController lottieController}) {
   Animation<double> sizeAnimation =
-      Tween<double>(begin: 0, end: 300).animate(lottieController);
+  Tween<double>(begin: 0, end: 300).animate(lottieController);
 
   return AnimatedBuilder(
     animation: lottieController,

@@ -3,20 +3,27 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-
+import 'package:http/http.dart' as http;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_carousel_slider/carousel_slider.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// import 'package:msp/model/competitor_model.dart';
+// import 'package:msp/model/price_change_model.dart';
+
+import 'package:shimmer/shimmer.dart';
 import 'package:shoppingmegamart/app.dart';
 import 'package:shoppingmegamart/bloc/database_bloc/database_setup/database_bloc.dart';
 import 'package:shoppingmegamart/bloc/feature_brand_bloc/feature_brands_bloc.dart';
@@ -25,24 +32,23 @@ import 'package:shoppingmegamart/bloc/feature_category/feature_category_bloc.dar
 import 'package:shoppingmegamart/bloc/product_list_by_id_bloc/product_list_by_id_bloc.dart';
 import 'package:shoppingmegamart/bloc/vendor_analysis_bloc/vendor_price_analysis_bloc.dart';
 import 'package:shoppingmegamart/bloc/vendor_details_bloc/vendor_details_bloc.dart';
+import 'package:shoppingmegamart/res/icon_file.dart';
+import 'package:shoppingmegamart/screens/brand_screen.dart';
+import 'package:shoppingmegamart/screens/navigation_drawer.dart';
+import 'package:shoppingmegamart/screens/product_list_screen/brand_product_list_screen.dart';
 import 'package:shoppingmegamart/screens/product_list_screen/product_list_screen.dart';
-import 'package:shoppingmegamart/screens/widgets/custom_view_button.dart';
+import 'package:shoppingmegamart/screens/widgets/bridge_class/bridge_class.dart';
 import 'package:shoppingmegamart/utils/common_methods.dart';
 import 'package:shoppingmegamart/utils/custom_dropdown.dart';
-import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
-
-// import 'package:msp/model/competitor_model.dart';
-// import 'package:msp/model/price_change_model.dart';
-
-import 'package:shimmer/shimmer.dart';
+import 'package:shoppingmegamart/utils/toast_messages/common_toasts.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'animation/custom_loader.dart';
+import 'loging_page/loging_page.dart';
+import 'model/brands_items.dart';
 import 'model/vendor_dashboard_model.dart';
 import 'reposotory_services/database/database_constants.dart';
 import 'reposotory_services/database/database_functions.dart';
-import 'reposotory_services/network_reposotory.dart';
-import 'screens/InAppBrowser.dart';
 import 'screens/ai_price_engine/ai_pricie_engine_screen.dart';
 import 'screens/liked_product_screen.dart';
 import 'screens/search_screen/search_screen.dart';
@@ -50,12 +56,10 @@ import 'screens/widgets/custom_tooltip.dart';
 import 'screens/widgets/extra_widgets.dart';
 import 'screens/widgets/inheriated_widget.dart';
 import 'screens/widgets/price_proposition_chart.dart';
-import 'screens/widgets/product_screen_2.dart';
 import 'screens/widgets/sample_product_screen.dart';
 import 'services/extra_functions.dart';
 import 'size.dart';
-
-import 'screens/widgets/drawer_class/custom_navigation_drawer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -115,7 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   bool shouldScrollMain = true;
 
-/*  int _activeDrawerIndex = 1;*/
+  /*  int _activeDrawerIndex = 1;*/
 
   int _activeIndex = 0;
 
@@ -138,9 +142,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: CustomLoader(),
       )
     ];
-
     // subscribeToFCMTopic();
-
     super.initState();
   }
 
@@ -241,8 +243,19 @@ class _DashboardScreenState extends State<DashboardScreen>
                     key: scaffoldKey,
                     extendBody: true,
                     resizeToAvoidBottomInset: false,
-                    drawer: NavigationDrawerPanel(
-                        data: {}), // Enable the custom drawer
+                    drawer: CustomNavigationDrawer(),
+                    //_buildDrawer(context),
+
+                    //     CustomNavigationDrawer(
+                    //   onLogout: () {
+                    //     Navigator.of(context).push(
+                    //       MaterialPageRoute(
+                    //         builder: (context) => const
+                    //       ),
+                    //     );
+                    //   },
+                    // ),
+                    // Enable the custom drawer
                     appBar: AppBar(
                       surfaceTintColor: Colors.white,
                       toolbarHeight: .18 * w,
@@ -804,7 +817,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           children: [
                             SizedBox(
                               width: .58 * w,
-                              height: .12 * w,
+                              height: .13 * w,
                               child: Stack(
                                 children: [
                                   Container(
@@ -1459,7 +1472,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     donutData = chartData;
   }
 
-/*
   Widget _buildDrawer(
     BuildContext context,
   ) {
@@ -1583,12 +1595,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                         },
                       ),
                       ExpansionTile(
-                        initiallyExpanded: _activeDrawerIndex == 1,
+                        initiallyExpanded: true,
+                        //_activeDrawerIndex == 1,
                         onExpansionChanged: (value) {
                           if (kDebugMode) {}
-                          value == true
-                              ? setState(() => _activeDrawerIndex = 1)
-                              : null;
+                          // value == true
+                          //     ? setState(() => _activeDrawerIndex = 1)
+                          //     : null;
                         },
                         shape: const RoundedRectangleBorder(
                             side: BorderSide(color: Colors.transparent)),
@@ -1633,7 +1646,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                         );
                                       },
                                       dense: true,
-                                      leading: const Padding(
+                                      leading: Padding(
                                         padding: EdgeInsets.only(left: 8.0),
                                         child: Icon(
                                           O.o,
@@ -1679,63 +1692,63 @@ class _DashboardScreenState extends State<DashboardScreen>
                       const SizedBox(
                         height: 5,
                       ),
-                      ExpansionTile(
-                        initiallyExpanded: _activeDrawerIndex == 2,
-                        onExpansionChanged: (value) {
-                          if (kDebugMode) {}
-                          value == true
-                              ? setState(() => _activeDrawerIndex = 2)
-                              : null;
-                        },
-                        shape: const RoundedRectangleBorder(
-                            side: BorderSide(color: Colors.transparent)),
-                        collapsedShape: const RoundedRectangleBorder(
-                            side: BorderSide(color: Colors.transparent)),
-                        leading: const Icon(
-                          O.report,
-                          color: Colors.black,
-                          size: 35,
-                        ),
-                        title: Text(
-                          'Rank Reports',
-                          style: GoogleFonts.montserrat(
-                            fontSize: w * 0.045,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        children: List.generate(
-                            _rankList.length,
-                            (index) => Column(
-                                  children: [
-                                    ListTile(
-                                      dense: true,
-                                      leading: const Padding(
-                                        padding: EdgeInsets.only(left: 8.0),
-                                        child: Icon(
-                                          O.o,
-                                          color: Colors.transparent,
-                                        ),
-                                      ),
-                                      title: Text(
-                                        _rankList[index],
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: w * 0.04,
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 30.0),
-                                      child: Divider(
-                                        color: Colors.black.withOpacity(.6),
-                                      ),
-                                    )
-                                  ],
-                                )),
-                      ),
+                      // ExpansionTile(
+                      //   initiallyExpanded: _activeDrawerIndex == 2,
+                      //   onExpansionChanged: (value) {
+                      //     if (kDebugMode) {}
+                      //     value == true
+                      //         ? setState(() => _activeDrawerIndex = 2)
+                      //         : null;
+                      //   },
+                      //   shape: const RoundedRectangleBorder(
+                      //       side: BorderSide(color: Colors.transparent)),
+                      //   collapsedShape: const RoundedRectangleBorder(
+                      //       side: BorderSide(color: Colors.transparent)),
+                      //   leading: const Icon(
+                      //     O.report,
+                      //     color: Colors.black,
+                      //     size: 35,
+                      //   ),
+                      //   title: Text(
+                      //     'Rank Reports',
+                      //     style: GoogleFonts.montserrat(
+                      //       fontSize: w * 0.045,
+                      //       color: Colors.black,
+                      //       fontWeight: FontWeight.bold,
+                      //     ),
+                      //   ),
+                      //   children: List.generate(
+                      //       _rankList.length,
+                      //       (index) => Column(
+                      //             children: [
+                      //               ListTile(
+                      //                 dense: true,
+                      //                 leading: const Padding(
+                      //                   padding: EdgeInsets.only(left: 8.0),
+                      //                   child: Icon(
+                      //                     O.o,
+                      //                     color: Colors.transparent,
+                      //                   ),
+                      //                 ),
+                      //                 title: Text(
+                      //                   _rankList[index],
+                      //                   style: GoogleFonts.montserrat(
+                      //                     fontSize: w * 0.04,
+                      //                     color: Colors.black,
+                      //                     fontWeight: FontWeight.bold,
+                      //                   ),
+                      //                 ),
+                      //               ),
+                      //               Padding(
+                      //                 padding: const EdgeInsets.symmetric(
+                      //                     horizontal: 30.0),
+                      //                 child: Divider(
+                      //                   color: Colors.black.withOpacity(.6),
+                      //                 ),
+                      //               )
+                      //             ],
+                      //           )),
+                      // ),
                       ListTile(
                         leading: const Padding(
                           padding: EdgeInsets.only(left: 8.0),
@@ -1754,65 +1767,65 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ),
                         onTap: () {},
                       ),
-                      ExpansionTile(
-                        initiallyExpanded: _activeDrawerIndex == 3,
-                        onExpansionChanged: (value) {
-                          if (kDebugMode) {}
-                          value == true
-                              ? setState(() => _activeDrawerIndex = 3)
-                              : null;
-                        },
-                        shape: const RoundedRectangleBorder(
-                            side: BorderSide(color: Colors.transparent)),
-                        collapsedShape: const RoundedRectangleBorder(
-                            side: BorderSide(color: Colors.transparent)),
-                        leading: const Padding(
-                          padding: EdgeInsets.only(left: 8.0),
-                          child: Icon(
-                            O.o,
-                            color: Colors.black,
-                          ),
-                        ),
-                        title: AutoSizeText(
-                          'ON AUTOMATION Rules',
-                          style: GoogleFonts.montserrat(
-                            fontSize: w * 0.04,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        children: List.generate(
-                            _gpRuleList.length,
-                            (index) => Column(
-                                  children: [
-                                    ListTile(
-                                      dense: true,
-                                      leading: const Padding(
-                                        padding: EdgeInsets.only(left: 8.0),
-                                        child: Icon(
-                                          O.o,
-                                          color: Colors.transparent,
-                                        ),
-                                      ),
-                                      title: Text(
-                                        _gpRuleList[index],
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: w * 0.04,
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 30.0),
-                                      child: Divider(
-                                        color: Colors.black.withOpacity(.6),
-                                      ),
-                                    )
-                                  ],
-                                )),
-                      ),
+                      // ExpansionTile(
+                      //   initiallyExpanded: _activeDrawerIndex == 3,
+                      //   onExpansionChanged: (value) {
+                      //     if (kDebugMode) {}
+                      //     value == true
+                      //         ? setState(() => _activeDrawerIndex = 3)
+                      //         : null;
+                      //   },
+                      //   shape: const RoundedRectangleBorder(
+                      //       side: BorderSide(color: Colors.transparent)),
+                      //   collapsedShape: const RoundedRectangleBorder(
+                      //       side: BorderSide(color: Colors.transparent)),
+                      //   leading: const Padding(
+                      //     padding: EdgeInsets.only(left: 8.0),
+                      //     child: Icon(
+                      //       O.o,
+                      //       color: Colors.black,
+                      //     ),
+                      //   ),
+                      //   title: AutoSizeText(
+                      //     'ON AUTOMATION Rules',
+                      //     style: GoogleFonts.montserrat(
+                      //       fontSize: w * 0.04,
+                      //       color: Colors.black,
+                      //       fontWeight: FontWeight.bold,
+                      //     ),
+                      //   ),
+                      //   children: List.generate(
+                      //       _gpRuleList.length,
+                      //       (index) => Column(
+                      //             children: [
+                      //               ListTile(
+                      //                 dense: true,
+                      //                 leading: const Padding(
+                      //                   padding: EdgeInsets.only(left: 8.0),
+                      //                   child: Icon(
+                      //                     O.o,
+                      //                     color: Colors.transparent,
+                      //                   ),
+                      //                 ),
+                      //                 title: Text(
+                      //                   _gpRuleList[index],
+                      //                   style: GoogleFonts.montserrat(
+                      //                     fontSize: w * 0.04,
+                      //                     color: Colors.black,
+                      //                     fontWeight: FontWeight.bold,
+                      //                   ),
+                      //                 ),
+                      //               ),
+                      //               Padding(
+                      //                 padding: const EdgeInsets.symmetric(
+                      //                     horizontal: 30.0),
+                      //                 child: Divider(
+                      //                   color: Colors.black.withOpacity(.6),
+                      //                 ),
+                      //               )
+                      //             ],
+                      //           )),
+                      // ),
                       const Divider(
                         color: Colors.black,
                         thickness: .5,
@@ -1872,9 +1885,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
     );
   }
-*/
 
-/*
   final _gpRuleList = [
     'Group Mapping View',
     'Group Mapping',
@@ -1895,7 +1906,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     'Common Brands',
     // 'Rank Improved Report',
   ];
-*/
 
   Padding _vendorLoading() {
     return Padding(
@@ -2969,62 +2979,59 @@ class _CompetitorClassState extends State<CompetitorClass>
                   alignment: WrapAlignment.center,
                   children: List.generate(
                     brandList.length,
-                    (index) => GestureDetector(
-                      onTap: () {},
-                      child: Card(
-                        color: Colors.white,
-                        child: Container(
-                            width: w * .17,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(2.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  CachedNetworkImage(
-                                    imageUrl: CommonMethods.removeLastSlash(
-                                            AppInfo.kBaseUrl(
-                                                stagingSelector: 1)) +
-                                        brandList[index]['image'].toString(),
+                    (index) => Card(
+                      color: Colors.white,
+                      child: Container(
+                          width: w * .17,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CachedNetworkImage(
+                                  imageUrl: CommonMethods.removeLastSlash(
+                                          AppInfo.kBaseUrl(
+                                              stagingSelector: 1)) +
+                                      brandList[index]['image'].toString(),
+                                  width: w * .2,
+                                  height: w * .2 - 20,
+                                  placeholder: (context, url) => Center(
+                                    child: Lottie.asset(
+                                      'assets/lottie_animations/loading_bar.json',
+                                      repeat: true,
+                                      animate: true,
+                                      width: 50,
+                                      height: 50,
+                                      frameRate: FrameRate(
+                                        60,
+                                      ),
+                                    ),
+                                  ),
+                                  // fit: BoxFit.fill,
+                                  errorWidget: (_, c, e) => SizedBox(
                                     width: w * .2,
-                                    height: w * .2 - 20,
-                                    placeholder: (context, url) => Center(
-                                      child: Lottie.asset(
-                                        'assets/lottie_animations/loading_bar.json',
-                                        repeat: true,
-                                        animate: true,
-                                        width: 50,
-                                        height: 50,
-                                        frameRate: FrameRate(
-                                          60,
-                                        ),
-                                      ),
-                                    ),
-                                    // fit: BoxFit.fill,
-                                    errorWidget: (_, c, e) => SizedBox(
-                                      width: w * .2,
-                                      child: Center(
-                                        child: Text(
-                                          brandList[index]['name'],
-                                          textAlign: TextAlign.center,
-                                        ),
+                                    child: Center(
+                                      child: Text(
+                                        brandList[index]['name'],
+                                        textAlign: TextAlign.center,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(
-                                    height: 5,
-                                  ),
-                                  Text(
-                                    brandList[index]['count'].toString(),
-                                    style: GoogleFonts.montserrat(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            )),
-                      ),
+                                ),
+                                const SizedBox(
+                                  height: 5,
+                                ),
+                                Text(
+                                  brandList[index]['count'].toString(),
+                                  style: GoogleFonts.montserrat(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          )),
                     ),
                   ),
                 ),
@@ -4633,11 +4640,25 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     context.read<FeatureBrandsBloc>().add(const FeatureBrandsEvent());
     setupRemoteConfig();
     getBanners();
+    //  loadBrands();
     super.initState();
   }
 
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+  // void loadBrands() async {
+  //   final brands = await fetchBrands();
+  //   _allBrands = brands;
+  // }
+
   List<String> categoryList = [];
   List<String> featureCategoryList = [];
+  //List<Map<String, dynamic>> _allBrands = [];
+  //int _visibleCount = 10;
 
   List<String> newProductsDropDownCategoryList = [
     'Gas Grills',
@@ -4851,7 +4872,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
-                              return const CustomLoader();
+                              return Center(
+                                  child: CustomLoader(width: 50, height: 50));
                             } else if (snapshot.hasError) {
                               return Center(
                                 child: RichText(
@@ -4912,8 +4934,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       _mainContentBigImages(),
                       _mainContentSmallImages(),
                       verticalSpace(verticalSpace: 15),
-                      _grillsMenu(),
-                      verticalSpace(verticalSpace: 25),
+                      //  _grillsMenu(),
+                      //    verticalSpace(verticalSpace: 25),
                       // _newProductsTitleRow(),
                       // verticalSpace(verticalSpace: 15),
                       // _newProductsRow(),
@@ -4923,7 +4945,53 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       // _specialOfferProductsRow(),
                       // verticalSpace(verticalSpace: 25),
                       // _shopByBrandTitleRow(),
-                      verticalSpace(verticalSpace: 70),
+
+                      Padding(
+                        padding: const EdgeInsets.only(left: 20.0),
+                        child: Text(
+                          'Grills & Outdoor Cooking',
+                          style: TextStyle(
+                            fontSize: 27, fontWeight: FontWeight.bold,
+                            //fontFamily: 'Futura BdCn BT Bold',
+                            fontFamily: 'Segoe UI',
+                          ),
+                        ),
+                      ),
+
+                      verticalSpace(verticalSpace: 25),
+                      grillsOutdoor(),
+
+                      verticalSpace(verticalSpace: 15),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 20.0),
+                        child: Text(
+                          'Shop by Grill Size',
+                          style: TextStyle(
+                            fontSize: 27, fontWeight: FontWeight.bold,
+                            //fontFamily: 'Futura BdCn BT Bold',
+                            fontFamily: 'Segoe UI',
+                          ),
+                        ),
+                      ),
+                      verticalSpace(verticalSpace: 25),
+                      _shopByGrills(),
+
+                      verticalSpace(verticalSpace: 5),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 20.0),
+                        child: Text(
+                          'Shop by Brand',
+                          style: TextStyle(
+                            fontSize: 27,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Segoe UI',
+                          ),
+                        ),
+                      ),
+                      verticalSpace(verticalSpace: 25),
+                      _allBrandsScreen(),
+                      verticalSpace(verticalSpace: 55),
+
                       // /*Padding(
                       //   padding: const EdgeInsets.symmetric(
                       //       horizontal: 18.0, vertical: 5),
@@ -6436,185 +6504,530 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-  Widget _mainContentBigImages() {
-    return FutureBuilder(
-      future: getMainContentBigImages(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CustomLoader();
-        } else if (snapshot.hasError) {
-          return const SizedBox();
-        } else {
-          return Column(
-            children: List.generate(
-                snapshot.data!.length,
-                (index) => Column(
+// try {
+//   final response = await http.get(
+//     Uri.parse(
+//         'https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data'),
+//   );
+//   if (response.statusCode == 200) {
+//     final List<dynamic> jsonData = json.decode(response.body);
+//     final brandsResponse = BrandsResponse.fromJson(jsonData);
+//     return brandsResponse.toJson();
+//   } else {
+//     throw Exception('Failed to load brands: ${response.statusCode}');
+//   }
+// } catch (e) {
+//   throw Exception('Error fetching brands: $e');
+// }
+
+  Future<List<Map<String, dynamic>>> fetchBrands() async {
+    log('Brand Api is running');
+    try {
+      log('method running');
+      final response = await http.get(
+        Uri.parse('https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data'),
+      ).timeout(const Duration(seconds: 30));
+      log('Brand API: https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data');
+
+      if (response.statusCode == 200) {
+        log('status code ${response.statusCode}');
+        final List<dynamic> jsonData = json.decode(response.body);
+        return jsonData.cast<Map<String, dynamic>>();
+      } else {
+        log('Error Brand API: ${response.statusCode}');
+        throw Exception('Failed to load brands: ${response.statusCode}');
+      }
+    } catch (e) {
+      log("Exception In Brand API: ${e.toString()}");
+      throw Exception('Error fetching brands: $e');
+    }
+  }
+
+
+  Widget _allBrandsScreen() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: fetchBrands(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(
+                  child: Text('Failed to load brands: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No brands available.'));
+            }
+            final allBrands = snapshot.data!;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 5,
+                crossAxisSpacing: 5,
+                childAspectRatio: 1,
+              ),
+              itemCount: allBrands.length,
+              itemBuilder: (context, index) {
+                final brand = allBrands[index];
+                return GestureDetector(
+                  onTap: () {
+                    log('Brand object: $brand');
+                    log('brandID ${brand['brand_id']}');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BrandProductListScreen(
+                          brandId: brand['brand_id'],
+                          brandName:  brand['brand_name'],
+                        ),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    elevation: 0.5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: const BorderSide(color: Colors.black),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Stack(
-                          children: [
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 5),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10.0),
-                                child: Image.network(
-                                  snapshot.data![index]['image_link'],
-                                  fit: BoxFit.fitWidth,
-                                ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 110,
+                            child: Image.network(
+                              brand['brand_logo'],
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Image.asset(
+                                'assets/images/no_image.png',
+                                fit: BoxFit.contain,
                               ),
                             ),
-                            Column(
-                              children: [
-                                const SizedBox(height: 10),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      snapshot.data![index]['large_text'],
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Futura BdCn BT Bold',
-                                        wordSpacing: 1,
-                                        letterSpacing: 1,
-                                        fontSize: w * .07,
-                                      ),
-                                    ),
-                                  ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              top: 10.0, left: 8.0, right: 8.0),
+                          child: Text(
+                            brand['brand_name'].toString().trim(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              fontFamily: 'Segoe UI',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              bottom: 4.0, left: 8.0, right: 8.0, top: 4.0),
+                          child: Text(
+                            'Products: ${brand['product_count']}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 18,
+                              fontFamily: 'Segoe UI',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _shopByGrills() {
+    final List<Map<String, String>> gridData = [
+      {
+        'title': 'Large Grills',
+        'image': 'assets/shop_by_grills/large_grills.jpg'
+      },
+      {
+        'title': 'Medium Grills',
+        'image': 'assets/shop_by_grills/medium_grills2.jpg'
+      },
+      {
+        'title': 'Small Grills',
+        'image': 'assets/shop_by_grills/small_grills.jpg'
+      },
+      {
+        'title': 'Large Size Grills',
+        'image': 'assets/shop_by_grills/large_size_grills.jpg'
+      },
+      {
+        'title': 'Medium Size Grills',
+        'image': 'assets/shop_by_grills/medium_size_grills.jpg'
+      },
+      {'title': '49+ inches', 'image': 'assets/shop_by_grills/49+ inches.jpg'},
+      {
+        'title': 'Small Size Grills',
+        'image': 'assets/shop_by_grills/small_size_grills.jpg'
+      },
+      {
+        'title': 'x-Large Size Grills',
+        'image': 'assets/shop_by_grills/x-large_size_grills.jpg'
+      },
+      {
+        'title': 'x-Large Grills',
+        'image': 'assets/shop_by_grills/x-large_grills.jpg',
+      },
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 5,
+          crossAxisSpacing: 5,
+          childAspectRatio: 1.0,
+        ),
+        itemCount: gridData.length,
+        itemBuilder: (context, index) {
+          final item = gridData[index];
+          return Column(
+            children: [
+              Expanded(
+                child: Card(
+                  elevation: 0.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    item['image']!,
+                    fit: BoxFit.contain,
+                    width: w * .5,
+                    height: w * .5,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                child: Text(
+                  item['title']!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: w * .035,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget grillsOutdoor() {
+    final List<Map<String, String>> gridData = [
+      {
+        'title': 'Outdoor Pizza Ovens',
+        'image': 'assets/grills_outdoor_cooking/outdoor_pizza_ovens.jpg'
+      },
+      {
+        'title': 'Gas Grills',
+        'image': 'assets/grills_outdoor_cooking/gas_grills.jpg'
+      },
+      {
+        'title': 'Charcoal Grills',
+        'image': 'assets/grills_outdoor_cooking/charcoal_grills.jpg'
+      },
+      {
+        'title': 'Flat Top Griddles',
+        'image': 'assets/grills_outdoor_cooking/flat_top_graddles.jpg'
+      },
+      {
+        'title': 'Pellet Grills',
+        'image': 'assets/grills_outdoor_cooking/pellet_grills.jpg'
+      },
+      {
+        'title': 'Electric Grills',
+        'image': 'assets/grills_outdoor_cooking/electric_grills.jpg'
+      },
+      {
+        'title': 'Kamado Grills',
+        'image': 'assets/grills_outdoor_cooking/kamado_grills.jpg'
+      },
+      {
+        'title': 'Beyond the Backyard',
+        'image': 'assets/grills_outdoor_cooking/bayond.jpg'
+      },
+      {
+        'title': 'Santa Maria Gaucho Grills',
+        'image': 'assets/grills_outdoor_cooking/santa_maria.jpg',
+      },
+      {
+        'title': 'BBQ Smokers',
+        'image': 'assets/grills_outdoor_cooking/bbq_smoker.jpg'
+      },
+      {
+        'title': 'Outdoor Fryers & Stoves',
+        'image': 'assets/grills_outdoor_cooking/outdoor_Gas Fryer.jpg'
+      },
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 5,
+          crossAxisSpacing: 5,
+          childAspectRatio: 1.0,
+        ),
+        itemCount: gridData.length,
+        itemBuilder: (context, index) {
+          final item = gridData[index];
+          return Column(
+            children: [
+              Expanded(
+                child: Card(
+                  elevation: 0.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    item['image']!,
+                    fit: BoxFit.contain,
+                    width: w * .5,
+                    height: w * .5,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                child: Text(
+                  item['title']!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: w * .035,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _mainContentBigImages() {
+    return SizedBox(
+      height: h * .28,
+      child: FutureBuilder(
+        future: getMainContentBigImages(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: const CustomLoader(width: 50, height: 50));
+          } else if (snapshot.hasError) {
+            return const SizedBox();
+          } else {
+            return Column(
+              children: List.generate(
+                  snapshot.data!.length,
+                  (index) => Column(
+                        children: [
+                          Stack(
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 5),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  child: Image.network(
+                                    snapshot.data![index]['image_link'],
+                                    fit: BoxFit.fitWidth,
+                                  ),
                                 ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      snapshot.data![index]['small_text'],
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Futura BdCn BT Bold',
-                                        wordSpacing: 1,
-                                        letterSpacing: 1,
-                                        fontSize: w * .045,
+                              ),
+                              Column(
+                                children: [
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        snapshot.data![index]['large_text'],
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'Futura BdCn BT Bold',
+                                          wordSpacing: 1,
+                                          letterSpacing: 1,
+                                          fontSize: w * .07,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () {},
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: primaryColor,
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        snapshot.data![index]['small_text'],
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'Futura BdCn BT Bold',
+                                          wordSpacing: 1,
+                                          letterSpacing: 1,
+                                          fontSize: w * .045,
+                                        ),
                                       ),
-                                      child: Center(
-                                        child: Text(
-                                          snapshot.data![index]['button_name'],
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: 'Futura BdCn BT Bold',
-                                            wordSpacing: 1,
-                                            letterSpacing: 1,
-                                            fontSize: w * .045,
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () {},
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: primaryColor,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            snapshot.data![index]
+                                                ['button_name'],
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontFamily: 'Futura BdCn BT Bold',
+                                              wordSpacing: 1,
+                                              letterSpacing: 1,
+                                              fontSize: w * .045,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                )
-                              ],
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                    )),
-          );
-        }
-      },
+                                    ],
+                                  )
+                                ],
+                              )
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      )),
+            );
+          }
+        },
+      ),
     );
   }
 
   Widget _mainContentSmallImages() {
-    return FutureBuilder(
-      future: getMainContentSmallImages(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CustomLoader();
-        } else if (snapshot.hasError) {
-          return const SizedBox();
-        } else {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: List.generate(
-                      snapshot.data!.length,
-                      // Up to half the length for left column
-                      (index) => index < (snapshot.data!.length / 2)
-                          ? GestureDetector(
-                              onTap: () {
-                                log('index1 - $index');
-                              },
-                              child: SizedBox(
-                                width: double.infinity, // Fill available width
-                                child: Column(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      child: Image.network(
-                                        snapshot.data![index]['image_link'],
-                                        fit: BoxFit.cover, // Adjust as needed
+    return SizedBox(
+      height: h * .28,
+      child: FutureBuilder(
+        future: getMainContentSmallImages(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: const CustomLoader(width: 50, height: 50));
+          } else if (snapshot.hasError) {
+            return const SizedBox();
+          } else {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: List.generate(
+                        snapshot.data!.length,
+                        // Up to half the length for left column
+                        (index) => index < (snapshot.data!.length / 2)
+                            ? GestureDetector(
+                                onTap: () {
+                                  log('index1 - $index');
+                                },
+                                child: SizedBox(
+                                  width:
+                                      double.infinity, // Fill available width
+                                  child: Column(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                        child: Image.network(
+                                          snapshot.data![index]['image_link'],
+                                          fit: BoxFit.cover, // Adjust as needed
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                  ],
+                                      const SizedBox(height: 10),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            )
-                          : Container(), // Placeholder for unused space
+                              )
+                            : Container(), // Placeholder for unused space
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    children: List.generate(
-                      snapshot.data!.length,
-                      // Up to half the length for right column
-                      (index) => index >= (snapshot.data!.length / 2)
-                          ? GestureDetector(
-                              onTap: () {
-                                log('index2 - $index');
-                              },
-                              child: SizedBox(
-                                width: double.infinity, // Fill available width
-                                child: Column(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      child: Image.network(
-                                        snapshot.data![index]['image_link'],
-                                        fit: BoxFit.cover, // Adjust as needed
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      children: List.generate(
+                        snapshot.data!.length,
+                        // Up to half the length for right column
+                        (index) => index >= (snapshot.data!.length / 2)
+                            ? GestureDetector(
+                                onTap: () {
+                                  log('index2 - $index');
+                                },
+                                child: SizedBox(
+                                  width:
+                                      double.infinity, // Fill available width
+                                  child: Column(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                        child: Image.network(
+                                          snapshot.data![index]['image_link'],
+                                          fit: BoxFit.cover, // Adjust as needed
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                  ],
+                                      const SizedBox(height: 10),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            )
-                          : Container(),
+                              )
+                            : Container(),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        }
-      },
+                ],
+              ),
+            );
+          }
+        },
+      ),
     );
   }
 
@@ -6735,238 +7148,238 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-  Widget _newProductsRow() {
-    return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: List.generate(
-                newProducts.length,
-                (index) => Padding(
-                      padding: index != newProducts.length
-                          ? const EdgeInsets.only(right: 15)
-                          : EdgeInsets.zero,
-                      child: Container(
-                        width: w * .44,
-                        decoration: BoxDecoration(
-                          border:
-                              Border.all(color: Colors.grey.shade300, width: 1),
-                          color: Colors.white,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Stack(
-                              children: [
-                                Image.network(newProducts[index].image),
-                                Positioned(
-                                  top: 0,
-                                  right: 0,
-                                  child: PopupMenuButton<IconData>(
-                                    offset: const Offset(0, 40),
-                                    padding: EdgeInsets.zero,
-                                    initialValue: selectedIcon,
-                                    onSelected: (value) {
-                                      setState(() => selectedIcon = value);
-                                    },
-                                    itemBuilder: (BuildContext context) =>
-                                        List.generate(
-                                            4,
-                                            (index) => PopupMenuItem<IconData>(
-                                                  value: iconsList[index],
-                                                  padding: EdgeInsets.zero,
-                                                  child: Center(
-                                                      child: Icon(
-                                                          iconsList[index])),
-                                                )),
-                                    constraints:
-                                        const BoxConstraints(maxWidth: 48),
-                                  ),
-                                )
-                              ],
-                            ),
-                            verticalSpace(verticalSpace: 2),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'From: ${newProducts[index].from}',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontFamily: 'Segoe UI',
-                                      fontSize: w * .03,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            verticalSpace(verticalSpace: 2),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      newProducts[index].prodTitle,
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontFamily: 'Futura BdCn BT Bold',
-                                        wordSpacing: 1,
-                                        letterSpacing: 1,
-                                        fontSize: w * .04,
-                                      ),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                            verticalSpace(verticalSpace: 5),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Divider(),
-                            ),
-                            verticalSpace(verticalSpace: 5),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            newProducts[index].actualPrice,
-                                            style: TextStyle(
-                                              decoration:
-                                                  TextDecoration.lineThrough,
-                                              decorationColor: Colors.grey,
-                                              color: Colors.grey,
-                                              fontFamily: 'Futura BdCn BT Bold',
-                                              wordSpacing: 1,
-                                              letterSpacing: 1,
-                                              fontSize: w * .04,
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                    verticalSpace(verticalSpace: 2),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            newProducts[index].discountedPrice,
-                                            style: TextStyle(
-                                              color: primaryColor,
-                                              fontFamily: 'Futura BdCn BT Bold',
-                                              wordSpacing: 1,
-                                              letterSpacing: 1,
-                                              fontSize: w * .07,
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Expanded(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                            bottom: 5, right: 5),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: primaryColor,
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                          ),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            children: [
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 5),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      '${newProducts[index].discountPercentage}%',
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontFamily:
-                                                            'Futura BdCn BT Bold',
-                                                        wordSpacing: 1,
-                                                        letterSpacing: 1,
-                                                        fontSize: w * .04,
-                                                      ),
-                                                    )
-                                                  ],
-                                                ),
-                                              ),
-                                              verticalSpace(verticalSpace: 2),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 5),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'OFF',
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontFamily:
-                                                            'Futura BdCn BT Bold',
-                                                        wordSpacing: 1,
-                                                        letterSpacing: 1,
-                                                        fontSize: w * .04,
-                                                      ),
-                                                    )
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                )
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    )),
-          ),
-        ));
-  }
+  // Widget _newProductsRow() {
+  //   return Padding(
+  //       padding: const EdgeInsets.symmetric(horizontal: 8.0),
+  //       child: SingleChildScrollView(
+  //         scrollDirection: Axis.horizontal,
+  //         child: Row(
+  //           children: List.generate(
+  //               newProducts.length,
+  //               (index) => Padding(
+  //                     padding: index != newProducts.length
+  //                         ? const EdgeInsets.only(right: 15)
+  //                         : EdgeInsets.zero,
+  //                     child: Container(
+  //                       width: w * .44,
+  //                       decoration: BoxDecoration(
+  //                         border:
+  //                             Border.all(color: Colors.grey.shade300, width: 1),
+  //                         color: Colors.white,
+  //                       ),
+  //                       child: Column(
+  //                         crossAxisAlignment: CrossAxisAlignment.start,
+  //                         children: [
+  //                           Stack(
+  //                             children: [
+  //                               Image.network(newProducts[index].image),
+  //                               Positioned(
+  //                                 top: 0,
+  //                                 right: 0,
+  //                                 child: PopupMenuButton<IconData>(
+  //                                   offset: const Offset(0, 40),
+  //                                   padding: EdgeInsets.zero,
+  //                                   initialValue: selectedIcon,
+  //                                   onSelected: (value) {
+  //                                     setState(() => selectedIcon = value);
+  //                                   },
+  //                                   itemBuilder: (BuildContext context) =>
+  //                                       List.generate(
+  //                                           4,
+  //                                           (index) => PopupMenuItem<IconData>(
+  //                                                 value: iconsList[index],
+  //                                                 padding: EdgeInsets.zero,
+  //                                                 child: Center(
+  //                                                     child: Icon(
+  //                                                         iconsList[index])),
+  //                                               )),
+  //                                   constraints:
+  //                                       const BoxConstraints(maxWidth: 48),
+  //                                 ),
+  //                               )
+  //                             ],
+  //                           ),
+  //                           verticalSpace(verticalSpace: 2),
+  //                           Padding(
+  //                             padding:
+  //                                 const EdgeInsets.symmetric(horizontal: 8.0),
+  //                             child: Row(
+  //                               mainAxisAlignment: MainAxisAlignment.start,
+  //                               children: [
+  //                                 Text(
+  //                                   'From: ${newProducts[index].from}',
+  //                                   style: TextStyle(
+  //                                     color: Colors.black,
+  //                                     fontFamily: 'Segoe UI',
+  //                                     fontSize: w * .03,
+  //                                     fontWeight: FontWeight.w500,
+  //                                   ),
+  //                                 ),
+  //                               ],
+  //                             ),
+  //                           ),
+  //                           verticalSpace(verticalSpace: 2),
+  //                           Padding(
+  //                             padding:
+  //                                 const EdgeInsets.symmetric(horizontal: 8.0),
+  //                             child: Row(
+  //                               mainAxisAlignment: MainAxisAlignment.start,
+  //                               children: [
+  //                                 Flexible(
+  //                                   child: Text(
+  //                                     newProducts[index].prodTitle,
+  //                                     style: TextStyle(
+  //                                       color: Colors.black,
+  //                                       fontFamily: 'Futura BdCn BT Bold',
+  //                                       wordSpacing: 1,
+  //                                       letterSpacing: 1,
+  //                                       fontSize: w * .04,
+  //                                     ),
+  //                                     maxLines: 3,
+  //                                     overflow: TextOverflow.ellipsis,
+  //                                   ),
+  //                                 )
+  //                               ],
+  //                             ),
+  //                           ),
+  //                           verticalSpace(verticalSpace: 5),
+  //                           const Padding(
+  //                             padding: EdgeInsets.symmetric(horizontal: 8.0),
+  //                             child: Divider(),
+  //                           ),
+  //                           verticalSpace(verticalSpace: 5),
+  //                           Row(
+  //                             mainAxisAlignment: MainAxisAlignment.start,
+  //                             crossAxisAlignment: CrossAxisAlignment.end,
+  //                             children: [
+  //                               Column(
+  //                                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                                 children: [
+  //                                   Padding(
+  //                                     padding: const EdgeInsets.symmetric(
+  //                                         horizontal: 8.0),
+  //                                     child: Row(
+  //                                       mainAxisAlignment:
+  //                                           MainAxisAlignment.start,
+  //                                       children: [
+  //                                         Text(
+  //                                           newProducts[index].actualPrice,
+  //                                           style: TextStyle(
+  //                                             decoration:
+  //                                                 TextDecoration.lineThrough,
+  //                                             decorationColor: Colors.grey,
+  //                                             color: Colors.grey,
+  //                                             fontFamily: 'Futura BdCn BT Bold',
+  //                                             wordSpacing: 1,
+  //                                             letterSpacing: 1,
+  //                                             fontSize: w * .04,
+  //                                           ),
+  //                                         )
+  //                                       ],
+  //                                     ),
+  //                                   ),
+  //                                   verticalSpace(verticalSpace: 2),
+  //                                   Padding(
+  //                                     padding: const EdgeInsets.symmetric(
+  //                                         horizontal: 8.0),
+  //                                     child: Row(
+  //                                       mainAxisAlignment:
+  //                                           MainAxisAlignment.start,
+  //                                       children: [
+  //                                         Text(
+  //                                           newProducts[index].discountedPrice,
+  //                                           style: TextStyle(
+  //                                             color: primaryColor,
+  //                                             fontFamily: 'Futura BdCn BT Bold',
+  //                                             wordSpacing: 1,
+  //                                             letterSpacing: 1,
+  //                                             fontSize: w * .07,
+  //                                           ),
+  //                                         )
+  //                                       ],
+  //                                     ),
+  //                                   ),
+  //                                 ],
+  //                               ),
+  //                               Expanded(
+  //                                 child: Row(
+  //                                   mainAxisAlignment: MainAxisAlignment.end,
+  //                                   crossAxisAlignment: CrossAxisAlignment.end,
+  //                                   children: [
+  //                                     Padding(
+  //                                       padding: const EdgeInsets.only(
+  //                                           bottom: 5, right: 5),
+  //                                       child: Container(
+  //                                         decoration: BoxDecoration(
+  //                                           color: primaryColor,
+  //                                           borderRadius:
+  //                                               BorderRadius.circular(5),
+  //                                         ),
+  //                                         child: Column(
+  //                                           mainAxisAlignment:
+  //                                               MainAxisAlignment.end,
+  //                                           children: [
+  //                                             Padding(
+  //                                               padding:
+  //                                                   const EdgeInsets.symmetric(
+  //                                                       horizontal: 5),
+  //                                               child: Row(
+  //                                                 mainAxisAlignment:
+  //                                                     MainAxisAlignment.start,
+  //                                                 children: [
+  //                                                   Text(
+  //                                                     '${newProducts[index].discountPercentage}%',
+  //                                                     style: TextStyle(
+  //                                                       color: Colors.white,
+  //                                                       fontFamily:
+  //                                                           'Futura BdCn BT Bold',
+  //                                                       wordSpacing: 1,
+  //                                                       letterSpacing: 1,
+  //                                                       fontSize: w * .04,
+  //                                                     ),
+  //                                                   )
+  //                                                 ],
+  //                                               ),
+  //                                             ),
+  //                                             verticalSpace(verticalSpace: 2),
+  //                                             Padding(
+  //                                               padding:
+  //                                                   const EdgeInsets.symmetric(
+  //                                                       horizontal: 5),
+  //                                               child: Row(
+  //                                                 mainAxisAlignment:
+  //                                                     MainAxisAlignment.start,
+  //                                                 children: [
+  //                                                   Text(
+  //                                                     'OFF',
+  //                                                     style: TextStyle(
+  //                                                       color: Colors.white,
+  //                                                       fontFamily:
+  //                                                           'Futura BdCn BT Bold',
+  //                                                       wordSpacing: 1,
+  //                                                       letterSpacing: 1,
+  //                                                       fontSize: w * .04,
+  //                                                     ),
+  //                                                   )
+  //                                                 ],
+  //                                               ),
+  //                                             ),
+  //                                           ],
+  //                                         ),
+  //                                       ),
+  //                                     )
+  //                                   ],
+  //                                 ),
+  //                               )
+  //                             ],
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                   )),
+  //         ),
+  //       ));
+  // }
 
   Widget _specialOfferProductsTitleRow() {
     return Padding(

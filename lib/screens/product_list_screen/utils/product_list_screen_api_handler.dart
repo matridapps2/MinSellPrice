@@ -1,8 +1,11 @@
 import 'dart:developer';
+import 'dart:convert';
 
 import 'package:shoppingmegamart/app.dart';
 import 'package:shoppingmegamart/model/product_list_model_new.dart';
 import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
+
+import '../product_list_screen.dart';
 
 class ProductListScreenApiHandler {
   ProductListScreenApiHandler._();
@@ -224,10 +227,25 @@ class ProductListScreenApiHandler {
         );
         toReturn = response;
       } catch (e, s) {
-       log('error in ProductListScreenApiHandler getProductList: $e');
-       log('stack trace - $s');
+        log('error in ProductListScreenApiHandler getProductList: $e');
+        log('stack trace - $s');
       }
     }
     return toReturn;
   }
+
+  // static Future<List<BrandProduct>> getBrandProductList({
+  //   required int brandId,
+  // }) async {
+  //   try {
+  //     final response = await NetworkCalls().getProductListByBrandID(brandId.toString());
+  //     if (response == null) return [];
+  //     final List<dynamic> jsonList = List.from(jsonDecode(response));
+  //     return jsonList.map((e) => BrandProduct.fromJson(e)).toList();
+  //   } catch (e, s) {
+  //     log('error in getBrandProductList: $e');
+  //     log('stack trace - $s');
+  //     return [];
+  //   }
+  // }
 }

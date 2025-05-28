@@ -1,0 +1,2 @@
+D:/ShoppingMegaMart/msp_ecommerece/android/app/.cxx/RelWithDebInfo/4o6k4b5d/x86_64/CMakeFiles/edit_cache.dir
+D:/ShoppingMegaMart/msp_ecommerece/android/app/.cxx/RelWithDebInfo/4o6k4b5d/x86_64/CMakeFiles/rebuild_cache.dir

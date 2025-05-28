@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:developer';
 import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class MyInAppBrowser extends InAppBrowser {
+  PullToRefreshController? pullToRefreshController;
+
   MyInAppBrowser(
       {int? windowId, UnmodifiableListView<UserScript>? initialUserScripts})
       : super(windowId: windowId, initialUserScripts: initialUserScripts);
@@ -14,7 +16,7 @@ class MyInAppBrowser extends InAppBrowser {
   @override
   Future onBrowserCreated() async {
     if (kDebugMode) {
-      print("\n\nBrowser Created!\n\n");
+      log("\n\nBrowser Created!\n\n");
     }
   }
 
@@ -40,13 +42,13 @@ class MyInAppBrowser extends InAppBrowser {
 
   @override
   void onExit() {
-    print("\n\nBrowser closed!\n\n");
+    log("\n\nBrowser closed!\n\n");
   }
 
   @override
   Future<NavigationActionPolicy> shouldOverrideUrlLoading(
       navigationAction) async {
-    print("\n\nOverride ${navigationAction.request.url}\n\n");
+    log("\n\nOverride ${navigationAction.request.url}\n\n");
     return NavigationActionPolicy.ALLOW;
   }
 }
@@ -70,23 +72,24 @@ class _InAppBrowserExampleScreenState extends State<InAppBrowserExampleScreen> {
     super.initState();
 
     pullToRefreshController = kIsWeb ||
-            ![TargetPlatform.iOS, TargetPlatform.android]
-                .contains(defaultTargetPlatform)
+        ![TargetPlatform.iOS, TargetPlatform.android]
+            .contains(defaultTargetPlatform)
         ? null
         : PullToRefreshController(
-            options: PullToRefreshOptions(
-              color: Colors.black,
-            ),
-            onRefresh: () async {
-              if (Platform.isAndroid) {
-                widget.browser.webViewController.reload();
-              } else if (Platform.isIOS) {
-                widget.browser.webViewController.loadUrl(
-                    urlRequest: URLRequest(
-                        url: await widget.browser.webViewController.getUrl()));
-              }
-            },
-          );
+      options: PullToRefreshOptions(
+        color: Colors.black,
+      ),
+      onRefresh: () async {
+        if (Platform.isAndroid) {
+          widget.browser.webViewController?.reload();
+        } else if (Platform.isIOS) {
+          widget.browser.webViewController?.loadUrl(
+              urlRequest: URLRequest(
+                  url: WebUri((await widget.browser.webViewController
+                      ?.getUrl()) as String)));
+        }
+      },
+    );
     widget.browser.pullToRefreshController = pullToRefreshController;
   }
 
@@ -95,33 +98,32 @@ class _InAppBrowserExampleScreenState extends State<InAppBrowserExampleScreen> {
     return Scaffold(
         appBar: AppBar(
             title: const Text(
-          "InAppBrowser",
-        )),
+              "InAppBrowser",
+            )),
         body: Center(
             child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-              ElevatedButton(
-                  onPressed: () async {
-                    await widget.browser.openUrlRequest(
-                      urlRequest:
-                          URLRequest(url: Uri.parse("https://flutter.dev")),
-                      options: InAppBrowserClassOptions(
-                        crossPlatform: InAppBrowserOptions(
-                          toolbarTopBackgroundColor: Colors.blue,
-                        ),
-
-                      ),
-                    );
-                  },
-                  child: const Text("Open In-App Browser")),
-              Container(height: 40),
-              ElevatedButton(
-                  onPressed: () async {
-                    await InAppBrowser.openWithSystemBrowser(
-                        url: Uri.parse("https://flutter.dev/"));
-                  },
-                  child: const Text("Open System Browser")),
-            ])));
+                  ElevatedButton(
+                      onPressed: () async {
+                        await widget.browser.openUrlRequest(
+                          urlRequest:
+                          URLRequest(url: WebUri("https://flutter.dev")),
+                          options: InAppBrowserClassOptions(
+                            crossPlatform: InAppBrowserOptions(
+                              toolbarTopBackgroundColor: Colors.blue,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text("Open In-App Browser")),
+                  Container(height: 40),
+                  ElevatedButton(
+                      onPressed: () async {
+                        await InAppBrowser.openWithSystemBrowser(
+                            url: WebUri("https://flutter.dev/"));
+                      },
+                      child: const Text("Open System Browser")),
+                ])));
   }
 }

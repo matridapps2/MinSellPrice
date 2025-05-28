@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:connection_notifier/connection_notifier.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -24,6 +25,11 @@ import 'package:shoppingmegamart/permissions/permissions.dart';
 import 'package:shoppingmegamart/screens/widgets/bridge_class/bridge_class.dart';
 import 'package:shoppingmegamart/services/background_service.dart';
 import 'package:shoppingmegamart/firebase_options.dart';
+import 'package:provider/provider.dart';
+import 'auth_provider.dart' as my_auth; // adjust path if needed
+import 'package:shoppingmegamart/notification_page/notification_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 const Color primaryColor = Color(0xFFd90310);
 
@@ -33,12 +39,8 @@ Future<void> permission() async {
   }
 }
 
-@pragma('vm:entry-point')
-Future<void> _backgroundMessageHandler(RemoteMessage message) async {
-  setupFlutterNotifications();
-
-  showFlutterNotification(message);
-}
+bool _notificationClicked = false;
+String _initialNotificationData = '';
 
 void main() async {
   Bloc.observer = SimpleBlocObserver();
@@ -48,50 +50,8 @@ void main() async {
           ? DefaultFirebaseOptions.android
           : DefaultFirebaseOptions.ios);
 
-  // await FirebaseMessaging.instance.requestPermission(
-  //   alert: true,
-  //   announcement: false,
-  //   badge: true,
-  //   carPlay: false,
-  //   criticalAlert: false,
-  //   provisional: false,
-  //   sound: true,
-  // );
-  //
-  // permission();
-  //
-  // if (Platform.isIOS) {
-  //   String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-  //   if (apnsToken == null) {
-  //     if (kDebugMode) {
-  //       print("APNS Token not available, waiting...");
-  //     }
-  //     await Future<void>.delayed(const Duration(
-  //       seconds: 3,
-  //     ));
-  //     apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-  //   }
-  //   if (apnsToken != null) {
-  //     if (kDebugMode) {
-  //       print("APNS Token: $apnsToken");
-  //     }
-  //   } else {
-  //     if (kDebugMode) {
-  //       print("APNS Token not available, trying to get FCM token anyway...");
-  //     }
-  //   }
-  // }
-
   requestNotificationPermission();
   setupFlutterNotifications();
-
-  // FirebaseMessaging.instance
-  //     .setForegroundNotificationPresentationOptions(alert: true, sound: true);
-  // FirebaseMessaging.onBackgroundMessage(_backgroundMessageHandler);
-  //
-  // FirebaseMessaging.onMessage.listen((event) {
-  //   showFlutterNotification(event);
-  // });
 
   FlutterBackgroundService().invoke("setAsBackground");
   await initializeService();
@@ -125,7 +85,123 @@ void main() async {
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  runApp(const MyApp());
+
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
+    final notificationJson = message.notification != null
+        ? jsonEncode({
+            'title': message.notification?.title ?? '',
+            'message': message.notification?.body ?? '',
+            'image': message.notification?.android?.imageUrl ??
+                message.notification?.apple?.imageUrl ??
+                message.data['image'] ?? '',
+            'name': message.data['name'] ?? '',
+            'time': DateTime.now().toIso8601String(),
+            'isRead': false,
+        })
+        : '';
+    if (notificationJson.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      final List<String> stored = prefs.getStringList('notifications') ?? [];
+      stored.insert(0, notificationJson); // newest first
+      await prefs.setStringList('notifications', stored);
+      log('Notification added to shared preferences:');
+      log(notificationJson);
+    }
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (context) => NotificationPage(),
+      ),
+    );
+  });
+
+  String? token = await FirebaseMessaging.instance.getToken();
+  log("FCM Token: $token");
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => my_auth.AuthProvider(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => DatabaseBloc(),
+          ),
+          BlocProvider(
+            create: (context) => LoginBloc(),
+          ),
+          BlocProvider(
+            create: (context) => VendorDetailsBloc(),
+          ),
+          BlocProvider(
+            create: (context) => InsertIntoDatabaseBloc(),
+          ),
+          // BlocProvider(
+          //   create: (context) => BrandPriceAnalysisBloc(),
+          // ),
+          BlocProvider(
+            create: (context) => ProductListByIdBloc(),
+          ),
+          // BlocProvider(
+          //   create: (context) => DiscountBloc(),
+          // ),
+          // BlocProvider(
+          //   create: (context) => PriceChangeBloc(),
+          // ),
+          BlocProvider(
+            create: (context) => AllBrandBloc(),
+          ),
+          BlocProvider(
+            create: (context) => FeatureCategoryBloc(),
+          ),
+          BlocProvider(
+            create: (context) => FeatureBrandsBloc(),
+          ),
+        ],
+        child: ConnectionNotifier(
+          connectionNotificationOptions: const ConnectionNotificationOptions(
+            alignment: AlignmentDirectional.topCenter,
+          ),
+          child: MaterialApp(
+            navigatorKey: navigatorKey,
+            title: 'ShoppingMegaMart',
+            debugShowMaterialGrid: false,
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              fontFamily: 'Segoe UI',
+              primarySwatch: MaterialColor(_d90310, colorCodes),
+              useMaterial3: true,
+              // Disable Material 3 if needed
+              // Customize other theme properties as desired
+              // For example, you can set the primary color:
+              primaryColor: Colors.white,
+              // Or adjust the text selection theme:
+              textSelectionTheme: const TextSelectionThemeData(
+                selectionColor: Colors.blue,
+                cursorColor: Colors.blue,
+              ),
+              cardColor: Colors.white,
+              appBarTheme:
+                  AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
+              // Set the card theme:
+              cardTheme: CardTheme(
+                color: Colors.white,
+                margin: const EdgeInsets.all(2),
+                // Set the desired card color
+                elevation: 4, // Adjust elevation if needed
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(8), // Customize card shape
+                ),
+              ),
+            ),
+            home: const SafeArea(
+              top: true,
+              child: BridgeClass(),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -138,6 +214,36 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_notificationClicked) {
+        // Prepare notification data as JSON string
+        final notificationJson = _initialNotificationData.isNotEmpty
+            ? jsonEncode({
+                'title': '',
+                'message': _initialNotificationData,
+                'image':
+                    '', // Add image URL if available in initial notification
+                'name': '',
+                'time': DateTime.now().toIso8601String(),
+                'isRead': false,
+              })
+            : '';
+        if (notificationJson.isNotEmpty) {
+          final prefs = await SharedPreferences.getInstance();
+          final List<String> stored =
+              prefs.getStringList('notifications') ?? [];
+          stored.insert(0, notificationJson);
+          await prefs.setStringList('notifications', stored);
+          log('Notification added to shared preferences (from _notificationClicked):');
+          log(notificationJson);
+        }
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (context) => NotificationPage()),
+        );
+        _notificationClicked = false;
+        _initialNotificationData = '';
+      }
+    });
     return MultiBlocProvider(
       providers: [
         BlocProvider(

@@ -65,8 +65,29 @@ class _LikedProductState extends State<LikedProduct>
                 snapshot.data == null ||
                 snapshot.data!.isEmpty) {
               return const Center(
-                child: Text('No Liked Product Available'),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'No favourites yet!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Segoe UI',
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Tap the heart icon on products you love to add them here',
+                      style: TextStyle(
+                        fontFamily: 'Segoe UI',
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               );
+
             }
 
             List<Map<String, dynamic>> onlyLikedProducts = [];
@@ -80,8 +101,29 @@ class _LikedProductState extends State<LikedProduct>
 
             if (onlyLikedProducts.isEmpty) {
               return const Center(
-                child: Text('No Liked Product Available'),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'No favourites yet!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Segoe UI',
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Tap the heart icon on products you love to add them here',
+                      style: TextStyle(
+                        fontFamily: 'Segoe UI',
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               );
+
             }
 
             return Padding(

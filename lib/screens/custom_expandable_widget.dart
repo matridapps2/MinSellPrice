@@ -794,9 +794,10 @@ class _CustomProductCardState extends State<CustomProductCard>
                       padding: const EdgeInsets.only(right: 10.0),
                       child: GestureDetector(
                         onTap: () async =>
-                            await MyInAppBrowser().openUrlRequest(
+                        await MyInAppBrowser().openUrlRequest(
                           urlRequest: URLRequest(
-                              url: Uri.parse(widget.data.firstVendorUrl+'?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                              url: WebUri(widget.data.firstVendorUrl +
+                                  '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
                           options: InAppBrowserClassOptions(
                             crossPlatform: InAppBrowserOptions(
                               toolbarTopBackgroundColor: Colors.blue,
@@ -923,9 +924,10 @@ class _CustomProductCardState extends State<CustomProductCard>
                       padding: const EdgeInsets.only(right: 10.0),
                       child: GestureDetector(
                         onTap: () async =>
-                            await MyInAppBrowser().openUrlRequest(
+                        await MyInAppBrowser().openUrlRequest(
                           urlRequest: URLRequest(
-                              url: Uri.parse(widget.data.secondVendorUrl+'?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                              url: WebUri(widget.data.secondVendorUrl +
+                                  '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
                           options: InAppBrowserClassOptions(
                             crossPlatform: InAppBrowserOptions(
                               toolbarTopBackgroundColor: Colors.blue,
@@ -1065,10 +1067,11 @@ class _CustomProductCardState extends State<CustomProductCard>
                             padding: const EdgeInsets.only(right: 10.0),
                             child: GestureDetector(
                               onTap: () async =>
-                                  await MyInAppBrowser().openUrlRequest(
+                              await MyInAppBrowser().openUrlRequest(
                                 urlRequest: URLRequest(
-                                  url: Uri.parse(
-                                    widget.data.vendorUrl+'?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
+                                  url: WebUri(
+                                    widget.data.vendorUrl +
+                                        '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
                                   ),
                                 ),
                                 options: InAppBrowserClassOptions(
@@ -1244,10 +1247,10 @@ class _CustomProductCardState extends State<CustomProductCard>
                               padding: const EdgeInsets.only(right: 10.0),
                               child: GestureDetector(
                                 onTap: () async =>
-                                    await MyInAppBrowser().openUrlRequest(
+                                await MyInAppBrowser().openUrlRequest(
                                   urlRequest: URLRequest(
-                                      url: Uri.parse(
-                                          widget.data.secondVendorUrl+'?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                                      url: WebUri(widget.data.secondVendorUrl +
+                                          '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
                                   options: InAppBrowserClassOptions(
                                     crossPlatform: InAppBrowserOptions(
                                       toolbarTopBackgroundColor: Colors.blue,
@@ -1423,10 +1426,10 @@ class _CustomProductCardState extends State<CustomProductCard>
                               padding: const EdgeInsets.only(right: 10.0),
                               child: GestureDetector(
                                 onTap: () async =>
-                                    await MyInAppBrowser().openUrlRequest(
+                                await MyInAppBrowser().openUrlRequest(
                                   urlRequest: URLRequest(
-                                      url: Uri.parse(
-                                          widget.data.secondVendorUrl+'?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                                      url: WebUri(widget.data.secondVendorUrl +
+                                          '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
                                   options: InAppBrowserClassOptions(
                                     crossPlatform: InAppBrowserOptions(
                                       toolbarTopBackgroundColor: Colors.blue,
@@ -1888,19 +1891,16 @@ class _CustomProductCardState extends State<CustomProductCard>
                           ),
                         ),
                         Padding(
-                          padding:
-                          const EdgeInsets.only(right: 16.0),
+                          padding: const EdgeInsets.only(right: 16.0),
                           child: GestureDetector(
                             onTap: () async =>
-                            await MyInAppBrowser()
-                                .openUrlRequest(
+                            await MyInAppBrowser().openUrlRequest(
                               urlRequest: URLRequest(
-                                  url: Uri.parse(
-                                      widget.data.vendorUrl+'?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                                  url: WebUri(widget.data.vendorUrl +
+                                      '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
                               options: InAppBrowserClassOptions(
                                 crossPlatform: InAppBrowserOptions(
-                                  toolbarTopBackgroundColor:
-                                  Colors.blue,
+                                  toolbarTopBackgroundColor: Colors.blue,
                                 ),
                               ),
                             ),
@@ -2067,19 +2067,16 @@ class _CustomProductCardState extends State<CustomProductCard>
                           ),
                         ),
                         Padding(
-                          padding:
-                          const EdgeInsets.only(right: 16.0),
+                          padding: const EdgeInsets.only(right: 16.0),
                           child: GestureDetector(
                             onTap: () async =>
-                            await MyInAppBrowser()
-                                .openUrlRequest(
+                            await MyInAppBrowser().openUrlRequest(
                               urlRequest: URLRequest(
-                                  url: Uri.parse(
-                                      widget.data.vendorBaseUrl!+'?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                                  url: WebUri(widget.data.vendorBaseUrl! +
+                                      '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
                               options: InAppBrowserClassOptions(
                                 crossPlatform: InAppBrowserOptions(
-                                  toolbarTopBackgroundColor:
-                                  Colors.blue,
+                                  toolbarTopBackgroundColor: Colors.blue,
                                 ),
                               ),
                             ),

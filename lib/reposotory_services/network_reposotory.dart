@@ -124,7 +124,6 @@ class NetworkCalls {
             toastLength: Toast.LENGTH_LONG,
           );
         });
-    //
     return productListModelFromJson(response.body);
   }
 
@@ -234,6 +233,37 @@ class NetworkCalls {
       log('stack trace getProductListBySearch: $s');
     }
     return toReturn;
+  }
+
+  Future<String?> getProductListByBrandID(String brandId) async {
+    try {
+      String uri = 'https://growth.matridtech.net/api/brand-product/$brandId';
+
+      log('Brand Product API: $uri');
+      final response = await retry(
+            () async => await http.get(Uri.parse(uri)),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
+      );
+
+      log('getProductListByBrandID Status code - ${response.statusCode}');
+      if (response.statusCode == 200) {
+        log('getProductListByBrandID response - ${response.body}');
+        return response.body;
+      } else {
+        log('getProductListByBrandID failed with status code: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      log('Exception: ${e.toString()}');
+      return null;
+    }
   }
 
   Future<List<ProductListModel>> getFeaturedProduct({
