@@ -237,7 +237,7 @@ class NetworkCalls {
 
   Future<String?> getProductListByBrandID(String brandId) async {
     try {
-      String uri = 'https://growth.matridtech.net/api/brand-product/$brandId';
+      String uri = 'https://growth.matridtech.net/api/brand-product/$brandId?test';
 
       log('Brand Product API: $uri');
       final response = await retry(

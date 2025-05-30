@@ -4600,6 +4600,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   bool _showMoreCategory = false;
 
   final _scrollController = ScrollController();
+  late Future<List<Map<String, dynamic>>> _brandsFuture;
+  late Future<List<Map<String, dynamic>>> _bannersFuture;
 
   List<List<FeaturedBrandModel>> makeFourElementsRow(
       {required List<FeaturedBrandModel> list}) {
@@ -4627,7 +4629,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   @override
   void initState() {
     getData();
-
     context.read<ProductListByIdBloc>().add(ProductListByIdLoadingEvent(
         vendorId: '${AppInfo.kVendorId}',
         date: '2024-03-05',
@@ -4639,8 +4640,11 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     context.read<FeatureCategoryBloc>().add(const FeatureCategoryEvent());
     context.read<FeatureBrandsBloc>().add(const FeatureBrandsEvent());
     setupRemoteConfig();
-    getBanners();
+    _bannersFuture = getBanners();
     //  loadBrands();
+    _brandsFuture = fetchBrands();
+    _mainContentBigImagesFuture = getMainContentBigImages();
+    _mainContentSmallImagesFuture = getMainContentSmallImages();
     super.initState();
   }
 
@@ -4650,13 +4654,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     super.dispose();
   }
 
-  // void loadBrands() async {
-  //   final brands = await fetchBrands();
-  //   _allBrands = brands;
-  // }
-
   List<String> categoryList = [];
   List<String> featureCategoryList = [];
+
   //List<Map<String, dynamic>> _allBrands = [];
   //int _visibleCount = 10;
 
@@ -4740,6 +4740,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     Icons.visibility_outlined,
     Icons.shopping_bag_outlined
   ];
+
+  late Future<List<Map<String, dynamic>>> _mainContentBigImagesFuture;
+  late Future<List<Map<String, dynamic>>> _mainContentSmallImagesFuture;
 
   @override
   Widget build(BuildContext context) {
@@ -4927,7 +4930,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                               );
                             }
                           },
-                          future: getBanners(),
+                          future: _bannersFuture,
                         ),
                       ),
                       verticalSpace(verticalSpace: 15),
@@ -6524,9 +6527,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     log('Brand Api is running');
     try {
       log('method running');
-      final response = await http.get(
-        Uri.parse('https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data'),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .get(
+            Uri.parse(
+                'https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data'),
+          )
+          .timeout(const Duration(seconds: 30));
       log('Brand API: https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data');
 
       if (response.statusCode == 200) {
@@ -6543,13 +6549,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     }
   }
 
-
   Widget _allBrandsScreen() {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: fetchBrands(),
+          future: _brandsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -6581,7 +6586,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       MaterialPageRoute(
                         builder: (context) => BrandProductListScreen(
                           brandId: brand['brand_id'],
-                          brandName:  brand['brand_name'],
+                          brandName: brand['brand_name'],
+                          database: widget.database,
+                          dataList: const [],
                         ),
                       ),
                     );
@@ -6601,11 +6608,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           child: SizedBox(
                             width: double.infinity,
                             height: 110,
-                            child: Image.network(
-                              brand['brand_logo'],
+                            child: CachedNetworkImage(
+                              imageUrl: brand['brand_logo'],
                               fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Image.asset(
+                              placeholder: (context, url) =>
+                                  Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) => Image.asset(
                                 'assets/images/no_image.png',
                                 fit: BoxFit.contain,
                               ),
@@ -6842,7 +6850,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     return SizedBox(
       height: h * .28,
       child: FutureBuilder(
-        future: getMainContentBigImages(),
+        future: _mainContentBigImagesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: const CustomLoader(width: 50, height: 50));
@@ -6946,7 +6954,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     return SizedBox(
       height: h * .28,
       child: FutureBuilder(
-        future: getMainContentSmallImages(),
+        future: _mainContentSmallImagesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: const CustomLoader(width: 50, height: 50));

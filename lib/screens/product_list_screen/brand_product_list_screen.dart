@@ -10,7 +10,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart';
 import 'package:shoppingmegamart/animation/custom_loader.dart';
 import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/model/brand_product.dart';
+import 'package:shoppingmegamart/model/product_list_model_new.dart';
 import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
 import 'package:shoppingmegamart/screens/InAppBrowser.dart';
 import 'package:shoppingmegamart/screens/ai_price_engine/ai_pricie_engine_screen.dart';
@@ -27,10 +27,14 @@ class BrandProductListScreen extends StatefulWidget {
     super.key,
     required this.brandId,
     required this.brandName,
+    required this.database,
+    required this.dataList,
   });
 
   final int brandId;
   final String? brandName;
+  final Database database;
+  final List<Map<String, dynamic>> dataList;
 
   @override
   State<BrandProductListScreen> createState() => _BrandProductListScreen();
@@ -58,9 +62,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
 
   List<String> filterVendor = [];
   List<String> uniqueVendors = [];
-  List<BrandProduct> brandProducts = [];
-  List<BrandProduct> tempProductList = [];
-  List<BrandProduct> finalList = [];
+  List<VendorProduct> brandProducts = [];
+  List<VendorProduct> tempProductList = [];
+  List<VendorProduct> finalList = [];
 
   @override
   void initState() {
@@ -78,16 +82,22 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
     try {
       final allProductsResponse = await NetworkCalls()
           .getProductListByBrandID(widget.brandId.toString());
-      final List<dynamic> jsonList =
-          List.from(jsonDecode(allProductsResponse ?? '[]'));
-      // Map to BrandProduct
-      brandProducts = jsonList.map((e) => BrandProduct.fromJson(e)).toList();
+      final Map<String, dynamic> decoded =
+          jsonDecode(allProductsResponse ?? '{}');
+      final List<dynamic> jsonList = decoded['vendor_products'] ?? [];
+      brandProducts = jsonList.map((e) => VendorProduct.fromJson(e)).toList();
 
-      // Build uniqueVendors list
-      uniqueVendors = brandProducts
-          .map((e) => e.vendorName.isNotEmpty ? e.vendorName : 'Default Vendor')
-          .toSet()
-          .toList();
+      uniqueVendors = getUniqueBrands(brandProducts);
+      uniqueVendors =
+          uniqueVendors.where((element1) => element1 != '--').toList();
+
+      List<String> tempList = [];
+      for (final vendor in uniqueVendors) {
+        tempList.add(
+            '$vendor Total Product(s): ${brandProducts.where((element) => element.firstVendorName == vendor).toList().length} ');
+      }
+      uniqueVendors.clear();
+      uniqueVendors = tempList;
 
       tempProductList = brandProducts;
       startIndex = currentPage * itemsPerPage;
@@ -95,6 +105,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
           ? tempProductList.length
           : startIndex + itemsPerPage;
       finalList = tempProductList.sublist(startIndex, endIndex);
+      filterVendor = [];
+      priceSorting = null;
       _isLoading = false;
       _isError = false;
       setState(() {});
@@ -348,7 +360,34 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                   const EdgeInsets.symmetric(
                                                       horizontal: 4.0),
                                               child: GestureDetector(
-                                                onTap: () {},
+                                                onTap: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          SafeArea(
+                                                        child: Scaffold(
+                                                          body:
+                                                              CurrentProductScreen(
+                                                            data: finalList[
+                                                                index],
+                                                            vendorId: AppInfo
+                                                                .kVendorId,
+                                                            database:
+                                                                widget.database,
+                                                            likedValue: 0,
+                                                            notifiedValue: 0,
+                                                            databaseData:
+                                                                widget.dataList,
+                                                            vendorShortname: '',
+                                                            sisterVendorShortName:
+                                                                '',
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
                                                 child: Card(
                                                   shape:
                                                       const RoundedRectangleBorder(
@@ -431,7 +470,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                       8.0,
                                                                   vertical: 3),
                                                           child: AutoSizeText(
-                                                            'MPN# ${finalList[index].brandKey}',
+                                                            'MPN# ${finalList[index].productMpn}',
                                                             maxLines: 1,
                                                             overflow:
                                                                 TextOverflow
@@ -508,13 +547,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   vertical: 5),
                                                           child: RichText(
                                                             text: TextSpan(
-                                                              text: finalList[index]
-                                                                          .vendorPricePrice ==
-                                                                      'null'
-                                                                  ? '--'
-                                                                  : finalList[
-                                                                          index]
-                                                                      .vendorPricePrice,
+                                                              text: finalList[
+                                                                      index]
+                                                                  .firstVendorPrice,
                                                               style: TextStyle(
                                                                 color: '#e3121b'
                                                                     .toColor(),
@@ -553,14 +588,22 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                       horizontalSpace:
                                                                           3),
                                                                   AutoSizeText(
-                                                                    ' Free Shipping',
+                                                                    finalList[index].firstVendorPriceShipping ==
+                                                                                '--' ||
+                                                                            finalList[index].firstVendorPriceShipping ==
+                                                                                '\$0.00'
+                                                                        ? ' Free Shipping'
+                                                                        : 'Shipping(${finalList[index].firstVendorPriceShipping})',
                                                                     maxLines: 3,
                                                                     overflow:
                                                                         TextOverflow
                                                                             .ellipsis,
                                                                     style: TextStyle(
-                                                                        color: '#3b8039'
-                                                                            .toColor(),
+                                                                        color: finalList[index].firstVendorPriceShipping == '--' || finalList[index].firstVendorPriceShipping == '\$0.00'
+                                                                            ? '#3b8039'
+                                                                                .toColor()
+                                                                            : '#0678cb'
+                                                                                .toColor(),
                                                                         fontFamily:
                                                                             'Segoe UI Bold',
                                                                         fontSize: w *
@@ -582,29 +625,40 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         ),
                                                         verticalSpace(
                                                             verticalSpace: 11),
-
-                                                        ///      Remove or comment out BuyAtButton and InAppBrowser for BrandProduct
-
-                                                        //       Center(
-                                                        //         child: InkWell(
-                                                        //           onTap: () async =>
-                                                        //               await MyInAppBrowser().openUrlRequest(
-                                                        //             urlRequest: URLRequest(
-                                                        //               url: WebUri(
-                                                        //                 finalList[index].firstVendorUrl +
-                                                        //                     '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
-                                                        //               ),
-                                                        //             ),
-                                                        //             options: InAppBrowserClassOptions(
-                                                        //               crossPlatform: InAppBrowserOptions(
-                                                        //                 toolbarTopBackgroundColor: const Color.fromARGB(255, 237, 63, 69),
-                                                        //               ),
-                                                        //             ),
-                                                        //           ),
-                                                        //           child: BuyAtButton(
-                                                        //               imageUrl: finalList[index].firstVendorName),
-                                                        //         ),
-                                                        //       ),
+                                                        Center(
+                                                          child: InkWell(
+                                                            onTap: () async =>
+                                                                await MyInAppBrowser()
+                                                                    .openUrlRequest(
+                                                              urlRequest:
+                                                                  URLRequest(
+                                                                url: WebUri(
+                                                                  // finalList[index].firstVendorUrl == '--' ? getOtherSeller.containsKey('${finalList[index].productId}') ? getOtherSeller['${finalList[index].productId}']!.firstVendorUrl : '--' :
+                                                                  finalList[index]
+                                                                          .firstVendorUrl +
+                                                                      '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
+                                                                ),
+                                                              ),
+                                                              options:
+                                                                  InAppBrowserClassOptions(
+                                                                crossPlatform:
+                                                                    InAppBrowserOptions(
+                                                                  toolbarTopBackgroundColor:
+                                                                      const Color
+                                                                          .fromARGB(
+                                                                          255,
+                                                                          237,
+                                                                          63,
+                                                                          69),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            child: BuyAtButton(
+                                                                imageUrl: finalList[
+                                                                        index]
+                                                                    .firstVendorName),
+                                                          ),
+                                                        ),
                                                         verticalSpace(
                                                             verticalSpace: 15)
                                                       ],
@@ -748,11 +802,11 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
     );
   }
 
-  void sortingOfList({required List<BrandProduct> mainList}) {
+  void sortingOfList({required List<VendorProduct> mainList}) {
     setState(() {
       if (filterVendor.isNotEmpty) {
         tempProductList = mainList.where((product) {
-          return filterVendor.contains(product.vendorName);
+          return filterVendor.contains(product.firstVendorName);
         }).toList();
       } else {
         tempProductList = mainList;
@@ -760,12 +814,21 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
 
       if (priceSorting != null) {
         if (priceSorting == 1) {
-          tempProductList.sort((a, b) => double.tryParse(a.vendorPricePrice)!
-              .compareTo(double.tryParse(b.vendorPricePrice)!));
+          tempProductList.sort((a, b) =>
+              extractDoubleFromString(a.firstVendorPrice)
+                  .compareTo(extractDoubleFromString(b.firstVendorPrice)));
         } else {
-          tempProductList.sort((a, b) => double.tryParse(b.vendorPricePrice)!
-              .compareTo(double.tryParse(a.vendorPricePrice)!));
+          tempProductList.sort((a, b) =>
+              extractDoubleFromString(b.firstVendorPrice)
+                  .compareTo(extractDoubleFromString(a.firstVendorPrice)));
         }
+      } else if (priceSorting == null && filterVendor.isNotEmpty) {
+        tempProductList.clear();
+        tempProductList = mainList.where((product) {
+          return filterVendor.contains(product.firstVendorName);
+        }).toList();
+      } else if (filterVendor.isEmpty && priceSorting == null) {
+        tempProductList = mainList;
       }
 
       currentPage = 0;
@@ -1237,39 +1300,4 @@ class _FilterMenuState extends State<FilterMenu> {
   }
 
   final _scrollController = ScrollController();
-}
-
-class BrandProduct {
-  final int productId;
-  final String productName;
-  final String brandName;
-  final String brandKey;
-  final String productImage;
-  final int vendorProductId;
-  final String vendorPricePrice;
-  final String vendorName;
-
-  BrandProduct({
-    required this.productId,
-    required this.productName,
-    required this.brandName,
-    required this.brandKey,
-    required this.productImage,
-    required this.vendorProductId,
-    required this.vendorPricePrice,
-    required this.vendorName,
-  });
-
-  factory BrandProduct.fromJson(Map<String, dynamic> json) {
-    return BrandProduct(
-      productId: json['product_id'] ?? 0,
-      productName: json['product_name'] ?? '',
-      brandName: json['brand_name'] ?? '',
-      brandKey: json['brand_key'] ?? '',
-      productImage: json['product_image'] ?? '',
-      vendorProductId: json['vendor_product_id'] ?? 0,
-      vendorPricePrice: json['vendorprice_price']?.toString() ?? 'null',
-      vendorName: json['vendor_name'] ?? 'Default Vendor',
-    );
-  }
 }
