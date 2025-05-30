@@ -195,7 +195,7 @@ class NetworkCalls {
   //   return productListModelFromJson(response.body);
   // }
 
-  Future<ProductListModelNew?> getProductListBySearch({
+  Future<ProductListModelNew?> getProductListBySearch(  {
     required String afSku,
     required String vendorId,
     required String hpSku,
@@ -203,8 +203,9 @@ class NetworkCalls {
     required String productName,
   }) async {
     String uri =
-        '${AppInfo.kBaseUrl(stagingSelector: 1)}api/search/$vendorId?afsku=$afSku&hpsku=$hpSku&productname=$productName&productmpn=$productMpn';
-    log('GET PRODUCT LIST BY SEARCH - $uri');
+        '${AppInfo.kBaseUrl(stagingSelector: 1)}api/search/$vendorId?afsku=$afSku&hpsku=$hpSku&productname=$productName';
+        '//&productmpn=$productMpn';
+    log('GET PRODUCT LIST BY SEARCH b - $uri');
 
     ProductListModelNew? toReturn;
     try {

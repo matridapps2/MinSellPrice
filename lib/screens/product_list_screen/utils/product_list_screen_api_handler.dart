@@ -233,19 +233,4 @@ class ProductListScreenApiHandler {
     }
     return toReturn;
   }
-
-  // static Future<List<BrandProduct>> getBrandProductList({
-  //   required int brandId,
-  // }) async {
-  //   try {
-  //     final response = await NetworkCalls().getProductListByBrandID(brandId.toString());
-  //     if (response == null) return [];
-  //     final List<dynamic> jsonList = List.from(jsonDecode(response));
-  //     return jsonList.map((e) => BrandProduct.fromJson(e)).toList();
-  //   } catch (e, s) {
-  //     log('error in getBrandProductList: $e');
-  //     log('stack trace - $s');
-  //     return [];
-  //   }
-  // }
 }

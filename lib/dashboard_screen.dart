@@ -4587,8 +4587,7 @@ class DashboardScreenWidget extends StatefulWidget {
   State<DashboardScreenWidget> createState() => _DashboardScreenWidgetState();
 }
 
-class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
-    with KeepAliveParentDataMixin {
+class _DashboardScreenWidgetState extends State<DashboardScreenWidget> with KeepAliveParentDataMixin {
   List<Map<String, dynamic>> databaseData = [];
   String _vendorShortName = '';
   String _sisterVendorShortName = '';
@@ -6603,19 +6602,24 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                          child: SizedBox(
-                            width: double.infinity,
-                            height: 110,
-                            child: CachedNetworkImage(
-                              imageUrl: brand['brand_logo'],
-                              fit: BoxFit.contain,
-                              placeholder: (context, url) =>
-                                  Center(child: CircularProgressIndicator()),
-                              errorWidget: (context, url, error) => Image.asset(
-                                'assets/images/no_image.png',
+                        Flexible(
+                          flex: 1,
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 5.0),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 115,
+                              child: CachedNetworkImage(
+                                imageUrl: brand['brand_logo'],
                                 fit: BoxFit.contain,
+                                placeholder: (context, url) =>
+                                    Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) =>
+                                    Image.asset(
+                                  'assets/images/no_image.png',
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             ),
                           ),

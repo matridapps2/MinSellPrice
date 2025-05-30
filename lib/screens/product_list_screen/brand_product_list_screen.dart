@@ -85,31 +85,36 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
       final Map<String, dynamic> decoded =
           jsonDecode(allProductsResponse ?? '{}');
       final List<dynamic> jsonList = decoded['vendor_products'] ?? [];
-      brandProducts = jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+      final List<VendorProduct> fetchedProducts =
+          jsonList.map((e) => VendorProduct.fromJson(e)).toList();
 
-      uniqueVendors = getUniqueBrands(brandProducts);
-      uniqueVendors =
-          uniqueVendors.where((element1) => element1 != '--').toList();
-
+      // Prepare unique vendors and temp list
+      List<String> uniqueVendorsLocal = getUniqueBrands(fetchedProducts);
+      uniqueVendorsLocal =
+          uniqueVendorsLocal.where((element1) => element1 != '--').toList();
       List<String> tempList = [];
-      for (final vendor in uniqueVendors) {
+      for (final vendor in uniqueVendorsLocal) {
         tempList.add(
-            '$vendor Total Product(s): ${brandProducts.where((element) => element.firstVendorName == vendor).toList().length} ');
+            '$vendor Total Product(s): ${fetchedProducts.where((element) => element.firstVendorName == vendor).toList().length} ');
       }
-      uniqueVendors.clear();
-      uniqueVendors = tempList;
 
-      tempProductList = brandProducts;
-      startIndex = currentPage * itemsPerPage;
-      endIndex = (startIndex + itemsPerPage > tempProductList.length)
-          ? tempProductList.length
-          : startIndex + itemsPerPage;
-      finalList = tempProductList.sublist(startIndex, endIndex);
-      filterVendor = [];
-      priceSorting = null;
-      _isLoading = false;
-      _isError = false;
-      setState(() {});
+      int start = currentPage * itemsPerPage;
+      int end = (start + itemsPerPage > fetchedProducts.length)
+          ? fetchedProducts.length
+          : start + itemsPerPage;
+
+      setState(() {
+        brandProducts = fetchedProducts;
+        uniqueVendors = tempList;
+        tempProductList = fetchedProducts;
+        startIndex = start;
+        endIndex = end;
+        finalList = tempProductList.sublist(startIndex, endIndex);
+        filterVendor = [];
+        priceSorting = null;
+        _isLoading = false;
+        _isError = false;
+      });
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -412,18 +417,36 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                     index]
                                                                 .productImage,
                                                             height: w * .3,
+                                                            placeholder:
+                                                                (context,
+                                                                        url) =>
+                                                                    Container(
+                                                              height: w * .25,
+                                                              width: w * .25,
+                                                              color: Colors
+                                                                  .grey[200],
+                                                              child: Center(
+                                                                child: CircularProgressIndicator(
+                                                                    strokeWidth:
+                                                                        2),
+                                                              ),
+                                                            ),
                                                             errorWidget:
                                                                 (context, _,
                                                                     c) {
-                                                              return CachedNetworkImage(
-                                                                  imageUrl:
-                                                                      'https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg');
+                                                              return Image
+                                                                  .network(
+                                                                'https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg',
+                                                                height: w * .3,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              );
                                                             },
                                                           ),
                                                         ),
                                                         verticalSpace(
                                                             verticalSpace: 2),
-                                                        Container(
+                                                          Container(
                                                           constraints:
                                                               BoxConstraints(
                                                                   minHeight:
@@ -438,8 +461,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                     right: 10.0,
                                                                     top: 8),
                                                             child: Text(
-                                                              finalList[index]
-                                                                  .productName,
+                                                              finalList[index].productName,
                                                               maxLines: 3,
                                                               overflow:
                                                                   TextOverflow
