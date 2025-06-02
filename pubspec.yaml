@@ -94,6 +94,7 @@ dependencies:
   dropdown_button2:
   archive: ^4.0.7
   motion_toast: ^2.13.0
+  image_network: ^2.6.0
 
 dev_dependencies:
 #  flutter_test:
@@ -164,6 +165,7 @@ flutter:
     - assets/No_Image_Available.jpg
     - assets/shop_by_grills/
     - assets/grills_outdoor_cooking/
+    - assets/no_image/no_image.jpg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 
