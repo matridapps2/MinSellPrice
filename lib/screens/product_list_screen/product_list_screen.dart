@@ -415,20 +415,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                                           SafeArea(
                                                         child: Scaffold(
                                                           body:
-                                                              CurrentProductScreen(
-                                                            data: finalList[
-                                                                index],
-                                                            vendorId: AppInfo
-                                                                .kVendorId,
-                                                            database:
-                                                                widget.database,
+                                                          CurrentProductScreen(
+                                                            data: finalList[index],
+                                                            vendorId: AppInfo.kVendorId,
+                                                            database: widget.database,
                                                             likedValue: 0,
                                                             notifiedValue: 0,
-                                                            databaseData:
-                                                                widget.dataList,
+                                                            databaseData: widget.dataList,
                                                             vendorShortname: '',
-                                                            sisterVendorShortName:
-                                                                '',
+                                                            sisterVendorShortName: '',
                                                             // getOtherSeller: getOtherSeller,
                                                           ),
                                                         ),
@@ -464,8 +459,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                                                 (context, _,
                                                                     c) {
                                                               return CachedNetworkImage(
-                                                                  imageUrl:
-                                                                      'https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg');
+                                                                  imageUrl: 'https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg');
                                                             },
                                                           ),
                                                         ),

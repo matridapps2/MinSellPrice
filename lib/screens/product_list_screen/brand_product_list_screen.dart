@@ -372,21 +372,15 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                       builder: (context) =>
                                                           SafeArea(
                                                         child: Scaffold(
-                                                          body:
-                                                              CurrentProductScreen(
-                                                            data: finalList[
-                                                                index],
-                                                            vendorId: AppInfo
-                                                                .kVendorId,
-                                                            database:
-                                                                widget.database,
+                                                          body: CurrentProductScreen(
+                                                            data: finalList[index],
+                                                            vendorId: AppInfo.kVendorId,
+                                                            database: widget.database,
                                                             likedValue: 0,
                                                             notifiedValue: 0,
-                                                            databaseData:
-                                                                widget.dataList,
+                                                            databaseData: widget.dataList,
                                                             vendorShortname: '',
-                                                            sisterVendorShortName:
-                                                                '',
+                                                            sisterVendorShortName: '',
                                                           ),
                                                         ),
                                                       ),
@@ -420,8 +414,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           loadingBuilder: (context,
                                                               child,
                                                               loadingProgress) {
-                                                            if (loadingProgress ==
-                                                                null)
+                                                            if (loadingProgress == null)
                                                               return child;
                                                             return Container(
                                                               height: w * .25,
@@ -450,39 +443,24 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         Container(
                                                           constraints:
                                                               BoxConstraints(
-                                                                  minHeight:
-                                                                      w * .2,
-                                                                  maxHeight:
-                                                                      w * .21),
+                                                                  minHeight: w * .2,
+                                                                  maxHeight: w * .21),
                                                           child: Padding(
                                                             padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    left: 8,
-                                                                    right: 10.0,
-                                                                    top: 8),
+                                                                const EdgeInsets.only(
+                                                                    left: 8, right: 10.0, top: 8),
                                                             child: Text(
-                                                              finalList[index]
-                                                                  .productName,
+                                                              finalList[index].productName,
                                                               maxLines: 3,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
+                                                              overflow: TextOverflow.ellipsis,
                                                               style: TextStyle(
-                                                                  color: '#222223'
-                                                                      .toColor(),
-                                                                  fontFamily:
-                                                                      'Myriad Arabic',
-                                                                  fontSize:
-                                                                      w * .06,
+                                                                  color: '#222223'.toColor(),
+                                                                  fontFamily: 'Myriad Arabic',
+                                                                  fontSize: w * .06,
                                                                   height: 1,
-                                                                  wordSpacing:
-                                                                      0,
-                                                                  letterSpacing:
-                                                                      0,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w900),
+                                                                  wordSpacing: 0,
+                                                                  letterSpacing: 0,
+                                                                  fontWeight: FontWeight.w900),
                                                             ),
                                                           ),
                                                         ),

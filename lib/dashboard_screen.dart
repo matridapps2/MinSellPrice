@@ -63,6 +63,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+// Add this at the top of the file, outside any class
+Future<List<Map<String, dynamic>>>? _brandsFutureSingleton;
+
 // final dateFormat = DateFormat("yyyy/MM/dd");
 final List<ChartData> chartData = [
   ChartData(
@@ -4587,7 +4590,8 @@ class DashboardScreenWidget extends StatefulWidget {
   State<DashboardScreenWidget> createState() => _DashboardScreenWidgetState();
 }
 
-class _DashboardScreenWidgetState extends State<DashboardScreenWidget> with KeepAliveParentDataMixin {
+class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
+    with KeepAliveParentDataMixin {
   List<Map<String, dynamic>> databaseData = [];
   String _vendorShortName = '';
   String _sisterVendorShortName = '';
@@ -4627,6 +4631,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget> with Keep
 
   @override
   void initState() {
+    super.initState();
     getData();
     context.read<ProductListByIdBloc>().add(ProductListByIdLoadingEvent(
         vendorId: '${AppInfo.kVendorId}',
@@ -4640,11 +4645,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget> with Keep
     context.read<FeatureBrandsBloc>().add(const FeatureBrandsEvent());
     setupRemoteConfig();
     _bannersFuture = getBanners();
-    //  loadBrands();
-    _brandsFuture = fetchBrands();
+    _brandsFuture = _brandsFutureSingleton ??= fetchBrands();
     _mainContentBigImagesFuture = getMainContentBigImages();
     _mainContentSmallImagesFuture = getMainContentSmallImages();
-    super.initState();
   }
 
   @override
@@ -6523,27 +6526,25 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget> with Keep
 // }
 
   Future<List<Map<String, dynamic>>> fetchBrands() async {
-    log('Brand Api is running');
     try {
       log('method running');
       final response = await http
           .get(
             Uri.parse(
                 'https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data'),
-          )
-          .timeout(const Duration(seconds: 30));
+          ).timeout(const Duration(seconds: 30));
       log('Brand API: https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data');
 
       if (response.statusCode == 200) {
-        log('status code ${response.statusCode}');
+        log('status code \\${response.statusCode}');
         final List<dynamic> jsonData = json.decode(response.body);
         return jsonData.cast<Map<String, dynamic>>();
       } else {
-        log('Error Brand API: ${response.statusCode}');
-        throw Exception('Failed to load brands: ${response.statusCode}');
+        log('Error Brand API: \\${response.statusCode}');
+        throw Exception('Failed to load brands: \\${response.statusCode}');
       }
     } catch (e) {
-      log("Exception In Brand API: ${e.toString()}");
+      log("Exception In Brand API: \\${e.toString()}");
       throw Exception('Error fetching brands: $e');
     }
   }

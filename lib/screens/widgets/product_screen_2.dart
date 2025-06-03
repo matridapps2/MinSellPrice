@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +23,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:share_plus/share_plus.dart';
-
 import 'sample_product_screen.dart';
 
 class CurrentProductScreen extends StatefulWidget {
@@ -34,6 +32,7 @@ class CurrentProductScreen extends StatefulWidget {
   final Database database;
   final List<Map<String, dynamic>> databaseData;
   final String vendorShortname, sisterVendorShortName;
+
   // final Map<String, GetOtherSeller>? getOtherSeller;
 
   const CurrentProductScreen({
@@ -721,12 +720,12 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
                 await DatabaseHelper().addAndUpdateProduct(
                   db: widget.database,
                   vendorId:
-                  int.parse('${widget.vendorId}${productData!.productId}'),
+                      int.parse('${widget.vendorId}${productData!.productId}'),
                   productSku: productData.productId,
                   isLiked: isLiked,
                   isNotified: _notifiedValue,
                   productData:
-                  keepSingleDollarSign(jsonEncode(productData.toJson())),
+                      keepSingleDollarSign(jsonEncode(productData.toJson())),
                 );
               } catch (e) {
                 log(e.toString());
@@ -778,7 +777,7 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
                             children: [
                               Padding(
                                 padding:
-                                const EdgeInsets.symmetric(horizontal: 4),
+                                    const EdgeInsets.symmetric(horizontal: 4),
                                 child: SizedBox(
                                   child: Center(
                                     child: CachedNetworkImage(
@@ -796,12 +795,12 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
                                       ),
                                       errorWidget: (context, url, error) =>
                                           Center(
-                                            child: Image.asset(
-                                              'assets/No_Image_Available.jpg',
-                                              height: h * .3,
-                                              fit: BoxFit.contain,
-                                            ),
-                                          ),
+                                        child: Image.asset(
+                                          'assets/No_Image_Available.jpg',
+                                          height: h * .3,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -847,8 +846,8 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
                                         letterSpacing: 0,
                                         fontWeight: FontWeight.w500
 
-                                      // fontWeight: FontWeight.w900
-                                    ),
+                                        // fontWeight: FontWeight.w900
+                                        ),
                                   ),
                                 ),
                               ),
@@ -1252,66 +1251,66 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
                           child: CompetitorClass(
                             firstVendorPrice: productData.firstVendorPrice,
                             firstVendorBasePrice:
-                            productData.firstVendorBasePrice,
+                                productData.firstVendorBasePrice,
                             firstVendorPriceShipping:
-                            productData.firstVendorPriceShipping,
+                                productData.firstVendorPriceShipping,
                             firstVendorExtraDiscount:
-                            productData.firstVendorExtraDiscount,
+                                productData.firstVendorExtraDiscount,
                             firstVendorName: productData.firstVendorName,
                             firstVendorUrl: productData.firstVendorUrl,
                             secondVendorPrice: productData.secondVendorPrice,
                             secondVendorBasePrice:
-                            productData.secondVendorBasePrice,
+                                productData.secondVendorBasePrice,
                             secondVendorPriceShipping:
-                            productData.secondVendorPriceShipping,
+                                productData.secondVendorPriceShipping,
                             secondVendorExtraDsicount:
-                            productData.secondVendorExtraDsicount,
+                                productData.secondVendorExtraDsicount,
                             secondVendorName: productData.secondVendorName,
                             secondVendorUrl: productData.secondVendorUrl,
                             thirdVendorName: productData.thirdVendorName,
                             thirdVendorUrl: productData.thirdVendorUrl,
                             thirdVendorFinalPrice:
-                            productData.thirdVendorFinalPrice,
+                                productData.thirdVendorFinalPrice,
                             thirdVendorBasePrice:
-                            productData.thirdVendorBasePrice,
+                                productData.thirdVendorBasePrice,
                             thirdVendorShipping:
-                            productData.thirdVendorShipping,
+                                productData.thirdVendorShipping,
                             thirdVendorExtraDiscount:
-                            productData.thirdVendorExtraDiscount,
+                                productData.thirdVendorExtraDiscount,
                             fourthVendorName: productData.fourthVendorName,
                             fourthVendorUrl: productData.fourthVendorUrl,
                             fourthVendorFinalPrice:
-                            productData.fourthVendorFinalPrice,
+                                productData.fourthVendorFinalPrice,
                             fourthVendorBasePrice:
-                            productData.fourthVendorBasePrice,
+                                productData.fourthVendorBasePrice,
                             fourthVendorShipping:
-                            productData.fourthVendorShipping,
+                                productData.fourthVendorShipping,
                             fourthVendorExtraDiscount:
-                            productData.fourthVendorExtraDiscount,
+                                productData.fourthVendorExtraDiscount,
                             fifthVendorName: productData.fifthVendorName,
                             fifthVendorUrl: productData.fifthVendorUrl,
                             fifthVendorFinalPrice:
-                            productData.fifthVendorFinalPrice,
+                                productData.fifthVendorFinalPrice,
                             fifthVendorBasePrice:
-                            productData.fifthVendorBasePrice,
+                                productData.fifthVendorBasePrice,
                             fifthVendorShipping:
-                            productData.fifthVendorShipping,
+                                productData.fifthVendorShipping,
                             fifthVendorExtraDiscount:
-                            productData.fifthVendorExtraDiscount,
+                                productData.fifthVendorExtraDiscount,
                             scrollController: _competitorScrollbar,
                             firstVendorProductId:
-                            productData.firstVendorProductId,
+                                productData.firstVendorProductId,
                             secondVendorProductId:
-                            productData.secondVendorProductId,
+                                productData.secondVendorProductId,
                             thirdVendorProductId:
-                            productData.thirdVendorProductId,
+                                productData.thirdVendorProductId,
                             fourthVendorProductId:
-                            productData.fourthVendorProductId,
+                                productData.fourthVendorProductId,
                             fifthVendorProductId:
-                            productData.fifthVendorProductId,
+                                productData.fifthVendorProductId,
                             competitorId: productData.competitorId,
                             vendorpriceFinalprice:
-                            productData.vendorPriceFinalPrice,
+                                productData.vendorPriceFinalPrice,
                           )),
                     ),
                   ],
@@ -1471,7 +1470,7 @@ class CompetitorClass extends StatelessWidget {
               width: w,
               child: AutoSizeText(
                 'Available at '
-                    '${totalNumberOfCompetitors(
+                '${totalNumberOfCompetitors(
                   firstVendorPrice: firstVendorPrice,
                   secondVendorPrice: secondVendorPrice,
                   thirdVendorPrice: thirdVendorFinalPrice,
@@ -1492,17 +1491,17 @@ class CompetitorClass extends StatelessWidget {
               vendorFinalPrice: firstVendorPrice,
               vendorBasePrice: firstVendorBasePrice,
               vendorShipping: keepSingleDollarSign(firstVendorPriceShipping
-                  .contains('--')
-                  ? firstVendorPriceShipping.replaceAll('\$', '')
-                  : firstVendorPriceShipping)
-                  .replaceAll('\$', '') ==
-                  '0.00'
+                                  .contains('--')
+                              ? firstVendorPriceShipping.replaceAll('\$', '')
+                              : firstVendorPriceShipping)
+                          .replaceAll('\$', '') ==
+                      '0.00'
                   ? 'Free Shipping'
                   : keepSingleDollarSign(firstVendorPriceShipping.contains('--')
-                  ? firstVendorPriceShipping.replaceAll('\$', '')
-                  : firstVendorPriceShipping),
+                      ? firstVendorPriceShipping.replaceAll('\$', '')
+                      : firstVendorPriceShipping),
               vendorDiscount: firstVendorExtraDiscount == '0.0' ||
-                  firstVendorExtraDiscount == '--'
+                      firstVendorExtraDiscount == '--'
                   ? ''
                   : firstVendorExtraDiscount,
               vendorProductUrl: firstVendorUrl),
@@ -1516,16 +1515,16 @@ class CompetitorClass extends StatelessWidget {
                       ? secondVendorBasePrice.replaceAll('\$', '')
                       : secondVendorBasePrice),
               vendorShipping: keepSingleDollarSign(secondVendorPriceShipping
-                  .contains('--')
-                  ? secondVendorPriceShipping.replaceAll('\$', '')
-                  : secondVendorPriceShipping)
-                  .replaceAll('\$', '') ==
-                  '0.00'
+                                  .contains('--')
+                              ? secondVendorPriceShipping.replaceAll('\$', '')
+                              : secondVendorPriceShipping)
+                          .replaceAll('\$', '') ==
+                      '0.00'
                   ? 'Free Shipping'
                   : keepSingleDollarSign(
-                  secondVendorPriceShipping.contains('--')
-                      ? secondVendorPriceShipping.replaceAll('\$', '')
-                      : secondVendorPriceShipping),
+                      secondVendorPriceShipping.contains('--')
+                          ? secondVendorPriceShipping.replaceAll('\$', '')
+                          : secondVendorPriceShipping),
               vendorDiscount: secondVendorExtraDsicount,
               vendorProductUrl: secondVendorUrl),
           CompetitorTile(
@@ -1538,15 +1537,15 @@ class CompetitorClass extends StatelessWidget {
                       ? thirdVendorBasePrice.replaceAll('\$', '')
                       : thirdVendorBasePrice),
               vendorShipping: keepSingleDollarSign(
-                  thirdVendorShipping.contains('--')
-                      ? thirdVendorShipping.replaceAll('\$', '')
-                      : thirdVendorShipping)
-                  .replaceAll('\$', '') ==
-                  '0.00'
+                              thirdVendorShipping.contains('--')
+                                  ? thirdVendorShipping.replaceAll('\$', '')
+                                  : thirdVendorShipping)
+                          .replaceAll('\$', '') ==
+                      '0.00'
                   ? 'Free Shipping'
                   : keepSingleDollarSign(thirdVendorShipping.contains('--')
-                  ? thirdVendorShipping.replaceAll('\$', '')
-                  : thirdVendorShipping),
+                      ? thirdVendorShipping.replaceAll('\$', '')
+                      : thirdVendorShipping),
               vendorDiscount: thirdVendorExtraDiscount,
               vendorProductUrl: thirdVendorUrl),
           CompetitorTile(
@@ -1559,15 +1558,15 @@ class CompetitorClass extends StatelessWidget {
                     ? fourthVendorBasePrice.replaceAll('\$', '')
                     : fourthVendorBasePrice),
             vendorShipping: keepSingleDollarSign(
-                fourthVendorShipping.contains('--')
-                    ? fourthVendorShipping.replaceAll('\$', '')
-                    : fourthVendorShipping)
-                .replaceAll('\$', '') ==
-                '0.00'
+                            fourthVendorShipping.contains('--')
+                                ? fourthVendorShipping.replaceAll('\$', '')
+                                : fourthVendorShipping)
+                        .replaceAll('\$', '') ==
+                    '0.00'
                 ? 'Free Shipping'
                 : keepSingleDollarSign(fourthVendorShipping.contains('--')
-                ? fourthVendorShipping.replaceAll('\$', '')
-                : fourthVendorShipping),
+                    ? fourthVendorShipping.replaceAll('\$', '')
+                    : fourthVendorShipping),
             vendorDiscount: fourthVendorExtraDiscount,
             vendorProductUrl: fourthVendorUrl,
           ),
@@ -1581,15 +1580,15 @@ class CompetitorClass extends StatelessWidget {
                     ? fifthVendorBasePrice.replaceAll('\$', '')
                     : fifthVendorBasePrice),
             vendorShipping: keepSingleDollarSign(
-                fifthVendorShipping.contains('--')
-                    ? fifthVendorShipping.replaceAll('\$', '')
-                    : fifthVendorShipping)
-                .replaceAll('\$', '') ==
-                '0.00'
+                            fifthVendorShipping.contains('--')
+                                ? fifthVendorShipping.replaceAll('\$', '')
+                                : fifthVendorShipping)
+                        .replaceAll('\$', '') ==
+                    '0.00'
                 ? 'Free Shipping'
                 : keepSingleDollarSign(fifthVendorShipping.contains('--')
-                ? fifthVendorShipping.replaceAll('\$', '')
-                : fifthVendorShipping),
+                    ? fifthVendorShipping.replaceAll('\$', '')
+                    : fifthVendorShipping),
             vendorDiscount: fifthVendorExtraDiscount,
             vendorProductUrl: fifthVendorUrl,
           ),
@@ -1730,7 +1729,7 @@ class CompetitorTile extends StatelessWidget {
                                   children: [
                                     CachedNetworkImage(
                                       imageUrl:
-                                      '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/$vendorImage.jpg',
+                                          '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/$vendorImage.jpg',
                                       width: w * .25,
                                       fit: BoxFit.fill,
                                       errorWidget: (_, c, e) => Container(
@@ -1738,7 +1737,7 @@ class CompetitorTile extends StatelessWidget {
                                         decoration: BoxDecoration(
                                           color: Colors.grey[200],
                                           borderRadius:
-                                          BorderRadius.circular(8),
+                                              BorderRadius.circular(8),
                                         ),
                                         child: Center(
                                           child: AutoSizeText(
@@ -1761,7 +1760,7 @@ class CompetitorTile extends StatelessWidget {
                                     CircleAvatar(
                                       radius: 21,
                                       backgroundColor:
-                                      Colors.black.withOpacity(.6),
+                                          Colors.black.withOpacity(.6),
                                       child: const CircleAvatar(
                                         radius: 20,
                                         backgroundColor: Colors.white,
@@ -1792,71 +1791,71 @@ class CompetitorTile extends StatelessWidget {
                                   height: 48,
                                   width: w * .4,
                                   child: (vendorShipping.contains('--') ||
-                                      vendorShipping == '\$0.00' ||
-                                      vendorShipping.replaceAll(
-                                          '\$', '') ==
-                                          'Free Shipping') &&
-                                      (vendorDiscount.contains('0.00') ||
-                                          vendorDiscount.contains('--'))
+                                              vendorShipping == '\$0.00' ||
+                                              vendorShipping.replaceAll(
+                                                      '\$', '') ==
+                                                  'Free Shipping') &&
+                                          (vendorDiscount.contains('0.00') ||
+                                              vendorDiscount.contains('--'))
                                       ? Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.local_shipping_outlined,
-                                        color: Colors.green,
-                                      ),
-                                      horizontalSpace(horizontalSpace: 6),
-                                      AutoSizeText(
-                                        (vendorShipping.contains('--') ||
-                                            vendorShipping.replaceAll(
-                                                '\$', '') ==
-                                                '+ 0.00'
-                                            ? 'Free Shipping'
-                                            : vendorShipping),
-                                        style: GoogleFonts.aBeeZee(
-                                          color: Colors.green,
-                                          fontSize: w * .04,
-                                          letterSpacing: 0,
-                                          fontWeight: FontWeight.normal,
-                                          // fontFamily: 'JT Marnie Light',
-                                        ),
-                                      ),
-                                    ],
-                                  )
+                                          children: [
+                                            const Icon(
+                                              Icons.local_shipping_outlined,
+                                              color: Colors.green,
+                                            ),
+                                            horizontalSpace(horizontalSpace: 6),
+                                            AutoSizeText(
+                                              (vendorShipping.contains('--') ||
+                                                      vendorShipping.replaceAll(
+                                                              '\$', '') ==
+                                                          '+ 0.00'
+                                                  ? 'Free Shipping'
+                                                  : vendorShipping),
+                                              style: GoogleFonts.aBeeZee(
+                                                color: Colors.green,
+                                                fontSize: w * .04,
+                                                letterSpacing: 0,
+                                                fontWeight: FontWeight.normal,
+                                                // fontFamily: 'JT Marnie Light',
+                                              ),
+                                            ),
+                                          ],
+                                        )
                                       : Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: RichText(
-                                      textAlign: TextAlign.center,
-                                      text: TextSpan(
-                                        text: vendorBasePrice,
-                                        style: GoogleFonts.albertSans(
-                                          color: Colors.black,
-                                          fontSize: w * .04,
-                                          letterSpacing: 0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        children: [
-                                          const TextSpan(text: ' + 🚚 '),
-                                          TextSpan(
-                                            text:
-                                            vendorShipping.replaceAll(
-                                                'Free Shipping',
-                                                '\$0.00'),
-                                            style: GoogleFonts.albertSans(
-                                              color: Colors.grey,
-                                              fontSize: w * .04,
-                                              letterSpacing: 0,
-                                              fontWeight: FontWeight.bold,
+                                          alignment: Alignment.centerLeft,
+                                          child: RichText(
+                                            textAlign: TextAlign.center,
+                                            text: TextSpan(
+                                              text: vendorBasePrice,
+                                              style: GoogleFonts.albertSans(
+                                                color: Colors.black,
+                                                fontSize: w * .04,
+                                                letterSpacing: 0,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              children: [
+                                                const TextSpan(text: ' + 🚚 '),
+                                                TextSpan(
+                                                  text:
+                                                      vendorShipping.replaceAll(
+                                                          'Free Shipping',
+                                                          '\$0.00'),
+                                                  style: GoogleFonts.albertSans(
+                                                    color: Colors.grey,
+                                                    fontSize: w * .04,
+                                                    letterSpacing: 0,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                returnDiscountTextSpan(
+                                                  basePrice: vendorBasePrice,
+                                                  discountPercent:
+                                                      vendorDiscount,
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          returnDiscountTextSpan(
-                                            basePrice: vendorBasePrice,
-                                            discountPercent:
-                                            vendorDiscount,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
+                                        ),
                                 ),
                               ),
                               Positioned(
@@ -1876,7 +1875,7 @@ class CompetitorTile extends StatelessWidget {
                                         options: InAppBrowserClassOptions(
                                           crossPlatform: InAppBrowserOptions(
                                             toolbarTopBackgroundColor:
-                                            Colors.blue,
+                                                Colors.blue,
                                           ),
                                         ),
                                       );
@@ -1887,14 +1886,14 @@ class CompetitorTile extends StatelessWidget {
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
                                           borderRadius:
-                                          BorderRadius.circular(14),
+                                              BorderRadius.circular(14),
                                           side: const BorderSide(
                                               width: 1, color: Colors.grey)),
                                       child: Container(
                                         decoration: BoxDecoration(
                                             color: Colors.white,
                                             borderRadius:
-                                            BorderRadius.circular(14)),
+                                                BorderRadius.circular(14)),
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 30.0,
@@ -1941,32 +1940,32 @@ class CompetitorTile extends StatelessWidget {
             ),
             activeIndex == 0
                 ? Positioned(
-              top: 0,
-              child: Container(
-                width: w * .32,
-                decoration: BoxDecoration(
-                  color: '#ff6501'.toColor(),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 2.0, horizontal: 2.0),
-                  child: Center(
-                    child: AutoSizeText(
-                      'Lowest total price',
-                      maxLines: 1,
-                      style: GoogleFonts.aBeeZee(
-                          color: Colors.white,
-                          fontSize: w * .018,
-                          fontWeight: FontWeight.w200),
+                    top: 0,
+                    child: Container(
+                      width: w * .32,
+                      decoration: BoxDecoration(
+                        color: '#ff6501'.toColor(),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2.0, horizontal: 2.0),
+                        child: Center(
+                          child: AutoSizeText(
+                            'Lowest total price',
+                            maxLines: 1,
+                            style: GoogleFonts.aBeeZee(
+                                color: Colors.white,
+                                fontSize: w * .018,
+                                fontWeight: FontWeight.w200),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
-            )
+                  )
                 : const SizedBox(),
           ],
         ),
@@ -1982,15 +1981,15 @@ class CompetitorTile extends StatelessWidget {
 
       return discountValueValue != 0.00
           ? TextSpan(
-        text:
-        '\n-$discountPercent% (\$${returnDiscountPrice(mainPrice: basePrice, discountPercentage: discountPercent)})',
-        style: GoogleFonts.albertSans(
-          color: Colors.orange,
-          fontSize: w * .04,
-          letterSpacing: 0,
-          fontWeight: FontWeight.normal,
-        ),
-      )
+              text:
+                  '\n-$discountPercent% (\$${returnDiscountPrice(mainPrice: basePrice, discountPercentage: discountPercent)})',
+              style: GoogleFonts.albertSans(
+                color: Colors.orange,
+                fontSize: w * .04,
+                letterSpacing: 0,
+                fontWeight: FontWeight.normal,
+              ),
+            )
           : const TextSpan();
     } catch (e) {
       return const TextSpan();
