@@ -93,8 +93,9 @@ class _AiPriceEngineScreenState extends State<AiPriceEngineScreen> {
           style: GoogleFonts.openSans(
             fontSize: w * .055,
             fontWeight: FontWeight.w500,
-            color:Colors.black,
-          ), context: context,
+            color: Colors.black,
+          ),
+          context: context,
         ),
         body: BlocListener<AllBrandBloc, AllBrandState>(
           listener: (context, state) {
@@ -1293,7 +1294,10 @@ class _AiPriceEngineScreenState extends State<AiPriceEngineScreen> {
                                             _secMinController.text,
                                         "brands_lowest_from": '',
                                         "brands_lowest_to": '',
-                                        "discount-coupon": _discountEnabled == false?'':_discountEnabled.toString(),
+                                        "discount-coupon":
+                                            _discountEnabled == false
+                                                ? ''
+                                                : _discountEnabled.toString(),
                                       };
                                       print(dataMap);
                                       Navigator.push(
@@ -1401,10 +1405,16 @@ AppBar buildAppBar(
     {required String title,
     List<Widget>? actions,
     required TextStyle style,
-    required bool centerTitle, required BuildContext context}) {
+    required bool centerTitle,
+    required BuildContext context}) {
   return AppBar(
     backgroundColor: Colors.white,
-    leading: InkWell(onTap: ()=> Navigator.pop(context),child: const Icon(Icons.arrow_back,color: Colors.black,)),
+    leading: InkWell(
+        onTap: () => Navigator.pop(context),
+        child: const Icon(
+          Icons.arrow_back,
+          color: Colors.black,
+        )),
     centerTitle: centerTitle,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     elevation: 4,

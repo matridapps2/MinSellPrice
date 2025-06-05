@@ -21,11 +21,9 @@ class CustomProductCard extends StatefulWidget {
       required bool showPrice,
       required bool showAllCompetitors,
       required bool showRT})
-      :
-      _showPrice = showPrice,
-      _showAllComp = showAllCompetitors,
-      _showRT = showRT,
-
+      : _showPrice = showPrice,
+        _showAllComp = showAllCompetitors,
+        _showRT = showRT,
         super(key: key);
   final ProductListModel data;
   final bool _showPrice, _showAllComp, _showRT;
@@ -794,7 +792,7 @@ class _CustomProductCardState extends State<CustomProductCard>
                       padding: const EdgeInsets.only(right: 10.0),
                       child: GestureDetector(
                         onTap: () async =>
-                        await MyInAppBrowser().openUrlRequest(
+                            await MyInAppBrowser().openUrlRequest(
                           urlRequest: URLRequest(
                               url: WebUri(widget.data.firstVendorUrl +
                                   '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
@@ -924,7 +922,7 @@ class _CustomProductCardState extends State<CustomProductCard>
                       padding: const EdgeInsets.only(right: 10.0),
                       child: GestureDetector(
                         onTap: () async =>
-                        await MyInAppBrowser().openUrlRequest(
+                            await MyInAppBrowser().openUrlRequest(
                           urlRequest: URLRequest(
                               url: WebUri(widget.data.secondVendorUrl +
                                   '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
@@ -972,10 +970,11 @@ class _CustomProductCardState extends State<CustomProductCard>
                 ),
               ),
               Visibility(
-                visible: widget._showAllComp == true &&(widget.data.vendorName.toLowerCase() !=
-                        widget.data.firstVendorName.toLowerCase() &&
-                    widget.data.vendorName.toLowerCase() !=
-                        widget.data.secondVendorName.toLowerCase()),
+                visible: widget._showAllComp == true &&
+                    (widget.data.vendorName.toLowerCase() !=
+                            widget.data.firstVendorName.toLowerCase() &&
+                        widget.data.vendorName.toLowerCase() !=
+                            widget.data.secondVendorName.toLowerCase()),
                 child: Column(
                   children: [
                     Padding(
@@ -1067,7 +1066,7 @@ class _CustomProductCardState extends State<CustomProductCard>
                             padding: const EdgeInsets.only(right: 10.0),
                             child: GestureDetector(
                               onTap: () async =>
-                              await MyInAppBrowser().openUrlRequest(
+                                  await MyInAppBrowser().openUrlRequest(
                                 urlRequest: URLRequest(
                                   url: WebUri(
                                     widget.data.vendorUrl +
@@ -1247,7 +1246,7 @@ class _CustomProductCardState extends State<CustomProductCard>
                               padding: const EdgeInsets.only(right: 10.0),
                               child: GestureDetector(
                                 onTap: () async =>
-                                await MyInAppBrowser().openUrlRequest(
+                                    await MyInAppBrowser().openUrlRequest(
                                   urlRequest: URLRequest(
                                       url: WebUri(widget.data.secondVendorUrl +
                                           '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
@@ -1426,7 +1425,7 @@ class _CustomProductCardState extends State<CustomProductCard>
                               padding: const EdgeInsets.only(right: 10.0),
                               child: GestureDetector(
                                 onTap: () async =>
-                                await MyInAppBrowser().openUrlRequest(
+                                    await MyInAppBrowser().openUrlRequest(
                                   urlRequest: URLRequest(
                                       url: WebUri(widget.data.secondVendorUrl +
                                           '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
@@ -1481,646 +1480,624 @@ class _CustomProductCardState extends State<CustomProductCard>
               ),
               widget._showPrice == false
                   ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Visibility(
-                    visible: widget._showRT,
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                          bottom: 2, left: 8, right: 8.0),
-                      child: AutoSizeText(
-                        'Recommendation',
-                        style: MyTextStyle.customProductUrlStyle(),
-                      ),
-                    ),
-                  ),
-                  Visibility(
-                    visible: widget._showRT,
-                    child: const SizedBox(
-                      height: 2,
-                    ),
-                  ),
-                  Visibility(
-                    visible: widget._showRT,
-                    child: SizedBox(
-                      width: w,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8.0),
-                        child: Row(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.center,
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                          children: [
-                            Tooltip(
-                              decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius:
-                                  BorderRadius.circular(10)),
-                              textAlign: TextAlign.center,
-                              richMessage: TextSpan(
-                                  text: 'RT\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.035 * w,
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: 'RP + Shipping',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 0.035 * w,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  ]),
-                              triggerMode: TooltipTriggerMode.tap,
-                              child: RichText(
-                                text: TextSpan(
-                                  text: '\$${widget.data.rp}\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.0353 * w,
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: '\$${widget.data.rp}',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 0.035 * w,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      children: [
-                                        TextSpan(
-                                          text: widget.data
-                                              .vendorpriceShipping ==
-                                              '0.00'
-                                              ? ' + Free Shipping'
-                                              : ' + \$${widget.data.vendorpriceShipping}',
-                                          style: GoogleFonts
-                                              .montserrat(
-                                            fontSize: 0.035 * w,
-                                            color: Colors.black,
-                                            fontWeight:
-                                            FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                                textAlign: TextAlign.start,
-                              ),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Visibility(
+                          visible: widget._showRT,
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                                bottom: 2, left: 8, right: 8.0),
+                            child: AutoSizeText(
+                              'Recommendation',
+                              style: MyTextStyle.customProductUrlStyle(),
                             ),
-                            Tooltip(
-                              decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius:
-                                  BorderRadius.circular(10)),
-                              textAlign: TextAlign.center,
-                              richMessage: TextSpan(
-                                  text: 'Variation\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.035 * w,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: 'Criteria',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 0.035 * w,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  ]),
-                              triggerMode: TooltipTriggerMode.tap,
-                              child: RichText(
-                                text: TextSpan(
-                                  text: '${widget.data.rpVariation}\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.0353 * w,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: widget.data.rpCriteria,
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 0.035 * w,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                textAlign: TextAlign.end,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                  Visibility(
-                    visible: widget._showRT,
-                    child: const SizedBox(
-                      height: 10,
-                    ),
-                  ),
-                  Visibility(
-                    visible: widget._showRT,
-                    child: SizedBox(
-                      width: w,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8.0),
-                        child: Row(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.center,
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                          children: [
-                            Tooltip(
-                              decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius:
-                                  BorderRadius.circular(10)),
-                              textAlign: TextAlign.center,
-                              richMessage: TextSpan(
-                                  text: 'RT\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.035 * w,
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: 'RP + Shipping',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 0.035 * w,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  ]),
-                              triggerMode: TooltipTriggerMode.tap,
-                              child: RichText(
-                                text: TextSpan(
-                                  text: '\$${widget.data.rt}\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.0353 * w,
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: '\$${widget.data.rp}',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 0.035 * w,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      children: [
-                                        TextSpan(
-                                          text: widget.data
-                                              .vendorpriceShipping ==
-                                              '0.00'
-                                              ? ' + Free Shipping'
-                                              : ' + \$${widget.data.vendorpriceShipping}',
-                                          style: GoogleFonts
-                                              .montserrat(
-                                            fontSize: 0.035 * w,
-                                            color: Colors.black,
-                                            fontWeight:
-                                            FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                                textAlign: TextAlign.start,
-                              ),
-                            ),
-                            Tooltip(
-                              decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius:
-                                  BorderRadius.circular(10)),
-                              textAlign: TextAlign.center,
-                              richMessage: TextSpan(
-                                  text: 'Variation\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.035 * w,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: 'Criteria',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 0.035 * w,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  ]),
-                              triggerMode: TooltipTriggerMode.tap,
-                              child: RichText(
-                                text: TextSpan(
-                                  text:
-                                  '${widget.data.rpVariation}\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.0353 * w,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: widget.data.rpCriteria,
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 0.035 * w,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                textAlign: TextAlign.end,
-                              ),
-                            ),
-                          ],
+                        Visibility(
+                          visible: widget._showRT,
+                          child: const SizedBox(
+                            height: 2,
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
+                        Visibility(
+                          visible: widget._showRT,
+                          child: SizedBox(
+                            width: w,
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Tooltip(
+                                    decoration: BoxDecoration(
+                                        color: Colors.grey,
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    textAlign: TextAlign.center,
+                                    richMessage: TextSpan(
+                                        text: 'RT\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.035 * w,
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: 'RP + Shipping',
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 0.035 * w,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        ]),
+                                    triggerMode: TooltipTriggerMode.tap,
+                                    child: RichText(
+                                      text: TextSpan(
+                                        text: '\$${widget.data.rp}\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.0353 * w,
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: '\$${widget.data.rp}',
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 0.035 * w,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            children: [
+                                              TextSpan(
+                                                text: widget.data
+                                                            .vendorpriceShipping ==
+                                                        '0.00'
+                                                    ? ' + Free Shipping'
+                                                    : ' + \$${widget.data.vendorpriceShipping}',
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 0.035 * w,
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.start,
+                                    ),
+                                  ),
+                                  Tooltip(
+                                    decoration: BoxDecoration(
+                                        color: Colors.grey,
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    textAlign: TextAlign.center,
+                                    richMessage: TextSpan(
+                                        text: 'Variation\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.035 * w,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: 'Criteria',
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 0.035 * w,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        ]),
+                                    triggerMode: TooltipTriggerMode.tap,
+                                    child: RichText(
+                                      text: TextSpan(
+                                        text: '${widget.data.rpVariation}\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.0353 * w,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: widget.data.rpCriteria,
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 0.035 * w,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.end,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Visibility(
+                          visible: widget._showRT,
+                          child: const SizedBox(
+                            height: 10,
+                          ),
+                        ),
+                        Visibility(
+                          visible: widget._showRT,
+                          child: SizedBox(
+                            width: w,
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Tooltip(
+                                    decoration: BoxDecoration(
+                                        color: Colors.grey,
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    textAlign: TextAlign.center,
+                                    richMessage: TextSpan(
+                                        text: 'RT\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.035 * w,
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: 'RP + Shipping',
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 0.035 * w,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        ]),
+                                    triggerMode: TooltipTriggerMode.tap,
+                                    child: RichText(
+                                      text: TextSpan(
+                                        text: '\$${widget.data.rt}\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.0353 * w,
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: '\$${widget.data.rp}',
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 0.035 * w,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            children: [
+                                              TextSpan(
+                                                text: widget.data
+                                                            .vendorpriceShipping ==
+                                                        '0.00'
+                                                    ? ' + Free Shipping'
+                                                    : ' + \$${widget.data.vendorpriceShipping}',
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 0.035 * w,
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.start,
+                                    ),
+                                  ),
+                                  Tooltip(
+                                    decoration: BoxDecoration(
+                                        color: Colors.grey,
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    textAlign: TextAlign.center,
+                                    richMessage: TextSpan(
+                                        text: 'Variation\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.035 * w,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: 'Criteria',
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 0.035 * w,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        ]),
+                                    triggerMode: TooltipTriggerMode.tap,
+                                    child: RichText(
+                                      text: TextSpan(
+                                        text: '${widget.data.rpVariation}\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.0353 * w,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: widget.data.rpCriteria,
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 0.035 * w,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.end,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
                   : SizedBox(
-                width: w,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                     const DelayedDisplay(
-                      slidingBeginOffset: Offset(0.0, -0.35),
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 10.0,
-                            bottom: 2,
-                            left: 8,
-                            right: 8.0),
-                        child: Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                          children: [
-                            // AutoSizeText(
-                            //   widget.vendorId == AppInfo.kVendorId
-                            //       ? 'AF Supply Pricing'
-                            //       : 'HP Pricing',
-                            //   style: MyTextStyle
-                            //       .customProductUrlStyle(),
-                            // ),
-                            // Padding(
-                            //   padding: const EdgeInsets.all(2.0),
-                            //   child: Image.asset(
-                            //     widget.vendorId == AppInfo.kVendorId
-                            //         ? 'assets/af-supply.png'
-                            //         : 'assets/home-perfect.png',
-                            //     width: 0.3 * w,
-                            //     height: 0.07 * w,
-                            //     fit: BoxFit.fill,
-                            //   ),
-                            // )
-                          ],
-                        ),
+                      width: w,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const DelayedDisplay(
+                            slidingBeginOffset: Offset(0.0, -0.35),
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                  top: 10.0, bottom: 2, left: 8, right: 8.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // AutoSizeText(
+                                  //   widget.vendorId == AppInfo.kVendorId
+                                  //       ? 'AF Supply Pricing'
+                                  //       : 'HP Pricing',
+                                  //   style: MyTextStyle
+                                  //       .customProductUrlStyle(),
+                                  // ),
+                                  // Padding(
+                                  //   padding: const EdgeInsets.all(2.0),
+                                  //   child: Image.asset(
+                                  //     widget.vendorId == AppInfo.kVendorId
+                                  //         ? 'assets/af-supply.png'
+                                  //         : 'assets/home-perfect.png',
+                                  //     width: 0.3 * w,
+                                  //     height: 0.07 * w,
+                                  //     fit: BoxFit.fill,
+                                  //   ),
+                                  // )
+                                ],
+                              ),
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Tooltip(
+                                  decoration: BoxDecoration(
+                                      color: Colors.grey,
+                                      borderRadius: BorderRadius.circular(10)),
+                                  textAlign: TextAlign.center,
+                                  richMessage: TextSpan(
+                                    text: 'Final Price\n',
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 0.035 * w,
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Base Price + Shipping\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.035 * w,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: '- Discount',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.035 * w,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  triggerMode: TooltipTriggerMode.tap,
+                                  child: RichText(
+                                    text: TextSpan(
+                                      text:
+                                          '\$${widget.data.vendorPriceFinalPrice}\n',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 0.04 * w,
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text:
+                                              '\$${widget.data.vendorpricePrice}',
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 0.035 * w,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text:
+                                                  ' + \$${widget.data.vendorpriceShipping}',
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 0.035 * w,
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text:
+                                                  ' - \$${widget.data.extraDiscount}',
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 0.035 * w,
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                    textAlign: TextAlign.start,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 16.0),
+                                child: GestureDetector(
+                                  onTap: () async =>
+                                      await MyInAppBrowser().openUrlRequest(
+                                    urlRequest: URLRequest(
+                                        url: WebUri(widget.data.vendorUrl +
+                                            '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                                    options: InAppBrowserClassOptions(
+                                      crossPlatform: InAppBrowserOptions(
+                                        toolbarTopBackgroundColor: Colors.blue,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey,
+                                      ),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(.03 * w),
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: .03 * w,
+                                        vertical: .02 * w,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          // AutoSizeText(
+                                          //   'To Shop',
+                                          //   style: MyTextStyle.simpleStyle(),
+                                          // ),
+                                          // SizedBox(
+                                          //   width: 0.01 * w,
+                                          // ),
+                                          Transform.rotate(
+                                            angle: 120,
+                                            child: const Icon(
+                                              Icons.arrow_upward,
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // DelayedDisplay(
+                          //   slidingBeginOffset: const Offset(0.0, -0.35),
+                          //   child: Padding(
+                          //     padding: const EdgeInsets.only(
+                          //         top: 10.0,
+                          //         bottom: 2,
+                          //         left: 8,
+                          //         right: 8.0),
+                          //     child: Row(
+                          //       mainAxisAlignment:
+                          //       MainAxisAlignment.spaceBetween,
+                          //       children: [
+                          //         AutoSizeText(
+                          //           widget.vendorId == AppInfo.kVendorId
+                          //               ? 'HP Pricing'
+                          //               : 'AF Supply Pricing',
+                          //           style: MyTextStyle
+                          //               .customProductUrlStyle(),
+                          //         ),
+                          //         Padding(
+                          //           padding: const EdgeInsets.all(2.0),
+                          //           child: Image.asset(
+                          //             widget.vendorId == AppInfo.kVendorId
+                          //                 ? 'assets/home-perfect.png'
+                          //                 : 'assets/af-supply.png',
+                          //             width: 0.3 * w,
+                          //             height: 0.07 * w,
+                          //             fit: BoxFit.fill,
+                          //           ),
+                          //         )
+                          //       ],
+                          //     ),
+                          //   ),
+                          // ),
+                          Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Tooltip(
+                                  decoration: BoxDecoration(
+                                      color: Colors.grey,
+                                      borderRadius: BorderRadius.circular(10)),
+                                  textAlign: TextAlign.center,
+                                  richMessage: TextSpan(
+                                    text: 'Final Price\n',
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 0.035 * w,
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Base Price + Shipping\n',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.035 * w,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: '- Discount',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 0.035 * w,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  triggerMode: TooltipTriggerMode.tap,
+                                  child: RichText(
+                                    text: TextSpan(
+                                      text:
+                                          '\$${widget.data.sisterVendorFinalPrice}\n',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 0.04 * w,
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text:
+                                              '\$${widget.data.sisterVendorBasePrice}',
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 0.035 * w,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text:
+                                                  ' + \$${widget.data.sisterVendorShipping}',
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 0.035 * w,
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text:
+                                                  ' - \$${widget.data.sisterExtraDiscount}',
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 0.035 * w,
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                    textAlign: TextAlign.start,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 16.0),
+                                child: GestureDetector(
+                                  onTap: () async =>
+                                      await MyInAppBrowser().openUrlRequest(
+                                    urlRequest: URLRequest(
+                                        url: WebUri(widget.data.vendorBaseUrl! +
+                                            '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                                    options: InAppBrowserClassOptions(
+                                      crossPlatform: InAppBrowserOptions(
+                                        toolbarTopBackgroundColor: Colors.blue,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey,
+                                      ),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(.03 * w),
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: .03 * w,
+                                        vertical: .02 * w,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          // AutoSizeText(
+                                          //   'To Shop',
+                                          //   style: MyTextStyle.simpleStyle(),
+                                          // ),
+                                          // SizedBox(
+                                          //   width: 0.01 * w,
+                                          // ),
+                                          Transform.rotate(
+                                            angle: 120,
+                                            child: const Icon(
+                                              Icons.arrow_upward,
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0),
-                          child: Tooltip(
-                            decoration: BoxDecoration(
-                                color: Colors.grey,
-                                borderRadius:
-                                BorderRadius.circular(10)),
-                            textAlign: TextAlign.center,
-                            richMessage: TextSpan(
-                              text: 'Final Price\n',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 0.035 * w,
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: 'Base Price + Shipping\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.035 * w,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '- Discount',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.035 * w,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            triggerMode: TooltipTriggerMode.tap,
-                            child: RichText(
-                              text: TextSpan(
-                                text:
-                                '\$${widget.data.vendorPriceFinalPrice}\n',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 0.04 * w,
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text:
-                                    '\$${widget.data.vendorpricePrice}',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 0.035 * w,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    children: [
-                                      TextSpan(
-                                        text:
-                                        ' + \$${widget.data.vendorpriceShipping}',
-                                        style:
-                                        GoogleFonts.montserrat(
-                                          fontSize: 0.035 * w,
-                                          color: Colors.black,
-                                          fontWeight:
-                                          FontWeight.bold,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text:
-                                        ' - \$${widget.data.extraDiscount}',
-                                        style:
-                                        GoogleFonts.montserrat(
-                                          fontSize: 0.035 * w,
-                                          color: Colors.black,
-                                          fontWeight:
-                                          FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                              textAlign: TextAlign.start,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 16.0),
-                          child: GestureDetector(
-                            onTap: () async =>
-                            await MyInAppBrowser().openUrlRequest(
-                              urlRequest: URLRequest(
-                                  url: WebUri(widget.data.vendorUrl +
-                                      '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
-                              options: InAppBrowserClassOptions(
-                                crossPlatform: InAppBrowserOptions(
-                                  toolbarTopBackgroundColor: Colors.blue,
-                                ),
-                              ),
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.grey,
-                                ),
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(.03 * w),
-                                ),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: .03 * w,
-                                  vertical: .02 * w,
-                                ),
-                                child: Row(
-                                  children: [
-                                    // AutoSizeText(
-                                    //   'To Shop',
-                                    //   style: MyTextStyle.simpleStyle(),
-                                    // ),
-                                    // SizedBox(
-                                    //   width: 0.01 * w,
-                                    // ),
-                                    Transform.rotate(
-                                      angle: 120,
-                                      child: const Icon(
-                                        Icons.arrow_upward,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // DelayedDisplay(
-                    //   slidingBeginOffset: const Offset(0.0, -0.35),
-                    //   child: Padding(
-                    //     padding: const EdgeInsets.only(
-                    //         top: 10.0,
-                    //         bottom: 2,
-                    //         left: 8,
-                    //         right: 8.0),
-                    //     child: Row(
-                    //       mainAxisAlignment:
-                    //       MainAxisAlignment.spaceBetween,
-                    //       children: [
-                    //         AutoSizeText(
-                    //           widget.vendorId == AppInfo.kVendorId
-                    //               ? 'HP Pricing'
-                    //               : 'AF Supply Pricing',
-                    //           style: MyTextStyle
-                    //               .customProductUrlStyle(),
-                    //         ),
-                    //         Padding(
-                    //           padding: const EdgeInsets.all(2.0),
-                    //           child: Image.asset(
-                    //             widget.vendorId == AppInfo.kVendorId
-                    //                 ? 'assets/home-perfect.png'
-                    //                 : 'assets/af-supply.png',
-                    //             width: 0.3 * w,
-                    //             height: 0.07 * w,
-                    //             fit: BoxFit.fill,
-                    //           ),
-                    //         )
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ),
-                    Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0),
-                          child: Tooltip(
-                            decoration: BoxDecoration(
-                                color: Colors.grey,
-                                borderRadius:
-                                BorderRadius.circular(10)),
-                            textAlign: TextAlign.center,
-                            richMessage: TextSpan(
-                              text: 'Final Price\n',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 0.035 * w,
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: 'Base Price + Shipping\n',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.035 * w,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '- Discount',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 0.035 * w,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            triggerMode: TooltipTriggerMode.tap,
-                            child: RichText(
-                              text: TextSpan(
-                                text:
-                                '\$${widget.data.sisterVendorFinalPrice}\n',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 0.04 * w,
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text:
-                                    '\$${widget.data.sisterVendorBasePrice}',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 0.035 * w,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    children: [
-                                      TextSpan(
-                                        text:
-                                        ' + \$${widget.data.sisterVendorShipping}',
-                                        style:
-                                        GoogleFonts.montserrat(
-                                          fontSize: 0.035 * w,
-                                          color: Colors.black,
-                                          fontWeight:
-                                          FontWeight.bold,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text:
-                                        ' - \$${widget.data.sisterExtraDiscount}',
-                                        style:
-                                        GoogleFonts.montserrat(
-                                          fontSize: 0.035 * w,
-                                          color: Colors.black,
-                                          fontWeight:
-                                          FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                              textAlign: TextAlign.start,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 16.0),
-                          child: GestureDetector(
-                            onTap: () async =>
-                            await MyInAppBrowser().openUrlRequest(
-                              urlRequest: URLRequest(
-                                  url: WebUri(widget.data.vendorBaseUrl! +
-                                      '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
-                              options: InAppBrowserClassOptions(
-                                crossPlatform: InAppBrowserOptions(
-                                  toolbarTopBackgroundColor: Colors.blue,
-                                ),
-                              ),
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.grey,
-                                ),
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(.03 * w),
-                                ),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: .03 * w,
-                                  vertical: .02 * w,
-                                ),
-                                child: Row(
-                                  children: [
-                                    // AutoSizeText(
-                                    //   'To Shop',
-                                    //   style: MyTextStyle.simpleStyle(),
-                                    // ),
-                                    // SizedBox(
-                                    //   width: 0.01 * w,
-                                    // ),
-                                    Transform.rotate(
-                                      angle: 120,
-                                      child: const Icon(
-                                        Icons.arrow_upward,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(
                 height: 4,
               ),

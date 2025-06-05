@@ -59,56 +59,37 @@ class BuyAtButton extends StatelessWidget {
                 ),
               ),
             ),
-          ),  Padding(
-            padding: const EdgeInsets.only(top: 20.0,left: 8,right: 8,bottom: 3),
+          ),
+          Padding(
+            padding:
+                const EdgeInsets.only(top: 20.0, left: 8, right: 8, bottom: 3),
             child: Center(
-              child:
-              CachedNetworkImage(
+              child: CachedNetworkImage(
                 imageUrl:
-                '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/$imageUrl.jpg',
-                height:
-                h * 0.04,
-                fit: BoxFit
-                    .fill,
-                errorWidget: (_,
-                    c,
-                    e) =>
-                    SizedBox(
-                      child:
-                      Container(
-                        width: w *
-                            .42,
-                        padding:
-                        const EdgeInsets
-                            .all(
-                            2),
-                        color: Colors
-                            .black,
-                        child:
-                        Center(
-                          child:
-                          AutoSizeText(
-                            imageUrl,
-                            maxLines:
-                            1,
-                            textAlign:
-                            TextAlign.center,
-                            style:
-                            GoogleFonts.albertSans(
-                              color:
-                              Colors.white,
-                              fontSize:
-                              w * .053,
-                              letterSpacing:
-                              0,
-                              fontWeight:
-                              FontWeight.bold,
-                              // fontFamily: 'JT Marnie Light',
-                            ),
-                          ),
+                    '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/$imageUrl.jpg',
+                height: h * 0.04,
+                fit: BoxFit.fill,
+                errorWidget: (_, c, e) => SizedBox(
+                  child: Container(
+                    width: w * .42,
+                    padding: const EdgeInsets.all(2),
+                    color: Colors.black,
+                    child: Center(
+                      child: AutoSizeText(
+                        imageUrl,
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.albertSans(
+                          color: Colors.white,
+                          fontSize: w * .053,
+                          letterSpacing: 0,
+                          fontWeight: FontWeight.bold,
+                          // fontFamily: 'JT Marnie Light',
                         ),
                       ),
                     ),
+                  ),
+                ),
               ),
             ),
           ),

@@ -1,4 +1,3 @@
-
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shoppingmegamart/model/price_change_model.dart';
@@ -13,11 +12,9 @@ class PriceChangeBloc extends Bloc<PriceChangeEvent, PriceChangeState> {
     on<PriceChangeLoadingEvent>((event, emit) async {
       emit(PriceChangeLoadingState());
       try {
-
-        final priceChangeModel = await NetworkCalls().getPriceChangeDetails(vendorId: event.vendorId, date: event.date);
+        final priceChangeModel = await NetworkCalls()
+            .getPriceChangeDetails(vendorId: event.vendorId, date: event.date);
         emit(PriceChangeLoadedState(priceChangeModel: priceChangeModel));
-
-
       } catch (e) {
         emit(
           PriceChangeErrorState(

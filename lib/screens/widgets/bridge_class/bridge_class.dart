@@ -9,7 +9,6 @@ import 'package:shoppingmegamart/screens/login_screen.dart';
 
 import '../../../reposotory_services/database/database_constants.dart';
 
-
 class BridgeClass extends StatefulWidget {
   const BridgeClass({super.key});
 
@@ -54,8 +53,19 @@ class _BridgeClassState extends State<BridgeClass> {
                 isUserLoggedIn = boolean;
               });
 
-              if(isUserLoggedIn == false){
-                await DatabaseHelper().insertLogin(state.database, {'id': 1, 'email': 'afsupply@gmail.com', 'name': 'AF Supply', 'vendor_id': AppInfo.kVendorId, 'vendor_name': 'AF Supply', 'vendor_short_name': 'AF', 'sister_concern_vendor': 10024, 'sister_vendor_short_name': 'HP', fcm_token_key: 'cmGoQkJZS4irsNs8sQ9HVb:APA91bH9h_3gs_S7cPPPhzSPFPaDyaxwTaNqIVOamRa8nPm-d_Kyrbs7hJeehGLuJhbSolGjCJEAqs-cDeSLxSOHac8Dvj1o_7WG-RufY3Bm-hEzH0aX4AHFijEK1VWqa1KOlzlTSHpZ'});
+              if (isUserLoggedIn == false) {
+                await DatabaseHelper().insertLogin(state.database, {
+                  'id': 1,
+                  'email': 'afsupply@gmail.com',
+                  'name': 'AF Supply',
+                  'vendor_id': AppInfo.kVendorId,
+                  'vendor_name': 'AF Supply',
+                  'vendor_short_name': 'AF',
+                  'sister_concern_vendor': 10024,
+                  'sister_vendor_short_name': 'HP',
+                  fcm_token_key:
+                      'cmGoQkJZS4irsNs8sQ9HVb:APA91bH9h_3gs_S7cPPPhzSPFPaDyaxwTaNqIVOamRa8nPm-d_Kyrbs7hJeehGLuJhbSolGjCJEAqs-cDeSLxSOHac8Dvj1o_7WG-RufY3Bm-hEzH0aX4AHFijEK1VWqa1KOlzlTSHpZ'
+                });
                 context.read<DatabaseBloc>().add(DatabaseInitEvent());
               }
 

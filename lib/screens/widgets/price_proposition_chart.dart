@@ -96,10 +96,8 @@ class _PricePropositionChartState extends State<PricePropositionChart> {
           child: Container(
             width: w,
             height: w,
-            decoration:BoxDecoration(
-                color:Colors.white,
-                borderRadius: BorderRadius.circular(8)
-            ),
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(8)),
             child: Stack(
               children: [
                 SfCircularChart(
@@ -151,7 +149,9 @@ class _PricePropositionChartState extends State<PricePropositionChart> {
                 ),
                 Center(
                   child: CachedNetworkImage(
-                    imageUrl:  index == 0?"${AppInfo.kBaseUrl(stagingSelector: 1)}vendor-logo/${widget.chartData[index].brandName}.jpg":'${AppInfo.kBaseUrl(stagingSelector: 1)}brand-logo/brands/${widget.chartData[index].brandName}.png',
+                    imageUrl: index == 0
+                        ? "${AppInfo.kBaseUrl(stagingSelector: 1)}vendor-logo/${widget.chartData[index].brandName}.jpg"
+                        : '${AppInfo.kBaseUrl(stagingSelector: 1)}brand-logo/brands/${widget.chartData[index].brandName}.png',
                     height: w * .3,
                     width: w * .3,
                   ),
@@ -195,8 +195,7 @@ class _PricePropositionChartState extends State<PricePropositionChart> {
                             text: widget.chartData[index].color[index1].value
                                 .toString(),
                             style: GoogleFonts.montserrat(
-                              color:
-                                  Colors.black,
+                              color: Colors.black,
                               fontWeight: FontWeight.bold,
                               fontSize: w * .04,
                             ),

@@ -1,4 +1,3 @@
-
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';

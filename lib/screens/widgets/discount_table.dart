@@ -187,7 +187,7 @@ class DiscountTable extends StatelessWidget {
               columns: <DataColumn>[
                 DataColumn(
                   label: Card(
-                    color:Colors.red,
+                    color: Colors.red,
                     elevation: 4,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -196,9 +196,7 @@ class DiscountTable extends StatelessWidget {
                         '0%',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white
-                        ),
+                            fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
                   ),
@@ -214,9 +212,7 @@ class DiscountTable extends StatelessWidget {
                         '0% - 20%',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white
-                        ),
+                            fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
                   ),
@@ -268,9 +264,7 @@ class DiscountTable extends StatelessWidget {
                         '70%',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white
-                        ),
+                            fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
                   ),
@@ -285,10 +279,16 @@ class DiscountTable extends StatelessWidget {
                           child: Text(
                             plumbingList[index]['count'],
                             textAlign: TextAlign.center,
-
-
                             style: GoogleFonts.montserrat(
-                              color: index == 0?Colors.red:index == 1?Colors.orangeAccent:index == 2?Colors.green:index == 3?Colors.redAccent:Colors.red,
+                              color: index == 0
+                                  ? Colors.red
+                                  : index == 1
+                                      ? Colors.orangeAccent
+                                      : index == 2
+                                          ? Colors.green
+                                          : index == 3
+                                              ? Colors.redAccent
+                                              : Colors.red,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -297,7 +297,7 @@ class DiscountTable extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ContentScreen(
-                            loadingString:  _returnLoadingString(index),
+                            loadingString: _returnLoadingString(index),
                             isVendorTable: true,
                             brandKey: '',
                             vendorName: 'Plumbing',
@@ -307,7 +307,9 @@ class DiscountTable extends StatelessWidget {
                             vendorId: vendorId.toString(),
                             id: plumbingList[index]['discount_id'],
                             date: plumbingList[index]['date'],
-                            isVendorPriceAnalysis: false, loadingData: 'Plumbing', database: database,
+                            isVendorPriceAnalysis: false,
+                            loadingData: 'Plumbing',
+                            database: database,
                           ),
                         ),
                       );
@@ -324,15 +326,24 @@ class DiscountTable extends StatelessWidget {
                           child: Text(
                             toolsList[index]['count'],
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(                              fontWeight: FontWeight.bold,
-                                color: index == 0?Colors.red:index == 1?Colors.orangeAccent:index == 2?Colors.green:index == 3?Colors.redAccent:Colors.red),
+                            style: GoogleFonts.montserrat(
+                                fontWeight: FontWeight.bold,
+                                color: index == 0
+                                    ? Colors.red
+                                    : index == 1
+                                        ? Colors.orangeAccent
+                                        : index == 2
+                                            ? Colors.green
+                                            : index == 3
+                                                ? Colors.redAccent
+                                                : Colors.red),
                           ),
                         ), onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => ContentScreen(
-                            loadingString:  _returnLoadingString(index),
+                            loadingString: _returnLoadingString(index),
                             isVendorTable: true,
                             brandKey: '',
                             vendorName: 'Tools',
@@ -342,8 +353,9 @@ class DiscountTable extends StatelessWidget {
                             vendorId: vendorId.toString(),
                             id: toolsList[index]['discount_id'],
                             date: toolsList[index]['date'],
-                            isVendorPriceAnalysis: false, loadingData: 'Tools', database: database,
-
+                            isVendorPriceAnalysis: false,
+                            loadingData: 'Tools',
+                            database: database,
                           ),
                         ),
                       );
@@ -361,9 +373,15 @@ class DiscountTable extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.montserrat(
                                 fontWeight: FontWeight.bold,
-
-                                color: index == 0?Colors.red:index == 1?Colors.orangeAccent:index == 2?Colors.green:index == 3?Colors.redAccent:Colors.red
-                            ),
+                                color: index == 0
+                                    ? Colors.red
+                                    : index == 1
+                                        ? Colors.orangeAccent
+                                        : index == 2
+                                            ? Colors.green
+                                            : index == 3
+                                                ? Colors.redAccent
+                                                : Colors.red),
                           ),
                         ), onTap: () {
                       Navigator.push(
@@ -379,8 +397,10 @@ class DiscountTable extends StatelessWidget {
                             vendorId: vendorId.toString(),
                             id: pvfList[index]['discount_id'],
                             date: pvfList[index]['date'],
-                            isVendorPriceAnalysis: false, loadingData: 'PVF',
-                            loadingString:  _returnLoadingString(index), database: database,
+                            isVendorPriceAnalysis: false,
+                            loadingData: 'PVF',
+                            loadingString: _returnLoadingString(index),
+                            database: database,
                           ),
                         ),
                       );
@@ -396,8 +416,17 @@ class DiscountTable extends StatelessWidget {
                           child: Text(
                             heatingList[index]['count'],
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(                              fontWeight: FontWeight.bold,
-                                color: index == 0?Colors.red:index == 1?Colors.orangeAccent:index == 2?Colors.green:index == 3?Colors.redAccent:Colors.red),
+                            style: GoogleFonts.montserrat(
+                                fontWeight: FontWeight.bold,
+                                color: index == 0
+                                    ? Colors.red
+                                    : index == 1
+                                        ? Colors.orangeAccent
+                                        : index == 2
+                                            ? Colors.green
+                                            : index == 3
+                                                ? Colors.redAccent
+                                                : Colors.red),
                           ),
                         ), onTap: () {
                       Navigator.push(
@@ -413,8 +442,10 @@ class DiscountTable extends StatelessWidget {
                             vendorId: vendorId.toString(),
                             id: heatingList[index]['discount_id'],
                             date: heatingList[index]['date'],
-                            isVendorPriceAnalysis: false, loadingData: 'Heating',
-                            loadingString:  _returnLoadingString(index), database: database,
+                            isVendorPriceAnalysis: false,
+                            loadingData: 'Heating',
+                            loadingString: _returnLoadingString(index),
+                            database: database,
                           ),
                         ),
                       );
@@ -431,15 +462,17 @@ class DiscountTable extends StatelessWidget {
   }
 
   String _returnLoadingString(int index) {
-    switch(index){
+    switch (index) {
       case 0:
         return 'Discount 0%';
       case 1:
         return 'Discount 0% - 20%';
       case 2:
         return 'Discount 20% - 50%';
-      case 3: return 'Discount 50% - 70%';
-      case 4: return 'Discount 70%';
+      case 3:
+        return 'Discount 50% - 70%';
+      case 4:
+        return 'Discount 70%';
       default:
         return 'No Discount';
     }

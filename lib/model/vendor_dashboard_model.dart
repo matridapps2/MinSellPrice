@@ -4,7 +4,7 @@ class VendorDashboardModel {
   final DashboardTotal dashboardTotal;
   final List<TopBrand> topBrands;
   final CompetitiveHealth competitiveHealth;
-  final Map<String,dynamic> competitiveHealthAnother;
+  final Map<String, dynamic> competitiveHealthAnother;
   final List<DiscountingHealth> discountingHealth;
   final PriceChanges priceChanges;
 
@@ -17,27 +17,34 @@ class VendorDashboardModel {
     required this.priceChanges,
   });
 
-  factory VendorDashboardModel.fromRawJson(String str) => VendorDashboardModel.fromJson(json.decode(str));
+  factory VendorDashboardModel.fromRawJson(String str) =>
+      VendorDashboardModel.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
-  factory VendorDashboardModel.fromJson(Map<String, dynamic> json) => VendorDashboardModel(
-    dashboardTotal: DashboardTotal.fromJson(json["DashboardTotal"]),
-    topBrands: List<TopBrand>.from(json["TopBrands"].map((x) => TopBrand.fromJson(x))),
-    competitiveHealth: CompetitiveHealth.fromJson(json["Competitive Health"]??{}),
-    competitiveHealthAnother: json["Competitive Health Another"]??{},
-    discountingHealth: List<DiscountingHealth>.from(json["Discounting Health"].map((x) => DiscountingHealth.fromJson(x))),
-    priceChanges: PriceChanges.fromJson(json["Price Changes"]),
-  );
+  factory VendorDashboardModel.fromJson(Map<String, dynamic> json) =>
+      VendorDashboardModel(
+        dashboardTotal: DashboardTotal.fromJson(json["DashboardTotal"]),
+        topBrands: List<TopBrand>.from(
+            json["TopBrands"].map((x) => TopBrand.fromJson(x))),
+        competitiveHealth:
+            CompetitiveHealth.fromJson(json["Competitive Health"] ?? {}),
+        competitiveHealthAnother: json["Competitive Health Another"] ?? {},
+        discountingHealth: List<DiscountingHealth>.from(
+            json["Discounting Health"]
+                .map((x) => DiscountingHealth.fromJson(x))),
+        priceChanges: PriceChanges.fromJson(json["Price Changes"]),
+      );
 
   Map<String, dynamic> toJson() => {
-    "DashboardTotal": dashboardTotal.toJson(),
-    "TopBrands": List<dynamic>.from(topBrands.map((x) => x.toJson())),
-    "Competitive Health": competitiveHealth.toJson(),
-    "Competitive Health Another": competitiveHealthAnother,
-    "Discounting Health": List<dynamic>.from(discountingHealth.map((x) => x.toJson())),
-    "Price Changes": priceChanges.toJson(),
-  };
+        "DashboardTotal": dashboardTotal.toJson(),
+        "TopBrands": List<dynamic>.from(topBrands.map((x) => x.toJson())),
+        "Competitive Health": competitiveHealth.toJson(),
+        "Competitive Health Another": competitiveHealthAnother,
+        "Discounting Health":
+            List<dynamic>.from(discountingHealth.map((x) => x.toJson())),
+        "Price Changes": priceChanges.toJson(),
+      };
 }
 
 class CompetitiveHealth {
@@ -69,39 +76,41 @@ class CompetitiveHealth {
     required this.idLowestBy515,
   });
 
-  factory CompetitiveHealth.fromRawJson(String str) => CompetitiveHealth.fromJson(json.decode(str));
+  factory CompetitiveHealth.fromRawJson(String str) =>
+      CompetitiveHealth.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
-  factory CompetitiveHealth.fromJson(Map<String, dynamic> json) => CompetitiveHealth(
-    highestBy15: json["highest_by_15%"]??'0',
-    idHighestBy15: json["id_highest_by_15%"].toString()??'',
-    highestBy5: json["highest_by_5%"]??'0',
-    idHighestBy5: json["id_highest_by_5%"].toString()??'',
-    highestBy515: json["highest_by_5% - 15%"]??'0',
-    idHighestBy515: json["id_highest_by_5% - 15%"].toString()??'',
-    lowestBy15: json["lowest_by_15%"]??'0',
-    idLowestBy15: json["id_lowest_by_15%"].toString()??'',
-    lowestBy5: json["lowest_by_5%"]??'0',
-    idLowestBy5: json["id_lowest_by_5%"].toString()??'',
-    lowestBy515: json["lowest_by_5% - 15%"]??'0',
-    idLowestBy515: json["id_lowest_by_5% - 15%"].toString()??'',
-  );
+  factory CompetitiveHealth.fromJson(Map<String, dynamic> json) =>
+      CompetitiveHealth(
+        highestBy15: json["highest_by_15%"] ?? '0',
+        idHighestBy15: json["id_highest_by_15%"].toString() ?? '',
+        highestBy5: json["highest_by_5%"] ?? '0',
+        idHighestBy5: json["id_highest_by_5%"].toString() ?? '',
+        highestBy515: json["highest_by_5% - 15%"] ?? '0',
+        idHighestBy515: json["id_highest_by_5% - 15%"].toString() ?? '',
+        lowestBy15: json["lowest_by_15%"] ?? '0',
+        idLowestBy15: json["id_lowest_by_15%"].toString() ?? '',
+        lowestBy5: json["lowest_by_5%"] ?? '0',
+        idLowestBy5: json["id_lowest_by_5%"].toString() ?? '',
+        lowestBy515: json["lowest_by_5% - 15%"] ?? '0',
+        idLowestBy515: json["id_lowest_by_5% - 15%"].toString() ?? '',
+      );
 
   Map<String, dynamic> toJson() => {
-    "highest_by_15%": highestBy15,
-    "id_highest_by_15%": idHighestBy15,
-    "highest_by_5%": highestBy5,
-    "id_highest_by_5%": idHighestBy5,
-    "highest_by_5% - 15%": highestBy515,
-    "id_highest_by_5% - 15%": idHighestBy515,
-    "lowest_by_15%": lowestBy15,
-    "id_lowest_by_15%": idLowestBy15,
-    "lowest_by_5%": lowestBy5,
-    "id_lowest_by_5%": idLowestBy5,
-    "lowest_by_5% - 15%": lowestBy515,
-    "id_lowest_by_5% - 15%": idLowestBy515,
-  };
+        "highest_by_15%": highestBy15,
+        "id_highest_by_15%": idHighestBy15,
+        "highest_by_5%": highestBy5,
+        "id_highest_by_5%": idHighestBy5,
+        "highest_by_5% - 15%": highestBy515,
+        "id_highest_by_5% - 15%": idHighestBy515,
+        "lowest_by_15%": lowestBy15,
+        "id_lowest_by_15%": idLowestBy15,
+        "lowest_by_5%": lowestBy5,
+        "id_lowest_by_5%": idLowestBy5,
+        "lowest_by_5% - 15%": lowestBy515,
+        "id_lowest_by_5% - 15%": idLowestBy515,
+      };
 }
 
 class CompetitiveHealthAnother {
@@ -129,35 +138,37 @@ class CompetitiveHealthAnother {
     required this.americanStandard,
   });
 
-  factory CompetitiveHealthAnother.fromRawJson(String str) => CompetitiveHealthAnother.fromJson(json.decode(str));
+  factory CompetitiveHealthAnother.fromRawJson(String str) =>
+      CompetitiveHealthAnother.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
-  factory CompetitiveHealthAnother.fromJson(Map<String, dynamic> json) => CompetitiveHealthAnother(
-    hansgrohe: AmericanStandard.fromJson(json["hansgrohe"]),
-    baldwin: AmericanStandard.fromJson(json["baldwin"]),
-    kohler: AmericanStandard.fromJson(json["kohler"]),
-    toto: AmericanStandard.fromJson(json["toto"]),
-    robern: AmericanStandard.fromJson(json["robern"]),
-    delta: AmericanStandard.fromJson(json["delta"]),
-    newportBrass: AmericanStandard.fromJson(json["newport-brass"]),
-    grohe: AmericanStandard.fromJson(json["grohe"]),
-    moen: AmericanStandard.fromJson(json["moen"]),
-    americanStandard: AmericanStandard.fromJson(json["american-standard"]),
-  );
+  factory CompetitiveHealthAnother.fromJson(Map<String, dynamic> json) =>
+      CompetitiveHealthAnother(
+        hansgrohe: AmericanStandard.fromJson(json["hansgrohe"]),
+        baldwin: AmericanStandard.fromJson(json["baldwin"]),
+        kohler: AmericanStandard.fromJson(json["kohler"]),
+        toto: AmericanStandard.fromJson(json["toto"]),
+        robern: AmericanStandard.fromJson(json["robern"]),
+        delta: AmericanStandard.fromJson(json["delta"]),
+        newportBrass: AmericanStandard.fromJson(json["newport-brass"]),
+        grohe: AmericanStandard.fromJson(json["grohe"]),
+        moen: AmericanStandard.fromJson(json["moen"]),
+        americanStandard: AmericanStandard.fromJson(json["american-standard"]),
+      );
 
   Map<String, dynamic> toJson() => {
-    "hansgrohe": hansgrohe.toJson(),
-    "baldwin": baldwin.toJson(),
-    "kohler": kohler.toJson(),
-    "toto": toto.toJson(),
-    "robern": robern.toJson(),
-    "delta": delta.toJson(),
-    "newport-brass": newportBrass.toJson(),
-    "grohe": grohe.toJson(),
-    "moen": moen.toJson(),
-    "american-standard": americanStandard.toJson(),
-  };
+        "hansgrohe": hansgrohe.toJson(),
+        "baldwin": baldwin.toJson(),
+        "kohler": kohler.toJson(),
+        "toto": toto.toJson(),
+        "robern": robern.toJson(),
+        "delta": delta.toJson(),
+        "newport-brass": newportBrass.toJson(),
+        "grohe": grohe.toJson(),
+        "moen": moen.toJson(),
+        "american-standard": americanStandard.toJson(),
+      };
 }
 
 class AmericanStandard {
@@ -193,43 +204,45 @@ class AmericanStandard {
     required this.idHigherMoreThan15,
   });
 
-  factory AmericanStandard.fromRawJson(String str) => AmericanStandard.fromJson(json.decode(str));
+  factory AmericanStandard.fromRawJson(String str) =>
+      AmericanStandard.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
-  factory AmericanStandard.fromJson(Map<String, dynamic> json) => AmericanStandard(
-    totalProducts: json["total_products"],
-    lowerMoreThan15: json["lower more than 15%"],
-    image: json["Image"],
-    idLowerMoreThan15: json["id_lower more than 15%"],
-    lowerFrom515: json["lower from 5% - 15%"],
-    idLowerFrom515: json["id_lower from 5% - 15%"],
-    lowerUpto5: json["lower upto 5%"],
-    idLowerUpto5: json["id_lower upto 5%"],
-    higherUpto5: json["higher upto 5%"],
-    idHigherUpto5: json["id_higher upto 5%"],
-    higherFrom515: json["higher from 5% - 15%"],
-    idHigherFrom515: json["id_higher from 5% - 15%"],
-    higherMoreThan15: json["higher more than 15%"],
-    idHigherMoreThan15: json["id_higher more than 15%"],
-  );
+  factory AmericanStandard.fromJson(Map<String, dynamic> json) =>
+      AmericanStandard(
+        totalProducts: json["total_products"],
+        lowerMoreThan15: json["lower more than 15%"],
+        image: json["Image"],
+        idLowerMoreThan15: json["id_lower more than 15%"],
+        lowerFrom515: json["lower from 5% - 15%"],
+        idLowerFrom515: json["id_lower from 5% - 15%"],
+        lowerUpto5: json["lower upto 5%"],
+        idLowerUpto5: json["id_lower upto 5%"],
+        higherUpto5: json["higher upto 5%"],
+        idHigherUpto5: json["id_higher upto 5%"],
+        higherFrom515: json["higher from 5% - 15%"],
+        idHigherFrom515: json["id_higher from 5% - 15%"],
+        higherMoreThan15: json["higher more than 15%"],
+        idHigherMoreThan15: json["id_higher more than 15%"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "total_products": totalProducts,
-    "lower more than 15%": lowerMoreThan15,
-    "Image": image,
-    "id_lower more than 15%": idLowerMoreThan15,
-    "lower from 5% - 15%": lowerFrom515,
-    "id_lower from 5% - 15%": idLowerFrom515,
-    "lower upto 5%": lowerUpto5,
-    "id_lower upto 5%": idLowerUpto5,
-    "higher upto 5%": higherUpto5,
-    "id_higher upto 5%": idHigherUpto5,
-    "higher from 5% - 15%": higherFrom515,
-    "id_higher from 5% - 15%": idHigherFrom515,
-    "higher more than 15%": higherMoreThan15,
-    "id_higher more than 15%": idHigherMoreThan15,
-  };
+        "total_products": totalProducts,
+        "lower more than 15%": lowerMoreThan15,
+        "Image": image,
+        "id_lower more than 15%": idLowerMoreThan15,
+        "lower from 5% - 15%": lowerFrom515,
+        "id_lower from 5% - 15%": idLowerFrom515,
+        "lower upto 5%": lowerUpto5,
+        "id_lower upto 5%": idLowerUpto5,
+        "higher upto 5%": higherUpto5,
+        "id_higher upto 5%": idHigherUpto5,
+        "higher from 5% - 15%": higherFrom515,
+        "id_higher from 5% - 15%": idHigherFrom515,
+        "higher more than 15%": higherMoreThan15,
+        "id_higher more than 15%": idHigherMoreThan15,
+      };
 }
 
 class DashboardTotal {
@@ -247,25 +260,26 @@ class DashboardTotal {
     required this.outofstock,
   });
 
-  factory DashboardTotal.fromRawJson(String str) => DashboardTotal.fromJson(json.decode(str));
+  factory DashboardTotal.fromRawJson(String str) =>
+      DashboardTotal.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
   factory DashboardTotal.fromJson(Map<String, dynamic> json) => DashboardTotal(
-    productCount: json["product_count"]??0,
-    scrapData: json["scrap_data"]??0,
-    priceAutomation: json["price_automation"]??0,
-    instock: json["instock"]??0,
-    outofstock: json["outofstock"]??0,
-  );
+        productCount: json["product_count"] ?? 0,
+        scrapData: json["scrap_data"] ?? 0,
+        priceAutomation: json["price_automation"] ?? 0,
+        instock: json["instock"] ?? 0,
+        outofstock: json["outofstock"] ?? 0,
+      );
 
   Map<String, dynamic> toJson() => {
-    "product_count": productCount,
-    "scrap_data": scrapData,
-    "price_automation": priceAutomation,
-    "instock": instock,
-    "outofstock": outofstock,
-  };
+        "product_count": productCount,
+        "scrap_data": scrapData,
+        "price_automation": priceAutomation,
+        "instock": instock,
+        "outofstock": outofstock,
+      };
 }
 
 class DiscountingHealth {
@@ -289,31 +303,34 @@ class DiscountingHealth {
     required this.updatedAt,
   });
 
-  factory DiscountingHealth.fromRawJson(String str) => DiscountingHealth.fromJson(json.decode(str));
+  factory DiscountingHealth.fromRawJson(String str) =>
+      DiscountingHealth.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
-  factory DiscountingHealth.fromJson(Map<String, dynamic> json) => DiscountingHealth(
-    discountId: json["discount_id"],
-    vendorId: json["vendor_id"],
-    discountValue: json["discount_value"],
-    discountBrandType: json["discount_brand_type"],
-    discountCount: json["discount_count"],
-    discountDate: DateTime.parse(json["discount_date"]),
-    createdAt: DateTime.parse(json["created_at"]),
-    updatedAt: DateTime.parse(json["updated_at"]),
-  );
+  factory DiscountingHealth.fromJson(Map<String, dynamic> json) =>
+      DiscountingHealth(
+        discountId: json["discount_id"],
+        vendorId: json["vendor_id"],
+        discountValue: json["discount_value"],
+        discountBrandType: json["discount_brand_type"],
+        discountCount: json["discount_count"],
+        discountDate: DateTime.parse(json["discount_date"]),
+        createdAt: DateTime.parse(json["created_at"]),
+        updatedAt: DateTime.parse(json["updated_at"]),
+      );
 
   Map<String, dynamic> toJson() => {
-    "discount_id": discountId,
-    "vendor_id": vendorId,
-    "discount_value": discountValue,
-    "discount_brand_type": discountBrandType,
-    "discount_count": discountCount,
-    "discount_date": "${discountDate.year.toString().padLeft(4, '0')}-${discountDate.month.toString().padLeft(2, '0')}-${discountDate.day.toString().padLeft(2, '0')}",
-    "created_at": createdAt.toIso8601String(),
-    "updated_at": updatedAt.toIso8601String(),
-  };
+        "discount_id": discountId,
+        "vendor_id": vendorId,
+        "discount_value": discountValue,
+        "discount_brand_type": discountBrandType,
+        "discount_count": discountCount,
+        "discount_date":
+            "${discountDate.year.toString().padLeft(4, '0')}-${discountDate.month.toString().padLeft(2, '0')}-${discountDate.day.toString().padLeft(2, '0')}",
+        "created_at": createdAt.toIso8601String(),
+        "updated_at": updatedAt.toIso8601String(),
+      };
 }
 
 class PriceChanges {
@@ -325,19 +342,21 @@ class PriceChanges {
     required this.last7Days,
   });
 
-  factory PriceChanges.fromRawJson(String str) => PriceChanges.fromJson(json.decode(str));
+  factory PriceChanges.fromRawJson(String str) =>
+      PriceChanges.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
   factory PriceChanges.fromJson(Map<String, dynamic> json) => PriceChanges(
-    today: List<Today>.from(json["TODAY"].map((x) => Today.fromJson(x))),
-    last7Days: List<Last7Day>.from(json["LAST 7 DAYS"].map((x) => Last7Day.fromJson(x))),
-  );
+        today: List<Today>.from(json["TODAY"].map((x) => Today.fromJson(x))),
+        last7Days: List<Last7Day>.from(
+            json["LAST 7 DAYS"].map((x) => Last7Day.fromJson(x))),
+      );
 
   Map<String, dynamic> toJson() => {
-    "TODAY": List<dynamic>.from(today.map((x) => x.toJson())),
-    "LAST 7 DAYS": List<dynamic>.from(last7Days.map((x) => x.toJson())),
-  };
+        "TODAY": List<dynamic>.from(today.map((x) => x.toJson())),
+        "LAST 7 DAYS": List<dynamic>.from(last7Days.map((x) => x.toJson())),
+      };
 }
 
 class Last7Day {
@@ -351,21 +370,22 @@ class Last7Day {
     required this.last7DaysProductIds,
   });
 
-  factory Last7Day.fromRawJson(String str) => Last7Day.fromJson(json.decode(str));
+  factory Last7Day.fromRawJson(String str) =>
+      Last7Day.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
   factory Last7Day.fromJson(Map<String, dynamic> json) => Last7Day(
-    brandName: json["brand_name"],
-    last7DaysCount: json["last_7days_count"],
-    last7DaysProductIds: json["last_7days_product_ids"],
-  );
+        brandName: json["brand_name"],
+        last7DaysCount: json["last_7days_count"],
+        last7DaysProductIds: json["last_7days_product_ids"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "brand_name": brandName,
-    "last_7days_count": last7DaysCount,
-    "last_7days_product_ids": last7DaysProductIds,
-  };
+        "brand_name": brandName,
+        "last_7days_count": last7DaysCount,
+        "last_7days_product_ids": last7DaysProductIds,
+      };
 }
 
 class Today {
@@ -382,14 +402,15 @@ class Today {
   String toRawJson() => json.encode(toJson());
 
   factory Today.fromJson(Map<String, dynamic> json) => Today(
-    brandName: json["brand_name"],
-    history: List<PriceHistory>.from(json["history"].map((x) => PriceHistory.fromJson(x))),
-  );
+        brandName: json["brand_name"],
+        history: List<PriceHistory>.from(
+            json["history"].map((x) => PriceHistory.fromJson(x))),
+      );
 
   Map<String, dynamic> toJson() => {
-    "brand_name": brandName,
-    "history": List<dynamic>.from(history.map((x) => x.toJson())),
-  };
+        "brand_name": brandName,
+        "history": List<dynamic>.from(history.map((x) => x.toJson())),
+      };
 }
 
 class PriceHistory {
@@ -401,19 +422,20 @@ class PriceHistory {
     required this.updateDate,
   });
 
-  factory PriceHistory.fromRawJson(String str) => PriceHistory.fromJson(json.decode(str));
+  factory PriceHistory.fromRawJson(String str) =>
+      PriceHistory.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
   factory PriceHistory.fromJson(Map<String, dynamic> json) => PriceHistory(
-    frequency: json["frequency"],
-    updateDate: json["update_date"],
-  );
+        frequency: json["frequency"],
+        updateDate: json["update_date"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "frequency": frequency,
-    "update_date": updateDateValues.reverse[updateDate],
-  };
+        "frequency": frequency,
+        "update_date": updateDateValues.reverse[updateDate],
+      };
 }
 
 enum UpdateDate {
@@ -445,23 +467,26 @@ class TopBrand {
     required this.topBrands,
   });
 
-  factory TopBrand.fromRawJson(String str) => TopBrand.fromJson(json.decode(str));
+  factory TopBrand.fromRawJson(String str) =>
+      TopBrand.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
   factory TopBrand.fromJson(Map<String, dynamic> json) => TopBrand(
-    vendorName: json["vendor_name"],
-    totalProducts: json["total_products"],
-    totalBrands: json["total_brands"],
-    topBrands: Map.from(json["top_brands"]).map((k, v) => MapEntry<String, TopBrandValue>(k, TopBrandValue.fromJson(v))),
-  );
+        vendorName: json["vendor_name"],
+        totalProducts: json["total_products"],
+        totalBrands: json["total_brands"],
+        topBrands: Map.from(json["top_brands"]).map((k, v) =>
+            MapEntry<String, TopBrandValue>(k, TopBrandValue.fromJson(v))),
+      );
 
   Map<String, dynamic> toJson() => {
-    "vendor_name": vendorName,
-    "total_products": totalProducts,
-    "total_brands": totalBrands,
-    "top_brands": Map.from(topBrands).map((k, v) => MapEntry<String, dynamic>(k, v.toJson())),
-  };
+        "vendor_name": vendorName,
+        "total_products": totalProducts,
+        "total_brands": totalBrands,
+        "top_brands": Map.from(topBrands)
+            .map((k, v) => MapEntry<String, dynamic>(k, v.toJson())),
+      };
 }
 
 class TopBrandValue {
@@ -473,19 +498,20 @@ class TopBrandValue {
     required this.count,
   });
 
-  factory TopBrandValue.fromRawJson(String str) => TopBrandValue.fromJson(json.decode(str));
+  factory TopBrandValue.fromRawJson(String str) =>
+      TopBrandValue.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
   factory TopBrandValue.fromJson(Map<String, dynamic> json) => TopBrandValue(
-    image: json["image"],
-    count: json["count"],
-  );
+        image: json["image"],
+        count: json["count"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "image": image,
-    "count": count,
-  };
+        "image": image,
+        "count": count,
+      };
 }
 
 class EnumValues<T> {

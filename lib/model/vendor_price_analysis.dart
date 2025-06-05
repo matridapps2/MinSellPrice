@@ -4,9 +4,11 @@
 
 import 'dart:convert';
 
-VendorPriceAnalyisModel vendorPriceAnalyisModelFromJson(String str) => VendorPriceAnalyisModel.fromJson(json.decode(str));
+VendorPriceAnalyisModel vendorPriceAnalyisModelFromJson(String str) =>
+    VendorPriceAnalyisModel.fromJson(json.decode(str));
 
-String vendorPriceAnalyisModelToJson(VendorPriceAnalyisModel data) => json.encode(data.toJson());
+String vendorPriceAnalyisModelToJson(VendorPriceAnalyisModel data) =>
+    json.encode(data.toJson());
 
 class VendorPriceAnalyisModel {
   final String highestBy15;
@@ -37,33 +39,34 @@ class VendorPriceAnalyisModel {
     required this.idLowestBy515,
   });
 
-  factory VendorPriceAnalyisModel.fromJson(Map<String, dynamic> json) => VendorPriceAnalyisModel(
-    highestBy15: json["highest_by_15%"],
-    idHighestBy15: json["id_highest_by_15%"],
-    highestBy5: json["highest_by_5%"],
-    idHighestBy5: json["id_highest_by_5%"],
-    highestBy515: json["highest_by_5% - 15%"],
-    idHighestBy515: json["id_highest_by_5% - 15%"],
-    lowestBy15: json["lowest_by_15%"],
-    idLowestBy15: json["id_lowest_by_15%"],
-    lowestBy5: json["lowest_by_5%"],
-    idLowestBy5: json["id_lowest_by_5%"],
-    lowestBy515: json["lowest_by_5% - 15%"],
-    idLowestBy515: json["id_lowest_by_5% - 15%"],
-  );
+  factory VendorPriceAnalyisModel.fromJson(Map<String, dynamic> json) =>
+      VendorPriceAnalyisModel(
+        highestBy15: json["highest_by_15%"],
+        idHighestBy15: json["id_highest_by_15%"],
+        highestBy5: json["highest_by_5%"],
+        idHighestBy5: json["id_highest_by_5%"],
+        highestBy515: json["highest_by_5% - 15%"],
+        idHighestBy515: json["id_highest_by_5% - 15%"],
+        lowestBy15: json["lowest_by_15%"],
+        idLowestBy15: json["id_lowest_by_15%"],
+        lowestBy5: json["lowest_by_5%"],
+        idLowestBy5: json["id_lowest_by_5%"],
+        lowestBy515: json["lowest_by_5% - 15%"],
+        idLowestBy515: json["id_lowest_by_5% - 15%"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "highest_by_15%": highestBy15,
-    "id_highest_by_15%": idHighestBy15,
-    "highest_by_5%": highestBy5,
-    "id_highest_by_5%": idHighestBy5,
-    "highest_by_5% - 15%": highestBy515,
-    "id_highest_by_5% - 15%": idHighestBy515,
-    "lowest_by_15%": lowestBy15,
-    "id_lowest_by_15%": idLowestBy15,
-    "lowest_by_5%": lowestBy5,
-    "id_lowest_by_5%": idLowestBy5,
-    "lowest_by_5% - 15%": lowestBy515,
-    "id_lowest_by_5% - 15%": idLowestBy515,
-  };
+        "highest_by_15%": highestBy15,
+        "id_highest_by_15%": idHighestBy15,
+        "highest_by_5%": highestBy5,
+        "id_highest_by_5%": idHighestBy5,
+        "highest_by_5% - 15%": highestBy515,
+        "id_highest_by_5% - 15%": idHighestBy515,
+        "lowest_by_15%": lowestBy15,
+        "id_lowest_by_15%": idLowestBy15,
+        "lowest_by_5%": lowestBy5,
+        "id_lowest_by_5%": idLowestBy5,
+        "lowest_by_5% - 15%": lowestBy515,
+        "id_lowest_by_5% - 15%": idLowestBy515,
+      };
 }

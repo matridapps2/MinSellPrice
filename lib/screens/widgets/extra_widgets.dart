@@ -6,17 +6,16 @@ import 'package:shoppingmegamart/size.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 List<Color> get getColorsList => [
-  Colors.black12.withOpacity(.3),
-  Colors.grey.withOpacity(.3),
-]..shuffle();
-
+      Colors.black12.withOpacity(.3),
+      Colors.grey.withOpacity(.3),
+    ]..shuffle();
 
 List<Alignment> get getAlignments => [
-  Alignment.bottomLeft,
-  Alignment.bottomRight,
-  Alignment.topRight,
-  Alignment.topLeft,
-];
+      Alignment.bottomLeft,
+      Alignment.bottomRight,
+      Alignment.topRight,
+      Alignment.topLeft,
+    ];
 
 // ignore: camel_case_types
 class AnimatedGradiantContainer extends StatefulWidget {
@@ -48,7 +47,7 @@ class _AnimatedGradiantContainerState extends State<AnimatedGradiantContainer> {
       const interval = Duration(seconds: 2);
       timer = Timer.periodic(
         interval,
-            (Timer timer) {
+        (Timer timer) {
           counter++;
           setState(() {});
         },
@@ -133,10 +132,10 @@ class DonutChart extends StatelessWidget {
                   explode: true,
                   // explodeAll: true,
                   dataLabelMapper: (ChartData data, _) =>
-                  '${data.x}\n${data.y}',
+                      '${data.x}\n${data.y}',
                   pointRenderMode: PointRenderMode.segment,
                   dataLabelSettings: DataLabelSettings(
-                    // alignment: ChartAlignment.near,
+                      // alignment: ChartAlignment.near,
                       showCumulativeValues: true,
                       labelAlignment: ChartDataLabelAlignment.bottom,
                       labelPosition: ChartDataLabelPosition.inside,

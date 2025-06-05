@@ -219,9 +219,17 @@ class ProductListModel {
       /// CONTAINS KEY IMPLEMENTATION ADDED BY RAHUL                         ///
       //**********************************************************************//
 
-      vendorBaseUrl: json.containsKey('VendorBaseUrl') ? json["VendorBaseUrl"] ?? '--' : '--',
-      competitor: json.containsKey('competitor') ? json["competitor"] == null ? '--' : json["competitor"].toString() : '--',
-      defaultcompetitor: json.containsKey('defaultcompetitor') ? json["defaultcompetitor"] ?? '--' : '--',
+      vendorBaseUrl: json.containsKey('VendorBaseUrl')
+          ? json["VendorBaseUrl"] ?? '--'
+          : '--',
+      competitor: json.containsKey('competitor')
+          ? json["competitor"] == null
+              ? '--'
+              : json["competitor"].toString()
+          : '--',
+      defaultcompetitor: json.containsKey('defaultcompetitor')
+          ? json["defaultcompetitor"] ?? '--'
+          : '--',
 
       //**********************************************************************//
       /// SISTER VENDOR DATA USING CONTAINS KEY IMPLEMENTATION (5 PARAMETER) ///
@@ -229,11 +237,29 @@ class ProductListModel {
       ///                         INCLUDES NON-AVAILABLE KEYS                ///
       //**********************************************************************//
 
-      sisterExtraDiscount: json.containsKey('VendorExtraDiscount') ? json['VendorExtraDiscount'] != null ? '${json['VendorExtraDiscount']}' : '--' : '--',
-      sisterVendorBasePrice: json.containsKey('VendorBasePrice') ? json['VendorBasePrice'] != null ? '\$${json['VendorBasePrice']}' : '--' : '--',
-      sisterVendorFinalPrice: json.containsKey('VendorPrice') ? json['VendorPrice'] != null ? '\$${json['VendorPrice']}' : '--' : '--',
-      sisterVendorShipping: json.containsKey('VendorPriceShipping') ? json['VendorPriceShipping'] != null ? '\$${json['VendorPriceShipping']}' : '--' : '--',
-      sisterVendorPriceDate: json.containsKey('VendorPriceDate') ? json['VendorPriceDate'].toString() : '--',
+      sisterExtraDiscount: json.containsKey('VendorExtraDiscount')
+          ? json['VendorExtraDiscount'] != null
+              ? '${json['VendorExtraDiscount']}'
+              : '--'
+          : '--',
+      sisterVendorBasePrice: json.containsKey('VendorBasePrice')
+          ? json['VendorBasePrice'] != null
+              ? '\$${json['VendorBasePrice']}'
+              : '--'
+          : '--',
+      sisterVendorFinalPrice: json.containsKey('VendorPrice')
+          ? json['VendorPrice'] != null
+              ? '\$${json['VendorPrice']}'
+              : '--'
+          : '--',
+      sisterVendorShipping: json.containsKey('VendorPriceShipping')
+          ? json['VendorPriceShipping'] != null
+              ? '\$${json['VendorPriceShipping']}'
+              : '--'
+          : '--',
+      sisterVendorPriceDate: json.containsKey('VendorPriceDate')
+          ? json['VendorPriceDate'].toString()
+          : '--',
 
       //**********************************************************************//
       ///         PRESENT IN BOTH STAGING AND LIVE API RESPONSE (84 KEYS)    ///
@@ -257,9 +283,15 @@ class ProductListModel {
       materialGroup: json["material_group"] ?? '--',
       secondarySku: json["secondary_sku"] ?? '--',
       vendorName: json["vendor_name"] ?? '--',
-      vendorpricePrice: json["vendorprice_price"] != null ? '\$${json["vendorprice_price"]}' : '--',
-      vendorPriceFinalPrice: json["vendorprice_finalprice"] != null ? '\$${json["vendorprice_finalprice"]}' : '--',
-      vendorpriceShipping: json["vendorprice_shipping"] != null ? '\$${json["vendorprice_shipping"]}' : '--',
+      vendorpricePrice: json["vendorprice_price"] != null
+          ? '\$${json["vendorprice_price"]}'
+          : '--',
+      vendorPriceFinalPrice: json["vendorprice_finalprice"] != null
+          ? '\$${json["vendorprice_finalprice"]}'
+          : '--',
+      vendorpriceShipping: json["vendorprice_shipping"] != null
+          ? '\$${json["vendorprice_shipping"]}'
+          : '--',
       extraDiscount: json["ExtraDiscount"] ?? '--',
       atp: json["atp"] == null ? '0' : json["atp"].toString(),
       sales: json["sales"] ?? '0',
@@ -286,49 +318,93 @@ class ProductListModel {
       adjustedPrice: json["adjusted_price"] ?? '--',
       firstVendorPercentage: json["FirstVendorPercentage"] ?? '--',
       secondVendorPercentage: json["SecondVendorPercentage"] ?? '--',
-      firstVendorPrice: json["FirstVendorPrice"] != null ? '\$${json["FirstVendorPrice"]}' : '--',
-      firstVendorBasePrice: json["FirstVendorBasePrice"] != null ? '\$${json["FirstVendorBasePrice"]}' : '--',
-      firstVendorPriceShipping: json["FirstVendorPriceShipping"] != null ? '\$${json["FirstVendorPriceShipping"]}' : '--',
+      firstVendorPrice: json["FirstVendorPrice"] != null
+          ? '\$${json["FirstVendorPrice"]}'
+          : '--',
+      firstVendorBasePrice: json["FirstVendorBasePrice"] != null
+          ? '\$${json["FirstVendorBasePrice"]}'
+          : '--',
+      firstVendorPriceShipping: json["FirstVendorPriceShipping"] != null
+          ? '\$${json["FirstVendorPriceShipping"]}'
+          : '--',
       firstVendorExtraDiscount: json["FirstVendorExtraDiscount"] ?? '--',
       firstVendorName: json["FirstVendorName"] ?? '--',
       firstVendorUrl: json["FirstVendorUrl"] ?? '--',
-      secondVendorPrice: json["SecondVendorPrice"] != null ? '\$${json["SecondVendorPrice"]}' : '--',
-      secondVendorBasePrice: json["SecondVendorBasePrice"] != null ? '\$${json["SecondVendorBasePrice"]}' : '--',
-      secondVendorPriceShipping: json["SecondVendorPriceShipping"] != null ? '\$${json["SecondVendorPriceShipping"]}' : '--',
+      secondVendorPrice: json["SecondVendorPrice"] != null
+          ? '\$${json["SecondVendorPrice"]}'
+          : '--',
+      secondVendorBasePrice: json["SecondVendorBasePrice"] != null
+          ? '\$${json["SecondVendorBasePrice"]}'
+          : '--',
+      secondVendorPriceShipping: json["SecondVendorPriceShipping"] != null
+          ? '\$${json["SecondVendorPriceShipping"]}'
+          : '--',
       secondVendorExtraDsicount: json["SecondVendorExtraDiscount"] ?? '--',
       secondVendorName: json["SecondVendorName"] ?? '--',
       secondVendorUrl: json["SecondVendorUrl"] ?? '--',
-      vendorpriceCount: json["vendorprice_count"] != null ? '\$${json["vendorprice_count"].toString()}' : '--',
+      vendorpriceCount: json["vendorprice_count"] != null
+          ? '\$${json["vendorprice_count"].toString()}'
+          : '--',
       thirdVendorName: json['ThirdVendorName'] ?? '--',
       thirdVendorUrl: json['ThirdVendorUrl'] ?? '--',
-      thirdVendorFinalPrice: json['ThirdVendorPrice'] != null ? '\$${json['ThirdVendorPrice']}' : '--',
-      thirdVendorBasePrice: json['ThirdVendorBasePrice'] != null ? '\$${json['ThirdVendorBasePrice']}' : '--',
-      thirdVendorShipping: json['ThirdVendorPriceShipping'] != null ? '\$${json['ThirdVendorPriceShipping']}' : '--',
+      thirdVendorFinalPrice: json['ThirdVendorPrice'] != null
+          ? '\$${json['ThirdVendorPrice']}'
+          : '--',
+      thirdVendorBasePrice: json['ThirdVendorBasePrice'] != null
+          ? '\$${json['ThirdVendorBasePrice']}'
+          : '--',
+      thirdVendorShipping: json['ThirdVendorPriceShipping'] != null
+          ? '\$${json['ThirdVendorPriceShipping']}'
+          : '--',
       thirdVendorExtraDiscount: json['ThirdVendorExtraDiscount'] ?? '--',
       fourthVendorName: json['FourthVendorName'] ?? '--',
       fourthVendorUrl: json['FourthVendorUrl'] ?? '--',
-      fourthVendorFinalPrice: json['FourthVendorPrice'] != null ? '\$${json['FourthVendorPrice']}' : '--',
-      fourthVendorBasePrice: json['FourthVendorBasePrice'] != null ? '\$${json['FourthVendorBasePrice']}' : '--',
-      fourthVendorShipping: json['FourthVendorPriceShipping'] != null ? '\$${json['FourthVendorPriceShipping']}' : '--',
+      fourthVendorFinalPrice: json['FourthVendorPrice'] != null
+          ? '\$${json['FourthVendorPrice']}'
+          : '--',
+      fourthVendorBasePrice: json['FourthVendorBasePrice'] != null
+          ? '\$${json['FourthVendorBasePrice']}'
+          : '--',
+      fourthVendorShipping: json['FourthVendorPriceShipping'] != null
+          ? '\$${json['FourthVendorPriceShipping']}'
+          : '--',
       fourthVendorExtraDiscount: json['FourthVendorExtraDiscount'] ?? '--',
       fifthVendorName: json['FifthVendorName'] ?? '--',
       fifthVendorUrl: json['FifthVendorUrl'] ?? '--',
-      fifthVendorFinalPrice: json['FifthVendorPrice'] != null ? '\$${json['FifthVendorPrice']}' : '--',
-      fifthVendorBasePrice: json['FifthVendorBasePrice'] != null ? '\$${json['FifthVendorBasePrice']}' : '--',
-      fifthVendorShipping: json['FifthVendorPriceShipping'] != null ? '\$${json['FifthVendorPriceShipping']}' : '--',
+      fifthVendorFinalPrice: json['FifthVendorPrice'] != null
+          ? '\$${json['FifthVendorPrice']}'
+          : '--',
+      fifthVendorBasePrice: json['FifthVendorBasePrice'] != null
+          ? '\$${json['FifthVendorBasePrice']}'
+          : '--',
+      fifthVendorShipping: json['FifthVendorPriceShipping'] != null
+          ? '\$${json['FifthVendorPriceShipping']}'
+          : '--',
       fifthVendorExtraDiscount: json['FifthVendorExtraDiscount'] ?? '--',
       rpVariation: json['rp_variation'] ?? '--',
-      firstVendorProductId: json["first_vendor_product_id"] == null ? '--' : json["first_vendor_product_id"].toString(),
-      secondVendorProductId: json["second_vendor_product_id"] == null ? '--' : json["second_vendor_product_id"].toString(),
-      thirdVendorProductId: json["third_vendor_product_id"] == null ? '--' : json["third_vendor_product_id"].toString(),
-      fourthVendorProductId: json["fourth_vendor_product_id"] == null ? '--' : json["fourth_vendor_product_id"].toString(),
-      fifthVendorProductId: json["fifth_vendor_product_id"] == null ? '--' : json["fifth_vendor_product_id"].toString(),
+      firstVendorProductId: json["first_vendor_product_id"] == null
+          ? '--'
+          : json["first_vendor_product_id"].toString(),
+      secondVendorProductId: json["second_vendor_product_id"] == null
+          ? '--'
+          : json["second_vendor_product_id"].toString(),
+      thirdVendorProductId: json["third_vendor_product_id"] == null
+          ? '--'
+          : json["third_vendor_product_id"].toString(),
+      fourthVendorProductId: json["fourth_vendor_product_id"] == null
+          ? '--'
+          : json["fourth_vendor_product_id"].toString(),
+      fifthVendorProductId: json["fifth_vendor_product_id"] == null
+          ? '--'
+          : json["fifth_vendor_product_id"].toString(),
 
       //**********************************************************************//
       ///                  PRESENT ONLY IN STAGING (1 KEY)                   ///
       //**********************************************************************//
 
-      competitorId: json["rp_competitor_vendor_product_id"] == null ? '--' : json["rp_competitor_vendor_product_id"].toString(),
+      competitorId: json["rp_competitor_vendor_product_id"] == null
+          ? '--'
+          : json["rp_competitor_vendor_product_id"].toString(),
 
       //**********************************************************************//
       /// NOT IMPLEMENTED IN THIS MODEL CLASS (5 KEYS)                       ///

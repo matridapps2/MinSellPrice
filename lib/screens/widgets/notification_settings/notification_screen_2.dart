@@ -49,9 +49,8 @@ class _NotificationSettingsScreen2State
           child: Column(
             children: [
               SizedBox(
-                height: h * .2-10,
+                height: h * .2 - 10,
                 width: w,
-
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -162,7 +161,7 @@ class _NotificationSettingsScreen2State
                                                     .length,
                                                 (index1) => Padding(
                                                       padding: const EdgeInsets
-                                                              .symmetric(
+                                                          .symmetric(
                                                           vertical: 8.0,
                                                           horizontal: 10),
                                                       child: GestureDetector(
@@ -191,7 +190,7 @@ class _NotificationSettingsScreen2State
                                                             child: Padding(
                                                               padding:
                                                                   const EdgeInsets
-                                                                          .symmetric(
+                                                                      .symmetric(
                                                                       vertical:
                                                                           8.0),
                                                               child: Text(
@@ -228,7 +227,7 @@ class _NotificationSettingsScreen2State
                                                     .length,
                                                 (index2) => Padding(
                                                   padding: const EdgeInsets
-                                                          .symmetric(
+                                                      .symmetric(
                                                       horizontal: 4.0),
                                                   child: Column(
                                                     children: [
@@ -285,7 +284,7 @@ class _NotificationSettingsScreen2State
                                                       Padding(
                                                         padding:
                                                             const EdgeInsets
-                                                                    .symmetric(
+                                                                .symmetric(
                                                                 horizontal:
                                                                     16.0),
                                                         child: SizedBox(
@@ -353,7 +352,7 @@ class _NotificationSettingsScreen2State
                                                       .contains('number')
                                                   ? Padding(
                                                       padding: const EdgeInsets
-                                                              .symmetric(
+                                                          .symmetric(
                                                           horizontal: 8.0),
                                                       child: Wrap(
                                                         children: List.generate(
@@ -423,7 +422,7 @@ class _NotificationSettingsScreen2State
                                                               .length,
                                                           (index2) => Padding(
                                                                 padding: const EdgeInsets
-                                                                        .symmetric(
+                                                                    .symmetric(
                                                                     horizontal:
                                                                         4.0),
                                                                 child: Column(
@@ -484,7 +483,7 @@ class _NotificationSettingsScreen2State
                                                                     ),
                                                                     Padding(
                                                                       padding: const EdgeInsets
-                                                                              .symmetric(
+                                                                          .symmetric(
                                                                           horizontal:
                                                                               16.0),
                                                                       child:

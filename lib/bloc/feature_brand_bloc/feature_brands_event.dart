@@ -1,6 +1,6 @@
 part of 'feature_brands_bloc.dart';
 
- class FeatureBrandsEvent extends Equatable {
+class FeatureBrandsEvent extends Equatable {
   const FeatureBrandsEvent();
 
   @override

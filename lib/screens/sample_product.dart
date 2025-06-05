@@ -46,7 +46,7 @@ class _SampleProductDesignState extends State<SampleProductDesign> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate:
-      selectedDate ?? DateTime.now().subtract(const Duration(days: 1)),
+          selectedDate ?? DateTime.now().subtract(const Duration(days: 1)),
       firstDate: DateTime(2022),
       lastDate: DateTime.now().subtract(const Duration(days: 1)),
     );
@@ -115,325 +115,325 @@ class _SampleProductDesignState extends State<SampleProductDesign> {
                 {
                   return state is ProductListByIdLoading
                       ? Center(
-                    child: CustomLoader(
-                      vendorName: widget.loadingData,
-                      imageString: widget.vendorImage,
-                      isAssetImage: widget.isVendorTable,
-                      loaderString: widget.loadingString,
-                    ),
-                  )
-                      : state is ProductListByIdErrorState
-                      ? Center(
-                    child:
-                    AutoSizeText(state.errorMessage.toString()),
-                  )
-                      : state is ProductListByIdLoadedState
-                      ? CustomScrollView(
-                    slivers: <Widget>[
-                      SliverAppBar(
-                        snap: false,
-                        backgroundColor: Colors.white,
-                        pinned: true,
-                        forceElevated: true,
-                        floating: false,
-                        expandedHeight: 130,
-                        leading: const SizedBox(),
-                        leadingWidth: 0,
-                        actions: [
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                changeLayout = !changeLayout;
-                              });
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Icon(
-                                Icons.change_circle,
-                                color: Colors.black,
-                              ),
-                            ),
-                          )
-                        ],
-                        flexibleSpace: FlexibleSpaceBar(
-                            centerTitle: true,
-                            title: Text(
-                              widget.vendorName,
-                              style: GoogleFonts.montserrat(
-                                fontSize: w * 0.035,
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ), //Text
-                            background: Padding(
-                              padding: const EdgeInsets.only(
-                                  bottom: 50.0,
-                                  top: 20,
-                                  left: 8,
-                                  right: 8),
-                              child: CachedNetworkImage(
-                                // fit: BoxFit.cover,
-                                height: w * .1,
-                                imageUrl: widget.vendorImage,
-                              ),
-                            ) //Images.network
-                        ),
-                      ),
-                      SliverAppBar(
-                          snap: false,
-                          pinned: true,
-                          floating: false,
-                          leading: const SizedBox(),
-                          leadingWidth: 0,
-                          toolbarHeight: changeLayout == false
-                              ? h * .25
-                              : h * .11,
-                          backgroundColor: Colors.white,
-                          flexibleSpace: Column(
-                            children: [
-                              Visibility(
-                                visible: !changeLayout,
-                                child: Flexible(
-                                  child: Align(
-                                    alignment:
-                                    Alignment.centerLeft,
-                                    child: Padding(
-                                      padding: const EdgeInsets
-                                          .symmetric(
-                                          horizontal: 8.0,
-                                          vertical: 8),
-                                      child: Row(
-                                        mainAxisSize:
-                                        MainAxisSize.min,
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment
-                                            .start,
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .start,
-                                        children: [
-                                          Container(
-                                            width: w * 0.45,
-                                            decoration:
-                                            const BoxDecoration(
-                                              border: Border(
-                                                left: BorderSide(
-                                                  color: Colors
-                                                      .black12,
-                                                ),
-                                                top: BorderSide(
-                                                  color: Colors
-                                                      .black12,
-                                                ),
-                                                bottom:
-                                                BorderSide(
-                                                  color: Colors
-                                                      .black12,
-                                                ),
-                                              ),
-                                            ),
-                                            child: Padding(
-                                              padding:
-                                              const EdgeInsets
-                                                  .symmetric(
-                                                  vertical:
-                                                  8),
-                                              child: Center(
-                                                child: RichText(
-                                                  textAlign:
-                                                  TextAlign
-                                                      .center,
-                                                  text: TextSpan(
-                                                    text:
-                                                    'Your Price\n',
-                                                    style: GoogleFonts
-                                                        .montserrat(
-                                                      fontSize: w *
-                                                          0.035,
-                                                      color: Colors
-                                                          .black,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .bold,
-                                                    ),
-                                                    children: [
-                                                      TextSpan(
-                                                        text:
-                                                        '- Discount\n',
-                                                        style: GoogleFonts
-                                                            .montserrat(
-                                                          fontSize:
-                                                          w * 0.035,
-                                                          color: Colors
-                                                              .green,
-                                                          fontWeight:
-                                                          FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      TextSpan(
-                                                        text:
-                                                        '+ Shipping\n',
-                                                        style: GoogleFonts
-                                                            .montserrat(
-                                                          fontSize:
-                                                          w * 0.035,
-                                                          color: Colors
-                                                              .black,
-                                                          fontWeight:
-                                                          FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            decoration:
-                                            const BoxDecoration(
-                                              border: Border(
-                                                left: BorderSide(
-                                                  color: Colors
-                                                      .black12,
-                                                ),
-                                                right: BorderSide(
-                                                  color: Colors
-                                                      .black12,
-                                                ),
-                                                top: BorderSide(
-                                                  color: Colors
-                                                      .black12,
-                                                ),
-                                                bottom:
-                                                BorderSide(
-                                                  color: Colors
-                                                      .black12,
-                                                ),
-                                              ),
-                                            ),
-                                            width: w * 0.45,
-                                            child: Padding(
-                                              padding:
-                                              const EdgeInsets
-                                                  .all(10),
-                                              child: Center(
-                                                child: RichText(
-                                                  textAlign:
-                                                  TextAlign
-                                                      .center,
-                                                  text: TextSpan(
-                                                    text:
-                                                    'Competitor Price\n',
-                                                    style: GoogleFonts
-                                                        .montserrat(
-                                                      fontSize: w *
-                                                          0.035,
-                                                      color: Colors
-                                                          .black,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .bold,
-                                                    ),
-                                                    children: [
-                                                      TextSpan(
-                                                        text:
-                                                        '- Discount\n',
-                                                        style: GoogleFonts
-                                                            .montserrat(
-                                                          fontSize:
-                                                          w * 0.035,
-                                                          color: Colors
-                                                              .green,
-                                                          fontWeight:
-                                                          FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      TextSpan(
-                                                        text:
-                                                        '+ Shipping\n',
-                                                        style: GoogleFonts
-                                                            .montserrat(
-                                                          fontSize:
-                                                          w * 0.035,
-                                                          color: Colors
-                                                              .black,
-                                                          fontWeight:
-                                                          FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Card(
-                                elevation: 4,
-                                child: Padding(
-                                  padding:
-                                  const EdgeInsets.all(8.0),
-                                  child: TextFormField(
-                                    onTap: () {
-                                      _selectDate(context);
-                                    },
-                                    readOnly: true,
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      floatingLabelBehavior:
-                                      FloatingLabelBehavior
-                                          .always,
-                                      floatingLabelStyle:
-                                      GoogleFonts.montserrat(
-                                          fontWeight:
-                                          FontWeight
-                                              .bold),
-                                      labelText: 'Date',
-                                      hintText: selectedDate !=
-                                          null
-                                          ? dateFormat.format(
-                                          selectedDate)
-                                          : 'Select a date (yyyy/MM/dd)',
-                                      suffixIcon: const Icon(
-                                          Icons.calendar_today),
-                                    ),
-                                    controller:
-                                    TextEditingController(
-                                      text: selectedDate != null
-                                          ? dateFormat.format(
-                                          selectedDate)
-                                          : '',
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                              (context, index) => AnimatedSwitcher(
-                            duration: const Duration(seconds: 1),
-                            child: sampleWidget1(
-                                data: state.productList[index],
-                                context: context,
-                                index: index,
-                                vendorImage: widget.vendorImage),
+                          child: CustomLoader(
+                            vendorName: widget.loadingData,
+                            imageString: widget.vendorImage,
+                            isAssetImage: widget.isVendorTable,
+                            loaderString: widget.loadingString,
                           ),
+                        )
+                      : state is ProductListByIdErrorState
+                          ? Center(
+                              child:
+                                  AutoSizeText(state.errorMessage.toString()),
+                            )
+                          : state is ProductListByIdLoadedState
+                              ? CustomScrollView(
+                                  slivers: <Widget>[
+                                    SliverAppBar(
+                                      snap: false,
+                                      backgroundColor: Colors.white,
+                                      pinned: true,
+                                      forceElevated: true,
+                                      floating: false,
+                                      expandedHeight: 130,
+                                      leading: const SizedBox(),
+                                      leadingWidth: 0,
+                                      actions: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              changeLayout = !changeLayout;
+                                            });
+                                          },
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Icon(
+                                              Icons.change_circle,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                      flexibleSpace: FlexibleSpaceBar(
+                                          centerTitle: true,
+                                          title: Text(
+                                            widget.vendorName,
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: w * 0.035,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ), //Text
+                                          background: Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 50.0,
+                                                top: 20,
+                                                left: 8,
+                                                right: 8),
+                                            child: CachedNetworkImage(
+                                              // fit: BoxFit.cover,
+                                              height: w * .1,
+                                              imageUrl: widget.vendorImage,
+                                            ),
+                                          ) //Images.network
+                                          ),
+                                    ),
+                                    SliverAppBar(
+                                        snap: false,
+                                        pinned: true,
+                                        floating: false,
+                                        leading: const SizedBox(),
+                                        leadingWidth: 0,
+                                        toolbarHeight: changeLayout == false
+                                            ? h * .25
+                                            : h * .11,
+                                        backgroundColor: Colors.white,
+                                        flexibleSpace: Column(
+                                          children: [
+                                            Visibility(
+                                              visible: !changeLayout,
+                                              child: Flexible(
+                                                child: Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8.0,
+                                                        vertical: 8),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Container(
+                                                          width: w * 0.45,
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                            border: Border(
+                                                              left: BorderSide(
+                                                                color: Colors
+                                                                    .black12,
+                                                              ),
+                                                              top: BorderSide(
+                                                                color: Colors
+                                                                    .black12,
+                                                              ),
+                                                              bottom:
+                                                                  BorderSide(
+                                                                color: Colors
+                                                                    .black12,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    vertical:
+                                                                        8),
+                                                            child: Center(
+                                                              child: RichText(
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                text: TextSpan(
+                                                                  text:
+                                                                      'Your Price\n',
+                                                                  style: GoogleFonts
+                                                                      .montserrat(
+                                                                    fontSize: w *
+                                                                        0.035,
+                                                                    color: Colors
+                                                                        .black,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                  children: [
+                                                                    TextSpan(
+                                                                      text:
+                                                                          '- Discount\n',
+                                                                      style: GoogleFonts
+                                                                          .montserrat(
+                                                                        fontSize:
+                                                                            w * 0.035,
+                                                                        color: Colors
+                                                                            .green,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                    TextSpan(
+                                                                      text:
+                                                                          '+ Shipping\n',
+                                                                      style: GoogleFonts
+                                                                          .montserrat(
+                                                                        fontSize:
+                                                                            w * 0.035,
+                                                                        color: Colors
+                                                                            .black,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Container(
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                            border: Border(
+                                                              left: BorderSide(
+                                                                color: Colors
+                                                                    .black12,
+                                                              ),
+                                                              right: BorderSide(
+                                                                color: Colors
+                                                                    .black12,
+                                                              ),
+                                                              top: BorderSide(
+                                                                color: Colors
+                                                                    .black12,
+                                                              ),
+                                                              bottom:
+                                                                  BorderSide(
+                                                                color: Colors
+                                                                    .black12,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          width: w * 0.45,
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(10),
+                                                            child: Center(
+                                                              child: RichText(
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                text: TextSpan(
+                                                                  text:
+                                                                      'Competitor Price\n',
+                                                                  style: GoogleFonts
+                                                                      .montserrat(
+                                                                    fontSize: w *
+                                                                        0.035,
+                                                                    color: Colors
+                                                                        .black,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                  children: [
+                                                                    TextSpan(
+                                                                      text:
+                                                                          '- Discount\n',
+                                                                      style: GoogleFonts
+                                                                          .montserrat(
+                                                                        fontSize:
+                                                                            w * 0.035,
+                                                                        color: Colors
+                                                                            .green,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                    TextSpan(
+                                                                      text:
+                                                                          '+ Shipping\n',
+                                                                      style: GoogleFonts
+                                                                          .montserrat(
+                                                                        fontSize:
+                                                                            w * 0.035,
+                                                                        color: Colors
+                                                                            .black,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Card(
+                                              elevation: 4,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: TextFormField(
+                                                  onTap: () {
+                                                    _selectDate(context);
+                                                  },
+                                                  readOnly: true,
+                                                  decoration: InputDecoration(
+                                                    border: InputBorder.none,
+                                                    floatingLabelBehavior:
+                                                        FloatingLabelBehavior
+                                                            .always,
+                                                    floatingLabelStyle:
+                                                        GoogleFonts.montserrat(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                    labelText: 'Date',
+                                                    hintText: selectedDate !=
+                                                            null
+                                                        ? dateFormat.format(
+                                                            selectedDate)
+                                                        : 'Select a date (yyyy/MM/dd)',
+                                                    suffixIcon: const Icon(
+                                                        Icons.calendar_today),
+                                                  ),
+                                                  controller:
+                                                      TextEditingController(
+                                                    text: selectedDate != null
+                                                        ? dateFormat.format(
+                                                            selectedDate)
+                                                        : '',
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        )),
+                                    SliverList(
+                                      delegate: SliverChildBuilderDelegate(
+                                        (context, index) => AnimatedSwitcher(
+                                          duration: const Duration(seconds: 1),
+                                          child: sampleWidget1(
+                                              data: state.productList[index],
+                                              context: context,
+                                              index: index,
+                                              vendorImage: widget.vendorImage),
+                                        ),
 
-                          //
-                          //ListTile
-                          childCount: state.productList.length,
-                        ), //SliverChildBuildDelegate
-                      ) //SliverList
-                    ], //<Widget>[]
-                  )
-                      : const Center(child: Text('No Data'));
+                                        //
+                                        //ListTile
+                                        childCount: state.productList.length,
+                                      ), //SliverChildBuildDelegate
+                                    ) //SliverList
+                                  ], //<Widget>[]
+                                )
+                              : const Center(child: Text('No Data'));
                 }
               },
             )),
@@ -443,52 +443,52 @@ class _SampleProductDesignState extends State<SampleProductDesign> {
 }
 
 Widget sampleWidget({required Map<String, dynamic> data}) => Column(
-  children: [
-    Padding(
-      padding: const EdgeInsets.only(bottom: 8.0, top: 10),
-      child: SizedBox(
-        width: w,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0, top: 10),
+          child: SizedBox(
+            width: w,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                FlutterLogo(
-                  size: w * .16,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                SizedBox(
-                  width: w * .7,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FlutterLogo(
+                      size: w * .16,
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    SizedBox(
+                      width: w * .7,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AutoSizeText(
-                            'MSP: ${data['msp']}',
-                            style: GoogleFonts.montserrat(
-                              fontSize: w * 0.042,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              AutoSizeText(
+                                'MSP: ${data['msp']}',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: w * 0.042,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              AutoSizeText(
+                                'SKU: ${data['SKU']}',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: w * 0.042,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          AutoSizeText(
-                            'SKU: ${data['SKU']}',
-                            style: GoogleFonts.montserrat(
-                              fontSize: w * 0.042,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          const SizedBox(
+                            height: 5,
                           ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 5,
-                      ),
 
 // 'Your Price: ${data['pre_price']}\nShipping included ${data['shipping']}',
 //                             style: GoogleFonts.montserrat(
@@ -496,154 +496,154 @@ Widget sampleWidget({required Map<String, dynamic> data}) => Column(
 //                               fontWeight: FontWeight.bold,
 //                             ),
 //                           ),
-                      const SizedBox(
-                        height: 5,
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          AutoSizeText(
+                            'Your Price: ${data['pre_price']}\nShipping included ${data['shipping']}',
+                            style: GoogleFonts.montserrat(
+                              fontSize: w * 0.035,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      AutoSizeText(
-                        'Your Price: ${data['pre_price']}\nShipping included ${data['shipping']}',
-                        style: GoogleFonts.montserrat(
-                          fontSize: w * 0.035,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
+                    )
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
-    ),
-    const SizedBox(
-      height: 10,
-    ),
-    RichText(
-      text: TextSpan(
-          text: 'Your price is',
-          style: GoogleFonts.montserrat(
-              fontSize: w * 0.035,
-              fontWeight: FontWeight.bold,
-              color: Colors.black),
-          children: [
-            TextSpan(
-              text: data['lowerorhigher'].toString().contains('-')
-                  ? ' ${data['lowerorhigher']} Lower'
-                  : ' ${data['lowerorhigher']} Higher',
+        const SizedBox(
+          height: 10,
+        ),
+        RichText(
+          text: TextSpan(
+              text: 'Your price is',
               style: GoogleFonts.montserrat(
-                fontSize: w * 0.035,
-                fontWeight: FontWeight.bold,
-                color: data['lowerorhigher'].toString().contains('-')
-                    ? Colors.green
-                    : Colors.red,
-              ),
-            ),
-            TextSpan(
-              text: ' then your competitor',
-              style: GoogleFonts.montserrat(
-                fontSize: w * 0.035,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ]),
-    ),
-    const SizedBox(
-      height: 10,
-    ),
-    SizedBox(
-      child: DataTable(
-        decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-        columns: [
-          DataColumn(
-            label: SizedBox(
-              width: w * .25,
-              child: Center(
-                child: AutoSizeText(
-                  'Your Price',
+                  fontSize: w * 0.035,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
+              children: [
+                TextSpan(
+                  text: data['lowerorhigher'].toString().contains('-')
+                      ? ' ${data['lowerorhigher']} Lower'
+                      : ' ${data['lowerorhigher']} Higher',
+                  style: GoogleFonts.montserrat(
+                    fontSize: w * 0.035,
+                    fontWeight: FontWeight.bold,
+                    color: data['lowerorhigher'].toString().contains('-')
+                        ? Colors.green
+                        : Colors.red,
+                  ),
+                ),
+                TextSpan(
+                  text: ' then your competitor',
                   style: GoogleFonts.montserrat(
                     fontSize: w * 0.035,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+              ]),
+        ),
+        const SizedBox(
+          height: 10,
+        ),
+        SizedBox(
+          child: DataTable(
+            decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+            columns: [
+              DataColumn(
+                label: SizedBox(
+                  width: w * .25,
+                  child: Center(
+                    child: AutoSizeText(
+                      'Your Price',
+                      style: GoogleFonts.montserrat(
+                        fontSize: w * 0.035,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-          DataColumn(
-            label: CachedNetworkImage(
-              imageUrl: data['compititor_data']['logo'],
-              width: w * .4,
-              height: w * .1,
-            ),
-          ),
-        ],
-        rows: [
-          DataRow(
-            cells: [
-              DataCell(
-                Center(
-                    child: Text(
+              DataColumn(
+                label: CachedNetworkImage(
+                  imageUrl: data['compititor_data']['logo'],
+                  width: w * .4,
+                  height: w * .1,
+                ),
+              ),
+            ],
+            rows: [
+              DataRow(
+                cells: [
+                  DataCell(
+                    Center(
+                        child: Text(
                       data['finalPrice'],
                       style: GoogleFonts.montserrat(
                         fontSize: w * 0.035,
                         fontWeight: FontWeight.bold,
                       ),
                     )),
-              ),
-              DataCell(
-                Center(
-                  child: Text(
-                    data['compititor_data']['total'],
+                  ),
+                  DataCell(
+                    Center(
+                      child: Text(
+                        data['compititor_data']['total'],
+                        style: GoogleFonts.montserrat(
+                          fontSize: w * 0.035,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+        const SizedBox(
+          height: 10,
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+              decoration: BoxDecoration(
+                  color: Colors.grey, borderRadius: BorderRadius.circular(25)),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16),
+                child: Center(
+                  child: AutoSizeText(
+                    'Check this item on competitor page',
                     style: GoogleFonts.montserrat(
                       fontSize: w * 0.035,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              ),
-            ],
-          )
-        ],
-      ),
-    ),
-    const SizedBox(
-      height: 10,
-    ),
-    Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Container(
-          decoration: BoxDecoration(
-              color: Colors.grey, borderRadius: BorderRadius.circular(25)),
-          child: Padding(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16),
-            child: Center(
-              child: AutoSizeText(
-                'Check this item on competitor page',
-                style: GoogleFonts.montserrat(
-                  fontSize: w * 0.035,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          )),
-    ),
-    const SizedBox(
-      height: 10,
-    ),
-    SizedBox(
-        width: w,
-        child: const Divider(
-          color: Colors.grey,
-        )),
-  ],
-);
+              )),
+        ),
+        const SizedBox(
+          height: 10,
+        ),
+        SizedBox(
+            width: w,
+            child: const Divider(
+              color: Colors.grey,
+            )),
+      ],
+    );
 
 Widget sampleWidget1(
     {required ProductListModel data,
-      required int index,
-      required String vendorImage,
-      required BuildContext context}) {
+    required int index,
+    required String vendorImage,
+    required BuildContext context}) {
   final productData = ProductData(
       productImage: data.productImage.isEmpty
           ? 'https://upload.wikimedia.org/wikipedia/commons/d/d1/Image_not_available.png?20210219185637'
@@ -652,8 +652,8 @@ Widget sampleWidget1(
       productName: data.vendorSku.isEmpty
           ? data.secondarySku
           : data.secondarySku.isEmpty
-          ? data.productMpn
-          : data.vendorSku,
+              ? data.productMpn
+              : data.vendorSku,
       firstLowest: "${data.firstVendorPercentage}%",
       yourPrice: data.firstVendorPrice,
       compPrice: data.secondVendorPrice.toString(),
@@ -661,7 +661,7 @@ Widget sampleWidget1(
       compUrl: data.firstVendorUrl,
       compName: data.secondVendorName,
       shipping:
-      data.shipping.isEmpty ? data.vendorpriceShipping : data.shipping,
+          data.shipping.isEmpty ? data.vendorpriceShipping : data.shipping,
       discountAmount: data.firstVendorExtraDiscount,
       discountPercent: data.firstVendorExtraDiscount,
       compshipping: data.secondVendorPriceShipping.toString(),
@@ -714,7 +714,7 @@ Widget sampleWidget1(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border:
-                            Border.all(color: Colors.grey.withOpacity(.4)),
+                                Border.all(color: Colors.grey.withOpacity(.4)),
                             image: DecorationImage(
                               onError: (e, s) => log(e.toString()),
                               image: CachedNetworkImageProvider(
@@ -871,93 +871,93 @@ Widget sampleWidget1(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Center(
                         child: data.vendorName.toLowerCase() ==
-                            data.firstVendorName.toLowerCase()
+                                data.firstVendorName.toLowerCase()
                             ? RichText(
-                          text: TextSpan(
-                            text: '\$${data.secondVendorPrice}\n',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 0.043 * w,
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: '\$${data.secondVendorBasePrice}',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 0.035 * w,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
+                                text: TextSpan(
+                                  text: '\$${data.secondVendorPrice}\n',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 0.043 * w,
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: '\$${data.secondVendorBasePrice}',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 0.035 * w,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text:
+                                              ' + \$${data.secondVendorPriceShipping}',
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 0.035 * w,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: data.secondVendorExtraDsicount ==
+                                                  '0.00'
+                                              ? ''
+                                              : '\n - ${data.secondVendorExtraDsicount}% (\$${returnDiscountPrice(discountPercentage: data.secondVendorExtraDsicount, mainPrice: data.secondVendorBasePrice.isEmpty ? data.secondVendorPrice.isEmpty ? '0.0' : data.secondVendorPrice : data.secondVendorPrice)})',
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 0.035 * w,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  ],
                                 ),
-                                children: [
-                                  TextSpan(
-                                    text:
-                                    ' + \$${data.secondVendorPriceShipping}',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 0.035 * w,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: data.secondVendorExtraDsicount ==
-                                        '0.00'
-                                        ? ''
-                                        : '\n - ${data.secondVendorExtraDsicount}% (\$${returnDiscountPrice(discountPercentage: data.secondVendorExtraDsicount, mainPrice: data.secondVendorBasePrice.isEmpty ? data.secondVendorPrice.isEmpty ? '0.0' : data.secondVendorPrice : data.secondVendorPrice)})',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 0.035 * w,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
+                                textAlign: TextAlign.center,
                               )
-                            ],
-                          ),
-                          textAlign: TextAlign.center,
-                        )
                             : RichText(
-                          text: TextSpan(
-                            text: '\$${data.firstVendorPrice}\n',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 0.043 * w,
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: '\$${data.firstVendorBasePrice}',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 0.035 * w,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
+                                text: TextSpan(
+                                  text: '\$${data.firstVendorPrice}\n',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 0.043 * w,
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: '\$${data.firstVendorBasePrice}',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 0.035 * w,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text:
+                                              ' + \$${data.firstVendorPriceShipping}',
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 0.035 * w,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: data.firstVendorExtraDiscount ==
+                                                  '0.00'
+                                              ? ''
+                                              : '\n - ${data.firstVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: data.firstVendorExtraDiscount, mainPrice: data.firstVendorBasePrice.isEmpty ? data.firstVendorPrice.isEmpty ? '0.0' : data.firstVendorPrice : data.firstVendorBasePrice)})',
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 0.035 * w,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  ],
                                 ),
-                                children: [
-                                  TextSpan(
-                                    text:
-                                    ' + \$${data.firstVendorPriceShipping}',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 0.035 * w,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: data.firstVendorExtraDiscount ==
-                                        '0.00'
-                                        ? ''
-                                        : '\n - ${data.firstVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: data.firstVendorExtraDiscount, mainPrice: data.firstVendorBasePrice.isEmpty ? data.firstVendorPrice.isEmpty ? '0.0' : data.firstVendorPrice : data.firstVendorBasePrice)})',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 0.035 * w,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
+                                textAlign: TextAlign.center,
+                              ),
                       ),
                     ),
                   ),
@@ -970,11 +970,11 @@ Widget sampleWidget1(
                 onTap: () async => await MyInAppBrowser().openUrlRequest(
                   urlRequest: URLRequest(
                       url: WebUri(data.vendorName.toLowerCase() ==
-                          data.firstVendorName.toLowerCase()
+                              data.firstVendorName.toLowerCase()
                           ? data.secondVendorUrl +
-                          '?utm_source=shoppingmegamart.com&utm_medium=mobile-app'
+                              '?utm_source=shoppingmegamart.com&utm_medium=mobile-app'
                           : data.firstVendorUrl +
-                          '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
+                              '?utm_source=shoppingmegamart.com&utm_medium=mobile-app')),
                   options: InAppBrowserClassOptions(
                     crossPlatform: InAppBrowserOptions(
                       toolbarTopBackgroundColor: Colors.blue,
@@ -983,11 +983,11 @@ Widget sampleWidget1(
                 ),
                 child: Padding(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6),
+                      const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6),
                   child: Center(
                     child: AutoSizeText(
                       data.vendorName.toLowerCase() ==
-                          data.firstVendorName.toLowerCase()
+                              data.firstVendorName.toLowerCase()
                           ? data.secondVendorName
                           : data.firstVendorName,
                       style: GoogleFonts.montserrat(
@@ -1011,8 +1011,8 @@ Widget sampleWidget1(
 
 double returnFinalPrice(
     {required String price,
-      required String discountPrice,
-      required String shipping}) {
+    required String discountPrice,
+    required String shipping}) {
   // String stringValue = "sdas3.40%";
 
   // RegExp regex = RegExp(r'\d+(\.\d+)?');

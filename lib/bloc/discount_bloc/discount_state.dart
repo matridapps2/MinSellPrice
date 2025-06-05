@@ -8,10 +8,12 @@ class DiscountInitial extends DiscountState {
   @override
   List<Object> get props => [];
 }
+
 class DiscountLoading extends DiscountState {
   @override
   List<Object> get props => [];
 }
+
 class DiscountLoaded extends DiscountState {
   final List<Discount> discountList;
 
@@ -20,6 +22,7 @@ class DiscountLoaded extends DiscountState {
   @override
   List<Object> get props => [discountList];
 }
+
 class DiscountError extends DiscountState {
   final String errorMessage;
 

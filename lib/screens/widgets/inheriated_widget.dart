@@ -18,6 +18,6 @@ class MyInheritedWidget extends InheritedWidget {
 
   @override
   bool updateShouldNotify(MyInheritedWidget oldWidget) {
-    return  oldWidget.vendorName !=vendorName && oldWidget.vendorId != vendorId;
+    return oldWidget.vendorName != vendorName && oldWidget.vendorId != vendorId;
   }
 }

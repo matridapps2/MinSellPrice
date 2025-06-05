@@ -79,20 +79,20 @@ class _CherryToastIconState extends State<CherryToastIcon>
       child: Center(
         child: widget.enableAnimation
             ? AnimatedBuilder(
-          builder: (context, child) {
-            return Icon(
-              widget.icon,
-              size: _heartAnimation.value,
-              color: widget.iconColor,
-            );
-          },
-          animation: _heartAnimationController,
-        )
+                builder: (context, child) {
+                  return Icon(
+                    widget.icon,
+                    size: _heartAnimation.value,
+                    color: widget.iconColor,
+                  );
+                },
+                animation: _heartAnimationController,
+              )
             : Icon(
-          widget.icon,
-          size: widget.iconSize,
-          color: widget.iconColor,
-        ),
+                widget.icon,
+                size: widget.iconSize,
+                color: widget.iconColor,
+              ),
       ),
     );
   }

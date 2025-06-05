@@ -704,10 +704,13 @@ class _TooltipOverlay extends StatelessWidget {
                   (index) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2.0),
                     child: Container(
-                      decoration:  BoxDecoration(
+                      decoration: BoxDecoration(
                           border: Border(
                         top: const BorderSide(color: Colors.grey),
-                        bottom: BorderSide(color:index==history.length-1? Colors.grey:Colors.white),
+                        bottom: BorderSide(
+                            color: index == history.length - 1
+                                ? Colors.grey
+                                : Colors.white),
                       )),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),

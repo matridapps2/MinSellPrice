@@ -20,7 +20,8 @@ class _LineChartState extends State<LineChart> {
     setState(() {
       data = widget.data;
     });
-    _tooltip = TooltipBehavior(enable: true,duration: 4,activationMode: ActivationMode.singleTap);
+    _tooltip = TooltipBehavior(
+        enable: true, duration: 4, activationMode: ActivationMode.singleTap);
     super.initState();
   }
 
@@ -43,19 +44,20 @@ class _LineChartState extends State<LineChart> {
                 color: Colors.black,
                 fontSize: 10,
               ),
-
             ),
             tooltipBehavior: _tooltip,
             series: <CartesianSeries<ChartData, String>>[
               ColumnSeries<ChartData, String>(
-                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(3),topRight: Radius.circular(4)),
+                  borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(3),
+                      topRight: Radius.circular(4)),
                   width: .4,
                   // spacing: 2,
                   dataSource: data,
                   xAxisName: 'Vendor Name',
                   yAxisName: 'Vendor Price',
-                  xValueMapper: (ChartData data, _) => data.x??'',
-                  yValueMapper: (ChartData data, _) => data.y??0.0,
+                  xValueMapper: (ChartData data, _) => data.x ?? '',
+                  yValueMapper: (ChartData data, _) => data.y ?? 0.0,
                   name: 'Competitor Price',
                   color: const Color.fromRGBO(8, 142, 255, 1))
             ]),

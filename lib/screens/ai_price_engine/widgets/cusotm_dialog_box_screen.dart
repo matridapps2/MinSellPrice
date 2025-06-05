@@ -11,7 +11,6 @@ import 'package:shoppingmegamart/screens/brand_screen.dart';
 import 'package:shoppingmegamart/services/extra_functions.dart';
 import 'package:shoppingmegamart/size.dart';
 
-
 class CustomDialogBoxScreen extends StatefulWidget {
   CustomDialogBoxScreen({
     super.key,
@@ -97,10 +96,10 @@ class _CustomDialogBoxScreenState extends State<CustomDialogBoxScreen> {
               centerTitle: false,
               title: 'Select Brand(s) (${widget.labelName})',
               style: GoogleFonts.openSans(
-                fontSize: w * .055,
-                fontWeight: FontWeight.w500,
-                color: Colors.black
-              ), context: context,
+                  fontSize: w * .055,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black),
+              context: context,
             ),
             verticalSpace(verticalSpace: 10),
             Padding(
@@ -117,16 +116,17 @@ class _CustomDialogBoxScreenState extends State<CustomDialogBoxScreen> {
                     onTap: () {
                       Fluttertoast.showToast(msg: 'Selecting All');
                       setState(() {
-                        temp.isEmpty?
-                        temp = List.from(_choices.map((e) => e)):temp.clear();
+                        temp.isEmpty
+                            ? temp = List.from(_choices.map((e) => e))
+                            : temp.clear();
                         widget.onChoiceSelection(temp);
-
                       });
                     },
                     splashColor: Colors.blue,
                     child: Padding(
                       padding: const EdgeInsets.all(4.0),
-                      child: AutoSizeText(temp.isEmpty?'Select All':'Clear'),
+                      child:
+                          AutoSizeText(temp.isEmpty ? 'Select All' : 'Clear'),
                     ),
                   ),
                 ],
@@ -137,7 +137,8 @@ class _CustomDialogBoxScreenState extends State<CustomDialogBoxScreen> {
                   thumbVisibility: true,
                   trackVisibility: true,
                   child: ListView.builder(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     itemBuilder: (
                       context,
                       indexMain,

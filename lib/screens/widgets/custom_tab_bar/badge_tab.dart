@@ -31,41 +31,41 @@ class MotionBadgeWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return _show == true && _isIndicator == true
         ? Container(
-      alignment: Alignment.center,
-      padding: const EdgeInsets.all(3),
-      margin: const EdgeInsets.all(7),
-      decoration: BoxDecoration(
-        color: _disabled == false ? _color : _color!.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(_size! / 2),
-      ),
-      constraints: BoxConstraints(
-        minWidth: _size!,
-        minHeight: _size!,
-      ),
-    )
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(3),
+            margin: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: _disabled == false ? _color : _color!.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(_size! / 2),
+            ),
+            constraints: BoxConstraints(
+              minWidth: _size!,
+              minHeight: _size!,
+            ),
+          )
         : _show == true && text != null && text != ''
-        ? Container(
-      alignment: Alignment.center,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: _disabled == false ? _color : _color!.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(_size! / 2),
-      ),
-      constraints: BoxConstraints(
-        minWidth: _size!,
-        minHeight: _size!,
-      ),
-      child: Text(
-        '$text',
-        style: TextStyle(
-          color: _textColor,
-          fontSize: _size != null ? (_size! / 2) : 9,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    )
-        : Container();
+            ? Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: _disabled == false ? _color : _color!.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(_size! / 2),
+                ),
+                constraints: BoxConstraints(
+                  minWidth: _size!,
+                  minHeight: _size!,
+                ),
+                child: Text(
+                  '$text',
+                  style: TextStyle(
+                    color: _textColor,
+                    fontSize: _size != null ? (_size! / 2) : 9,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            : Container();
   }
 }

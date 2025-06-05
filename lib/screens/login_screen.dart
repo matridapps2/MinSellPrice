@@ -62,7 +62,6 @@ class _LoginScreenState extends State<LoginScreen> {
             : null;
       },
       child: GestureDetector(
-
         child: Scaffold(
           body: Container(
             decoration: const BoxDecoration(
@@ -120,12 +119,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 decoration: const InputDecoration(
                                   focusedBorder: UnderlineInputBorder(
                                       borderSide: BorderSide.none,
-                                      borderRadius:
-                                          BorderRadius.all(Radius.circular(10))),
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(10))),
                                   enabledBorder: UnderlineInputBorder(
                                       borderSide: BorderSide.none,
-                                      borderRadius:
-                                          BorderRadius.all(Radius.circular(10))),
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(10))),
                                   prefixIcon: Icon(
                                     Icons.person,
                                     color: Colors.blue,
@@ -141,14 +140,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.only(left: 20, right: 20),
+                              padding:
+                                  const EdgeInsets.only(left: 20, right: 20),
                               child: Form(
                                 key: _formKey,
                                 child: TextFormField(
                                   obscuringCharacter: '*',
                                   controller: _passwordEditingController,
                                   obscureText: _showPassword,
-                                  decoration:  InputDecoration(
+                                  decoration: InputDecoration(
                                     focusedBorder: const UnderlineInputBorder(
                                         borderSide: BorderSide.none,
                                         borderRadius: BorderRadius.all(
@@ -160,17 +160,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                     prefixIcon: const Icon(
                                       Icons.person,
                                       color: Colors.blue,
-                                    ),  suffix: GestureDetector(
-                                    onTap: ()=> setState(() {
-                                      _showPassword  = !_showPassword;
-                                    }),
-                                      child:_showPassword ? const Icon(
-                                        Icons.remove_red_eye_rounded,
-                                        color: Colors.blue,
-                                      ):const Icon(
-                                        Icons.remove_red_eye_outlined,
-                                        color: Colors.red,
-                                      ),
+                                    ),
+                                    suffix: GestureDetector(
+                                      onTap: () => setState(() {
+                                        _showPassword = !_showPassword;
+                                      }),
+                                      child: _showPassword
+                                          ? const Icon(
+                                              Icons.remove_red_eye_rounded,
+                                              color: Colors.blue,
+                                            )
+                                          : const Icon(
+                                              Icons.remove_red_eye_outlined,
+                                              color: Colors.red,
+                                            ),
                                     ),
                                     filled: true,
                                     fillColor: Colors.white,
@@ -196,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               padding: const EdgeInsets.all(8.0),
                               child: isEmailCorrect
                                   ? BlocListener<LoginBloc, LoginState>(
-                                      listener: (context, state) async{
+                                      listener: (context, state) async {
                                         // TODO: implement listener}
                                         state is LoginErrorState
                                             ? Fluttertoast.showToast(
@@ -207,7 +210,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 backgroundColor: Colors.red,
                                                 textColor: Colors.white,
                                                 fontSize: 16.0)
-                                            :state is LoginLoadedState? await _addLoginData( loginData: state.loginData).whenComplete(() async =>  BridgeClass.createRebirth(context: context) ):null;
+                                            : state is LoginLoadedState
+                                                ? await _addLoginData(
+                                                        loginData:
+                                                            state.loginData)
+                                                    .whenComplete(() async =>
+                                                        BridgeClass
+                                                            .createRebirth(
+                                                                context:
+                                                                    context))
+                                                : null;
                                       },
                                       child: BlocBuilder<LoginBloc, LoginState>(
                                         builder: (context, state) {
@@ -216,10 +228,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 backgroundColor:
                                                     isEmailCorrect == false
                                                         ? Colors.red
-                                                        : Colors.white.withOpacity(.3),
+                                                        : Colors.white
+                                                            .withOpacity(.3),
                                               ),
-                                              onPressed: () async{
-
+                                              onPressed: () async {
                                                 if (_formKey.currentState!
                                                     .validate()) {
                                                   final String loginData =
@@ -231,11 +243,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                                         _passwordEditingController
                                                             .text,
                                                   });
-                                                  final fcmToken = await FirebaseMessaging.instance.getToken();
+                                                  final fcmToken =
+                                                      await FirebaseMessaging
+                                                          .instance
+                                                          .getToken();
                                                   context.read<LoginBloc>().add(
                                                       LoginUserEvent(
                                                           loginDataAsMap:
-                                                              loginData, database: database, fcmToken: fcmToken!));
+                                                              loginData,
+                                                          database: database,
+                                                          fcmToken: fcmToken!));
                                                 }
                                               },
                                               child: state is LoginLoadedState ||
@@ -245,7 +262,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   ? const Text(
                                                       'Log In',
                                                       style: TextStyle(
-                                                          fontSize: 17,color: Colors.white),
+                                                          fontSize: 17,
+                                                          color: Colors.white),
                                                     )
                                                   : Lottie.asset(
                                                       'assets/lottie_animations/loading_bar.json',
@@ -350,27 +368,23 @@ class _LoginScreenState extends State<LoginScreen> {
   //   );
   // }
 
-
   Future<void> _addLoginData({required String loginData}) async {
-     final fcmToken = await FirebaseMessaging.instance.getToken();
-print(fcmToken);
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+    print(fcmToken);
     // final Map<String, dynamic> jsonData = jsonDecode(loginData);
 
-
-     // await DatabaseHelper().insertLogin(database, queryData);
+    // await DatabaseHelper().insertLogin(database, queryData);
     Future.delayed(const Duration(seconds: 1));
 
-     await DatabaseHelper().createProductTable(db: database);
-     await DatabaseHelper().createSearchHistoryTable(db: database);
-Future.delayed(const Duration(seconds: 1));
-
-
+    await DatabaseHelper().createProductTable(db: database);
+    await DatabaseHelper().createSearchHistoryTable(db: database);
+    Future.delayed(const Duration(seconds: 1));
   }
 
-@override
+  @override
   void initState() {
     // TODO: implement initState
-  context.read<DatabaseBloc>().add(DatabaseInitEvent());
+    context.read<DatabaseBloc>().add(DatabaseInitEvent());
 
     super.initState();
   }

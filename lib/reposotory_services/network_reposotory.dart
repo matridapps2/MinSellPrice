@@ -195,7 +195,7 @@ class NetworkCalls {
   //   return productListModelFromJson(response.body);
   // }
 
-  Future<ProductListModelNew?> getProductListBySearch(  {
+  Future<ProductListModelNew?> getProductListBySearch({
     required String afSku,
     required String vendorId,
     required String hpSku,
@@ -204,7 +204,7 @@ class NetworkCalls {
   }) async {
     String uri =
         '${AppInfo.kBaseUrl(stagingSelector: 1)}api/search/$vendorId?afsku=$afSku&hpsku=$hpSku&productname=$productName';
-        '//&productmpn=$productMpn';
+    '//&productmpn=$productMpn';
     log('GET PRODUCT LIST BY SEARCH b - $uri');
 
     ProductListModelNew? toReturn;
@@ -238,11 +238,12 @@ class NetworkCalls {
 
   Future<String?> getProductListByBrandID(String brandId) async {
     try {
-      String uri = 'https://growth.matridtech.net/api/brand-product/$brandId?test';
+      String uri =
+          'https://growth.matridtech.net/api/brand-product/$brandId?test';
 
       log('Brand Product API: $uri');
       final response = await retry(
-            () async => await http.get(Uri.parse(uri)),
+        () async => await http.get(Uri.parse(uri)),
         retryIf: (e) => e is SocketException || e is TimeoutException,
         onRetry: (e) {
           Fluttertoast.showToast(

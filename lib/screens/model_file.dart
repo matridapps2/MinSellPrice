@@ -21,16 +21,16 @@ class BrandsModel {
   final dynamic error;
 
   factory BrandsModel.fromJson(Map<String, dynamic> json) => BrandsModel(
-    status: json["status"],
-    response: BrandResponse.fromJson(json["response"]),
-    error: json["error"],
-  );
+        status: json["status"],
+        response: BrandResponse.fromJson(json["response"]),
+        error: json["error"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "status": status,
-    "response": response.toJson(),
-    "error": error,
-  };
+        "status": status,
+        "response": response.toJson(),
+        "error": error,
+      };
 }
 
 class BrandResponse {
@@ -55,38 +55,38 @@ class BrandResponse {
   final List<int> totalProducts;
 
   factory BrandResponse.fromJson(Map<String, dynamic> json) => BrandResponse(
-    brands: List<Brand>.from(json["Brands"].map((x) => Brand.fromJson(x))),
-    higherBy5Total: json["Higher by 5% total"],
-    responseHigherBy5To15: json["Higher by 5 to 15% "],
-    responseHigherBy15: json["Higher by 15% "],
-    higherBy5: json["Higher by 5%"] == null
-        ? {"no_data": "Scrapping is under progress"}
-        : Map.from(json["Higher by 5%"])
-        .map((k, v) => MapEntry<String, String>(k, v.toString())),
-    higherBy5To15: json["Higher by 5 to 15%"] == null
-        ? {"no_data": "Scrapping is under progress"}
-        : Map.from(json["Higher by 5 to 15%"])
-        .map((k, v) => MapEntry<String, String>(k, v)),
-    higherBy15: json["Higher by 15%"] == null
-        ? {"no_data": "Scrapping is under progress"}
-        : Map.from(json["Higher by 15%"])
-        .map((k, v) => MapEntry<String, String>(k, v)),
-    totalProducts: List<int>.from(json["Total Products"].map((x) => x)),
-  );
+        brands: List<Brand>.from(json["Brands"].map((x) => Brand.fromJson(x))),
+        higherBy5Total: json["Higher by 5% total"],
+        responseHigherBy5To15: json["Higher by 5 to 15% "],
+        responseHigherBy15: json["Higher by 15% "],
+        higherBy5: json["Higher by 5%"] == null
+            ? {"no_data": "Scrapping is under progress"}
+            : Map.from(json["Higher by 5%"])
+                .map((k, v) => MapEntry<String, String>(k, v.toString())),
+        higherBy5To15: json["Higher by 5 to 15%"] == null
+            ? {"no_data": "Scrapping is under progress"}
+            : Map.from(json["Higher by 5 to 15%"])
+                .map((k, v) => MapEntry<String, String>(k, v)),
+        higherBy15: json["Higher by 15%"] == null
+            ? {"no_data": "Scrapping is under progress"}
+            : Map.from(json["Higher by 15%"])
+                .map((k, v) => MapEntry<String, String>(k, v)),
+        totalProducts: List<int>.from(json["Total Products"].map((x) => x)),
+      );
 
   Map<String, dynamic> toJson() => {
-    "Brands": List<dynamic>.from(brands.map((x) => x.toJson())),
-    "Higher by 5% total": higherBy5Total,
-    "Higher by 5 to 15% ": responseHigherBy5To15,
-    "Higher by 15% ": responseHigherBy15,
-    "Higher by 5%":
-    Map.from(higherBy5).map((k, v) => MapEntry<String, dynamic>(k, v)),
-    "Higher by 5 to 15%": Map.from(higherBy5To15)
-        .map((k, v) => MapEntry<String, dynamic>(k, v)),
-    "Higher by 15%":
-    Map.from(higherBy15).map((k, v) => MapEntry<String, dynamic>(k, v)),
-    "Total Products": List<dynamic>.from(totalProducts.map((x) => x)),
-  };
+        "Brands": List<dynamic>.from(brands.map((x) => x.toJson())),
+        "Higher by 5% total": higherBy5Total,
+        "Higher by 5 to 15% ": responseHigherBy5To15,
+        "Higher by 15% ": responseHigherBy15,
+        "Higher by 5%":
+            Map.from(higherBy5).map((k, v) => MapEntry<String, dynamic>(k, v)),
+        "Higher by 5 to 15%": Map.from(higherBy5To15)
+            .map((k, v) => MapEntry<String, dynamic>(k, v)),
+        "Higher by 15%":
+            Map.from(higherBy15).map((k, v) => MapEntry<String, dynamic>(k, v)),
+        "Total Products": List<dynamic>.from(totalProducts.map((x) => x)),
+      };
 }
 
 class Brand {
@@ -109,22 +109,22 @@ class Brand {
   final int notGmc;
 
   factory Brand.fromJson(Map<String, dynamic> json) => Brand(
-    brandName: json["brand_name"],
-    brandKey: json["brand_key"],
-    counts: json["counts"],
-    vendorProductsCounts: json["VendorProductsCounts"],
-    lowestproduct: json["lowestproduct"],
-    nonProduct: json["non_product"],
-    notGmc: json["not_gmc"],
-  );
+        brandName: json["brand_name"],
+        brandKey: json["brand_key"],
+        counts: json["counts"],
+        vendorProductsCounts: json["VendorProductsCounts"],
+        lowestproduct: json["lowestproduct"],
+        nonProduct: json["non_product"],
+        notGmc: json["not_gmc"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "brand_name": brandName,
-    "brand_key": brandKey,
-    "counts": counts,
-    "VendorProductsCounts": vendorProductsCounts,
-    "lowestproduct": lowestproduct,
-    "non_product": nonProduct,
-    "not_gmc": notGmc,
-  };
+        "brand_name": brandName,
+        "brand_key": brandKey,
+        "counts": counts,
+        "VendorProductsCounts": vendorProductsCounts,
+        "lowestproduct": lowestproduct,
+        "non_product": nonProduct,
+        "not_gmc": notGmc,
+      };
 }

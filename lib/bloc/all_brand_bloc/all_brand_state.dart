@@ -8,20 +8,23 @@ class AllBrandInitialState extends AllBrandState {
   @override
   List<Object> get props => [];
 }
+
 class AllBrandLoadingState extends AllBrandState {
   @override
   List<Object> get props => [];
 }
+
 class AllBrandLoadedState extends AllBrandState {
-  final Map<String,dynamic> data;
+  final Map<String, dynamic> data;
 
   const AllBrandLoadedState({required this.data});
 
   @override
   List<Object> get props => [data];
 }
+
 class AllBrandErrorState extends AllBrandState {
-  final String  errorMessage;
+  final String errorMessage;
 
   const AllBrandErrorState({required this.errorMessage});
 

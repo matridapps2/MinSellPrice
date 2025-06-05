@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:shoppingmegamart/loging_page/loging_page.dart';
 import 'package:sqflite/sqflite.dart';
 import '../notification_page/notification_page.dart';
@@ -9,9 +12,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../auth_provider.dart' as my_auth;
 import '../utils/toast_messages/common_toasts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class CustomNavigationDrawer extends StatefulWidget {
   final VoidCallback? onLogout;
+
   const CustomNavigationDrawer({Key? key, this.onLogout}) : super(key: key);
 
   @override
@@ -21,11 +27,14 @@ class CustomNavigationDrawer extends StatefulWidget {
 class _CustomNavigationDrawerState extends State<CustomNavigationDrawer> {
   bool _isLoggedIn = false;
   Database? _database;
+  String? _contactUrl;
+  String? _privacyPolicyUrl;
 
   @override
   void initState() {
     super.initState();
     _checkLoginStatus();
+    _fetchUrlsFromFirebase();
   }
 
   void refreshLoginStatus() {
@@ -63,6 +72,28 @@ class _CustomNavigationDrawerState extends State<CustomNavigationDrawer> {
       _isLoggedIn = false;
     });
     if (widget.onLogout != null) widget.onLogout!();
+  }
+
+  Future<void> _fetchUrlsFromFirebase() async {
+    try {
+      final ref = FirebaseDatabase.instance.ref().child('users');
+      final snapshot = await ref.get();
+      if (snapshot.exists) {
+        final data = snapshot.value as Map<dynamic, dynamic>?;
+        if (data != null && data.isNotEmpty) {
+          final firstUser = data.values.first as Map<dynamic, dynamic>;
+          setState(() {
+            _contactUrl = firstUser['contact url'] as String?;
+            _privacyPolicyUrl = firstUser['privacy policy'] as String?;
+          });
+          log('_contactUrl $_contactUrl');
+          log('_privacyPolicyUrl $_privacyPolicyUrl');
+          log('data fetch successfully from firebase realtime database');
+        }
+      }
+    } catch (e) {
+      log('Exception ${e.toString()}');
+    }
   }
 
   @override
@@ -132,7 +163,13 @@ class _CustomNavigationDrawerState extends State<CustomNavigationDrawer> {
               'CONTACT US',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            onTap: () {
+            onTap: () async {
+              if (_contactUrl != null) {
+                final Uri url = Uri.parse(_contactUrl!);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+                }
+              }
               Navigator.pop(context);
             },
           ),
@@ -144,7 +181,13 @@ class _CustomNavigationDrawerState extends State<CustomNavigationDrawer> {
               'PRIVACY POLICY',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            onTap: () {
+            onTap: () async {
+              if (_privacyPolicyUrl != null) {
+                final Uri url = Uri.parse(_privacyPolicyUrl!);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+                }
+              }
               Navigator.pop(context);
             },
           ),

@@ -3,11 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shoppingmegamart/bloc/vendor_details_bloc/vendor_details_bloc.dart';
 import 'package:shoppingmegamart/services/extra_functions.dart';
+
 class DatePickerFormField extends StatefulWidget {
-  const DatePickerFormField({
-    super.key,
-    required this.vendorId
-  });
+  const DatePickerFormField({super.key, required this.vendorId});
 
   final int vendorId;
 
@@ -18,14 +16,12 @@ class DatePickerFormField extends StatefulWidget {
 class _DatePickerFormFieldState extends State<DatePickerFormField> {
   DateTime selectedDate = DateTime.now().subtract(const Duration(days: 1));
 
-
-
   List<DateTime> returnDisableDate() {
     List<DateTime> futureDates = [];
 
     DateTime today = DateTime.now();
     DateTime endDate =
-    today.add(const Duration(days: 30)); // Adjust the end date as needed
+        today.add(const Duration(days: 30)); // Adjust the end date as needed
 
     while (today.isBefore(endDate)) {
       today = today.add(const Duration(days: 1));
@@ -39,7 +35,7 @@ class _DatePickerFormFieldState extends State<DatePickerFormField> {
 
     DateTime today = DateTime.now();
     DateTime endDate =
-    today.add(const Duration(days: 365)); // Adjust the end date as needed
+        today.add(const Duration(days: 365)); // Adjust the end date as needed
 
     while (today.isBefore(endDate)) {
       today = today.add(const Duration(days: 1));
@@ -58,15 +54,15 @@ class _DatePickerFormFieldState extends State<DatePickerFormField> {
       });
       if (mounted) {
         context.read<VendorDetailsBloc>().add(
-          VendorDetailsFetchingEvent(
-            vendorId: widget.vendorId.toString(),
-            date: dateFormat
-                .format(
-              selectedDate,
-            )
-                .replaceAll('/', '-'),
-          ),
-        );
+              VendorDetailsFetchingEvent(
+                vendorId: widget.vendorId.toString(),
+                date: dateFormat
+                    .format(
+                      selectedDate,
+                    )
+                    .replaceAll('/', '-'),
+              ),
+            );
       }
     }
   }
@@ -182,7 +178,7 @@ class _DatePickerFormFieldState extends State<DatePickerFormField> {
                 border: InputBorder.none,
                 floatingLabelBehavior: FloatingLabelBehavior.always,
                 floatingLabelStyle:
-                GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                    GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                 labelText: 'Date',
                 hintText: dateFormat.format(selectedDate),
                 suffixIcon: const Icon(Icons.calendar_today),

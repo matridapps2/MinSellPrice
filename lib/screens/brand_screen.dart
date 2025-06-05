@@ -93,39 +93,40 @@ class _BrandScreenState extends State<BrandScreen> {
           listener: (BuildContext context, AllBrandState state) {
             state is AllBrandLoadedState
                 ? setState(() {
-              state.data.forEach((key, value) {
-                try {
-                  final lower1 =
-                  quoteKeysAndStrings((value)["lower more than 15%"]);
-                  final lower2 = (value)["total_products"];
-                  final lower3 = (value)["Image"];
-                  final lower4 = (value)["key"];
-                  final lower10 = (value)["brand_id"];
-                  final lower5 = (value)["lower upto 5%"];
-                  final lower6 = quoteKeysAndStrings((value)["higher upto 5%"]);
-                  final lower7 =
-                  quoteKeysAndStrings((value)["higher from 5% - 15%"]);
-                  final lower9 =
-                  quoteKeysAndStrings((value)["lower from 5% - 15%"]);
-                  final lower8 =
-                  quoteKeysAndStrings((value)["higher more than 15%"]);
+                    state.data.forEach((key, value) {
+                      try {
+                        final lower1 =
+                            quoteKeysAndStrings((value)["lower more than 15%"]);
+                        final lower2 = (value)["total_products"];
+                        final lower3 = (value)["Image"];
+                        final lower4 = (value)["key"];
+                        final lower10 = (value)["brand_id"];
+                        final lower5 = (value)["lower upto 5%"];
+                        final lower6 =
+                            quoteKeysAndStrings((value)["higher upto 5%"]);
+                        final lower7 = quoteKeysAndStrings(
+                            (value)["higher from 5% - 15%"]);
+                        final lower9 =
+                            quoteKeysAndStrings((value)["lower from 5% - 15%"]);
+                        final lower8 = quoteKeysAndStrings(
+                            (value)["higher more than 15%"]);
 
-                  final item = AllBrandModel(
-                      lowerMoreThan15: HigherFrom515.fromJson(lower1),
-                      totalProducts: lower2,
-                      image: lower3,
-                      key: lower4,
-                      lowerFrom515: HigherFrom515.fromJson(lower9),
-                      lowerUpto5: HigherFrom515.fromJson(lower5),
-                      higherUpto5: HigherFrom515.fromJson(lower6),
-                      higherFrom515: HigherFrom515.fromJson(lower7),
-                      higherMoreThan15: HigherFrom515.fromJson(lower8),
-                      brandId: lower10);
-                  allItems.add(item);
-                } catch (e) {
-                  print(e);
-                }
-              });
+                        final item = AllBrandModel(
+                            lowerMoreThan15: HigherFrom515.fromJson(lower1),
+                            totalProducts: lower2,
+                            image: lower3,
+                            key: lower4,
+                            lowerFrom515: HigherFrom515.fromJson(lower9),
+                            lowerUpto5: HigherFrom515.fromJson(lower5),
+                            higherUpto5: HigherFrom515.fromJson(lower6),
+                            higherFrom515: HigherFrom515.fromJson(lower7),
+                            higherMoreThan15: HigherFrom515.fromJson(lower8),
+                            brandId: lower10);
+                        allItems.add(item);
+                      } catch (e) {
+                        print(e);
+                      }
+                    });
 
                     searchItems = allItems;
                     // log(jsonEncode(searchItems));
@@ -159,7 +160,6 @@ class _BrandScreenState extends State<BrandScreen> {
                             child: CustomScrollView(
                               slivers: [
                                 SliverAnimatedList(
-
                                   itemBuilder: (context, index, animation) {
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -850,26 +850,27 @@ class _BrandScreenState extends State<BrandScreen> {
                         ],
                       ),
                     )
-                  : state is AllBrandErrorState?Center(child: AutoSizeText(state.errorMessage,  textAlign:
-              TextAlign.center,
-                style: GoogleFonts
-                    .openSans(
-                    fontWeight:
-                    FontWeight
-                        .bold,
-                    fontSize:
-                    w * .05),),):Center(
-                      child: Lottie.asset(
-                        'assets/lottie_animations/loading_bar.json',
-                        repeat: true,
-                        animate: true,
-                        width: 80,
-                        height: 80,
-                        frameRate: FrameRate(
-                          60,
-                        ),
-                      ),
-                    );
+                  : state is AllBrandErrorState
+                      ? Center(
+                          child: AutoSizeText(
+                            state.errorMessage,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.openSans(
+                                fontWeight: FontWeight.bold, fontSize: w * .05),
+                          ),
+                        )
+                      : Center(
+                          child: Lottie.asset(
+                            'assets/lottie_animations/loading_bar.json',
+                            repeat: true,
+                            animate: true,
+                            width: 80,
+                            height: 80,
+                            frameRate: FrameRate(
+                              60,
+                            ),
+                          ),
+                        );
             },
           ),
         ),

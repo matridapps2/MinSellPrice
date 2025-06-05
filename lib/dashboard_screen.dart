@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:http/http.dart' as http;
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -60,6 +61,7 @@ import 'screens/widgets/sample_product_screen.dart';
 import 'services/extra_functions.dart';
 import 'size.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shoppingmegamart/screens/all_brands_screen.dart';
 
 GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -4995,7 +4997,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       ),
                       verticalSpace(verticalSpace: 25),
                       _allBrandsScreen(),
-                      verticalSpace(verticalSpace: 55),
+                      verticalSpace(verticalSpace: 45),
 
                       // /*Padding(
                       //   padding: const EdgeInsets.symmetric(
@@ -6532,7 +6534,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           .get(
             Uri.parse(
                 'https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data'),
-          ).timeout(const Duration(seconds: 30));
+          )
+          .timeout(const Duration(seconds: 30));
       log('Brand API: https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data');
 
       if (response.statusCode == 200) {
@@ -6565,100 +6568,140 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               return const Center(child: Text('No brands available.'));
             }
             final allBrands = snapshot.data!;
-            return GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 5,
-                crossAxisSpacing: 5,
-                childAspectRatio: 1,
-              ),
-              itemCount: allBrands.length,
-              itemBuilder: (context, index) {
-                final brand = allBrands[index];
-                return GestureDetector(
-                  onTap: () {
-                    log('Brand object: $brand');
-                    log('brandID ${brand['brand_id']}');
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BrandProductListScreen(
-                          brandId: brand['brand_id'],
-                          brandName: brand['brand_name'],
-                          database: widget.database,
-                          dataList: const [],
+            final initialBrands = allBrands.take(10).toList();
+            final hasMoreBrands = allBrands.length > 10;
+
+            return Column(
+              children: [
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 5,
+                    crossAxisSpacing: 5,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: initialBrands.length,
+                  itemBuilder: (context, index) {
+                    final brand = initialBrands[index];
+                    return GestureDetector(
+                      onTap: () {
+                        log('Brand object: $brand');
+                        log('brandID ${brand['brand_id']}');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BrandProductListScreen(
+                              brandId: brand['brand_id'],
+                              brandName: brand['brand_name'],
+                              database: widget.database,
+                              dataList: const [],
+                            ),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 0.5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: const BorderSide(color: Colors.black),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Flexible(
+                              flex: 1,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 5.0),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 115,
+                                  child: CachedNetworkImage(
+                                    imageUrl: brand['brand_logo'],
+                                    fit: BoxFit.contain,
+                                    placeholder: (context, url) => const Center(
+                                        child: CircularProgressIndicator()),
+                                    errorWidget: (context, url, error) =>
+                                        Image.asset(
+                                      'assets/images/no_image.png',
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  top: 10.0, left: 8.0, right: 8.0),
+                              child: Text(
+                                brand['brand_name'].toString().trim(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                  fontFamily: 'Segoe UI',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: 4.0, left: 8.0, right: 8.0, top: 4.0),
+                              child: Text(
+                                'Products: ${brand['product_count']}',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 18,
+                                  fontFamily: 'Segoe UI',
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
                   },
-                  child: Card(
-                    elevation: 0.5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: Colors.black),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Flexible(
-                          flex: 1,
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 5.0),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 115,
-                              child: CachedNetworkImage(
-                                imageUrl: brand['brand_logo'],
-                                fit: BoxFit.contain,
-                                placeholder: (context, url) =>
-                                    Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) =>
-                                    Image.asset(
-                                  'assets/images/no_image.png',
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
+                ),
+                if (hasMoreBrands)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20.0, top: 5),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AllBrandsScreen(
+                              brands: allBrands,
+                              database: widget.database,
                             ),
                           ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 237, 63, 69),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              top: 10.0, left: 8.0, right: 8.0),
-                          child: Text(
-                            brand['brand_name'].toString().trim(),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              fontFamily: 'Segoe UI',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      ),
+                      child: const Text(
+                        'See More Brands',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              bottom: 4.0, left: 8.0, right: 8.0, top: 4.0),
-                          child: Text(
-                            'Products: ${brand['product_count']}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 18,
-                              fontFamily: 'Segoe UI',
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                );
-              },
+              ],
             );
           },
         ),

@@ -1,5 +1,3 @@
-
-
 const databaseName = 'user_database.db';
 const loginTable = 'UserLoginDetails';
 const emailKey = "email";
@@ -15,7 +13,7 @@ const fcm_token_key = "fcm_token_key";
 
 /*Product Table Constants*/
 const productTable = 'productsDetails';
-const productSKU =  "Product_SKU";
+const productSKU = "Product_SKU";
 const isLikedKey = "isProductLikedByVendor";
 const isNotifiedKey = "isProductNotified";
 const uniqueId = "vendorProductId";

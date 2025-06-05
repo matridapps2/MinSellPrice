@@ -109,7 +109,10 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
                       Container(height: 1, color: Color(0xFFE0E0E0)),
                       const ListTile(
                         title: Text('Default welcome msg!',
-                            style: TextStyle(fontWeight: FontWeight.bold,color: Colors.black,fontSize: 18)),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                fontSize: 18)),
                         tileColor: Colors.transparent,
                         contentPadding: EdgeInsets.symmetric(horizontal: 17),
                         dense: true,
@@ -117,7 +120,10 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
                       Container(height: 1, color: Color(0xFFE0E0E0)),
                       const ListTile(
                         title: Text('Sign In',
-                            style: TextStyle(fontWeight: FontWeight.bold,color: Colors.black,fontSize: 18)),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                fontSize: 18)),
                         tileColor: Colors.transparent,
                         contentPadding: EdgeInsets.symmetric(horizontal: 17),
                         dense: true,
@@ -125,7 +131,10 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
                       Container(height: 1, color: Color(0xFFE0E0E0)),
                       const ListTile(
                         title: Text('Create an Account',
-                            style: TextStyle(fontWeight: FontWeight.bold,color: Colors.black,fontSize: 18)),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                fontSize: 18)),
                         tileColor: Colors.transparent,
                         contentPadding: EdgeInsets.symmetric(horizontal: 17),
                         dense: true,
@@ -1097,7 +1106,6 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
     );
   }
 }
-
 
 //in this screenshoot logic is when click on menu then bacground tab tranfer
 // in account and when click on account then transfer on menu and in when tab bacground in menu then opens account section and when tab background in account then open menu section then create this logic if in menu in tab background is not shown then if we click menu then it should not be work. then same logic build

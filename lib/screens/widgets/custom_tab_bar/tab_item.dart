@@ -18,7 +18,8 @@ class MotionTabItem extends StatefulWidget {
   final double? tabIconSize;
   final Widget? badge;
 
-  const MotionTabItem({super.key, 
+  const MotionTabItem({
+    super.key,
     required this.title,
     required this.selected,
     required this.iconData,
@@ -75,12 +76,12 @@ class _MotionTabItemState extends State<MotionTabItem> {
                 padding: const EdgeInsets.all(8.0),
                 child: widget.selected
                     ? Text(
-                  widget.title!,
-                  style: widget.textStyle,
-                  softWrap: false,
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                )
+                        widget.title!,
+                        style: widget.textStyle,
+                        softWrap: false,
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                      )
                     : const Text(''),
               ),
             ),
@@ -114,10 +115,10 @@ class _MotionTabItemState extends State<MotionTabItem> {
                       ),
                       widget.badge != null
                           ? Positioned(
-                        top: 0,
-                        right: 0,
-                        child: widget.badge!,
-                      )
+                              top: 0,
+                              right: 0,
+                              child: widget.badge!,
+                            )
                           : const SizedBox(),
                     ],
                   ),

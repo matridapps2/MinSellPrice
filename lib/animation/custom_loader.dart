@@ -10,8 +10,8 @@ class CustomLoader extends StatelessWidget {
       'assets/lottie_animations/custom_loader_for_msp_ecommerce.json',
       repeat: true,
       reverse: true,
-      width: width??50,
-      height: height??50,
+      width: width ?? 50,
+      height: height ?? 50,
       fit: BoxFit.fill,
     );
   }

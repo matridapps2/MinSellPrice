@@ -12,24 +12,21 @@ class ProductListByIdLoadingEvent extends ProductListByIdEvent {
   final String vendorId, date, dataId;
   final String? brandKey, productMpn, productName;
   final bool featuredProducts,
-
       fromSearchScreen,
-      brandProductsEnabled, isCategory;
-  final Map<String,String>? aiEngineData;
-
+      brandProductsEnabled,
+      isCategory;
+  final Map<String, String>? aiEngineData;
 
   const ProductListByIdLoadingEvent({
     required this.vendorId,
     required this.date,
     required this.dataId,
     this.brandKey,
-
     this.aiEngineData,
     this.productMpn,
     this.productName,
     required this.featuredProducts,
     required this.isCategory,
-
     required this.fromSearchScreen,
     required this.brandProductsEnabled,
   });
@@ -43,17 +40,17 @@ class ProductListByIdLoadingEvent extends ProductListByIdEvent {
         featuredProducts,
         brandKey,
         fromSearchScreen,
-
         productMpn,
         productName,
         brandProductsEnabled,
         aiEngineData,
       ];
 }
-class ProductListByIdSortEvent extends ProductListByIdEvent{
 
-  final List<String> filterVendor ;
+class ProductListByIdSortEvent extends ProductListByIdEvent {
+  final List<String> filterVendor;
   final int? priceSortingOption;
 
-const  ProductListByIdSortEvent({required this.filterVendor, this.priceSortingOption});
+  const ProductListByIdSortEvent(
+      {required this.filterVendor, this.priceSortingOption});
 }

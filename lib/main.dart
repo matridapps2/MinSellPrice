@@ -93,11 +93,12 @@ void main() async {
             'message': message.notification?.body ?? '',
             'image': message.notification?.android?.imageUrl ??
                 message.notification?.apple?.imageUrl ??
-                message.data['image'] ?? '',
+                message.data['image'] ??
+                '',
             'name': message.data['name'] ?? '',
             'time': DateTime.now().toIso8601String(),
             'isRead': false,
-        })
+          })
         : '';
     if (notificationJson.isNotEmpty) {
       final prefs = await SharedPreferences.getInstance();

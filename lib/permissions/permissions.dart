@@ -10,7 +10,6 @@ Future<void> requestNotificationPermission() async {
   } else if (status.isDenied) {
     // Permission is denied
     FirebaseMessaging.instance.requestPermission();
-
   } else if (status.isPermanentlyDenied) {
     // Permission is permanently denied, show the user a dialog to go to app settings
     FirebaseMessaging.instance.requestPermission();

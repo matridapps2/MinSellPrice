@@ -14,7 +14,7 @@ class FeatureBrandsBloc extends Bloc<FeatureBrandsEvent, FeatureBrandsState> {
 
         List<FeaturedBrandModel> dataList = List<FeaturedBrandModel>.from(
           (data).map(
-                (e) => FeaturedBrandModel.fromJson(e),
+            (e) => FeaturedBrandModel.fromJson(e),
           ),
         );
         emit(

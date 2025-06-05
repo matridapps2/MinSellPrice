@@ -51,7 +51,8 @@ class _AnimatedNotificationButtonState extends State<AnimatedNotificationButton>
         vendorId: int.parse('${widget.vendorId}${widget.productSKU}'),
         productSku: widget.productSKU,
         isLiked: widget.isLiked,
-        isNotified: _currIndex, productData: widget.productData);
+        isNotified: _currIndex,
+        productData: widget.productData);
 
     await DatabaseHelper().showAllProducts(db: widget.database);
 

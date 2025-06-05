@@ -4,14 +4,12 @@ abstract class AllBrandEvent extends Equatable {
   const AllBrandEvent();
 }
 
-class AllBrandLoadingEvent extends AllBrandEvent{
-
+class AllBrandLoadingEvent extends AllBrandEvent {
   final String date, vendorId;
-
 
   const AllBrandLoadingEvent({required this.date, required this.vendorId});
 
   @override
   // TODO: implement props
-  List<Object?> get props =>[vendorId,date];
+  List<Object?> get props => [vendorId, date];
 }

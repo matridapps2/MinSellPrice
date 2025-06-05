@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:motion_toast/motion_toast.dart';
 
 import 'package:shoppingmegamart/utils/toast_messages/cherry_toast/cherry_toast.dart';
-import 'package:shoppingmegamart/utils/toast_messages/cherry_toast/arrays.dart' as array;
-
+import 'package:shoppingmegamart/utils/toast_messages/cherry_toast/arrays.dart'
+    as array;
 
 class ToastUtils {
   ToastUtils._();
 
   static Color toastBackGroundColor = Color.fromARGB(255, 76, 76, 76);
-  static Color appColor =Color.fromARGB(255, 237, 63, 69);
+  static Color appColor = Color.fromARGB(255, 237, 63, 69);
 
   static mobileToast1500MSCenter({
     required String message,

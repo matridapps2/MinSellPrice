@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -1457,6 +1458,14 @@ class CompetitorClass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final totalCompetitors = totalNumberOfCompetitors(
+      firstVendorPrice: firstVendorPrice,
+      secondVendorPrice: secondVendorPrice,
+      thirdVendorPrice: thirdVendorFinalPrice,
+      fourthVendorPrice: fourthVendorFinalPrice,
+      fifthVendorPrice: fifthVendorFinalPrice,
+    );
+
     return SingleChildScrollView(
       controller: scrollController,
       child: Column(
@@ -1469,14 +1478,9 @@ class CompetitorClass extends StatelessWidget {
             child: SizedBox(
               width: w,
               child: AutoSizeText(
-                'Available at '
-                '${totalNumberOfCompetitors(
-                  firstVendorPrice: firstVendorPrice,
-                  secondVendorPrice: secondVendorPrice,
-                  thirdVendorPrice: thirdVendorFinalPrice,
-                  fourthVendorPrice: fourthVendorFinalPrice,
-                  fifthVendorPrice: fifthVendorFinalPrice,
-                )} store',
+                totalCompetitors == 0
+                    ? 'Not Available'
+                    : 'Available at $totalCompetitors store',
                 style: GoogleFonts.montserrat(
                   fontSize: 0.06 * w,
                   color: Colors.black,
@@ -1485,156 +1489,116 @@ class CompetitorClass extends StatelessWidget {
               ),
             ),
           ),
-          CompetitorTile(
-              activeIndex: 0,
-              vendorImage: firstVendorName,
-              vendorFinalPrice: firstVendorPrice,
-              vendorBasePrice: firstVendorBasePrice,
-              vendorShipping: keepSingleDollarSign(firstVendorPriceShipping
-                                  .contains('--')
-                              ? firstVendorPriceShipping.replaceAll('\$', '')
-                              : firstVendorPriceShipping)
-                          .replaceAll('\$', '') ==
-                      '0.00'
-                  ? 'Free Shipping'
-                  : keepSingleDollarSign(firstVendorPriceShipping.contains('--')
-                      ? firstVendorPriceShipping.replaceAll('\$', '')
-                      : firstVendorPriceShipping),
-              vendorDiscount: firstVendorExtraDiscount == '0.0' ||
-                      firstVendorExtraDiscount == '--'
-                  ? ''
-                  : firstVendorExtraDiscount,
-              vendorProductUrl: firstVendorUrl),
-          CompetitorTile(
-              activeIndex: 1,
-              vendorImage: secondVendorName,
+          if (totalCompetitors > 0) ...[
+            CompetitorTile(
+                activeIndex: 0,
+                vendorImage: firstVendorName,
+                vendorFinalPrice: firstVendorPrice,
+                vendorBasePrice: firstVendorBasePrice,
+                vendorShipping: keepSingleDollarSign(firstVendorPriceShipping
+                                    .contains('--')
+                                ? firstVendorPriceShipping.replaceAll('\$', '')
+                                : firstVendorPriceShipping)
+                            .replaceAll('\$', '') ==
+                        '0.00'
+                    ? 'Free Shipping'
+                    : keepSingleDollarSign(
+                        firstVendorPriceShipping.contains('--')
+                            ? firstVendorPriceShipping.replaceAll('\$', '')
+                            : firstVendorPriceShipping),
+                vendorDiscount: firstVendorExtraDiscount == '0.0' ||
+                        firstVendorExtraDiscount == '--'
+                    ? ''
+                    : firstVendorExtraDiscount,
+                vendorProductUrl: firstVendorUrl),
+            CompetitorTile(
+                activeIndex: 1,
+                vendorImage: secondVendorName,
+                vendorFinalPrice: keepSingleDollarSign(
+                    '${secondVendorPrice.contains('--') ? secondVendorPrice.replaceAll('\$', '') : secondVendorPrice}\n'),
+                vendorBasePrice: keepSingleDollarSign(
+                    secondVendorBasePrice.contains('--')
+                        ? secondVendorBasePrice.replaceAll('\$', '')
+                        : secondVendorBasePrice),
+                vendorShipping: keepSingleDollarSign(secondVendorPriceShipping
+                                    .contains('--')
+                                ? secondVendorPriceShipping.replaceAll('\$', '')
+                                : secondVendorPriceShipping)
+                            .replaceAll('\$', '') ==
+                        '0.00'
+                    ? 'Free Shipping'
+                    : keepSingleDollarSign(
+                        secondVendorPriceShipping.contains('--')
+                            ? secondVendorPriceShipping.replaceAll('\$', '')
+                            : secondVendorPriceShipping),
+                vendorDiscount: secondVendorExtraDsicount,
+                vendorProductUrl: secondVendorUrl),
+            CompetitorTile(
+                activeIndex: 2,
+                vendorImage: thirdVendorName,
+                vendorFinalPrice: keepSingleDollarSign(
+                    '${thirdVendorFinalPrice.contains('--') ? thirdVendorFinalPrice.replaceAll('\$', '') : thirdVendorFinalPrice}\n'),
+                vendorBasePrice: keepSingleDollarSign(
+                    thirdVendorBasePrice.contains('--')
+                        ? thirdVendorBasePrice.replaceAll('\$', '')
+                        : thirdVendorBasePrice),
+                vendorShipping: keepSingleDollarSign(
+                                thirdVendorShipping.contains('--')
+                                    ? thirdVendorShipping.replaceAll('\$', '')
+                                    : thirdVendorShipping)
+                            .replaceAll('\$', '') ==
+                        '0.00'
+                    ? 'Free Shipping'
+                    : keepSingleDollarSign(thirdVendorShipping.contains('--')
+                        ? thirdVendorShipping.replaceAll('\$', '')
+                        : thirdVendorShipping),
+                vendorDiscount: thirdVendorExtraDiscount,
+                vendorProductUrl: thirdVendorUrl),
+            CompetitorTile(
+              activeIndex: 3,
+              vendorImage: fourthVendorName,
               vendorFinalPrice: keepSingleDollarSign(
-                  '${secondVendorPrice.contains('--') ? secondVendorPrice.replaceAll('\$', '') : secondVendorPrice}\n'),
+                  '${fourthVendorFinalPrice.contains('--') ? fourthVendorFinalPrice.replaceAll('\$', '') : fourthVendorFinalPrice}\n'),
               vendorBasePrice: keepSingleDollarSign(
-                  secondVendorBasePrice.contains('--')
-                      ? secondVendorBasePrice.replaceAll('\$', '')
-                      : secondVendorBasePrice),
-              vendorShipping: keepSingleDollarSign(secondVendorPriceShipping
-                                  .contains('--')
-                              ? secondVendorPriceShipping.replaceAll('\$', '')
-                              : secondVendorPriceShipping)
-                          .replaceAll('\$', '') ==
-                      '0.00'
-                  ? 'Free Shipping'
-                  : keepSingleDollarSign(
-                      secondVendorPriceShipping.contains('--')
-                          ? secondVendorPriceShipping.replaceAll('\$', '')
-                          : secondVendorPriceShipping),
-              vendorDiscount: secondVendorExtraDsicount,
-              vendorProductUrl: secondVendorUrl),
-          CompetitorTile(
-              activeIndex: 2,
-              vendorImage: thirdVendorName,
-              vendorFinalPrice: keepSingleDollarSign(
-                  '${thirdVendorFinalPrice.contains('--') ? thirdVendorFinalPrice.replaceAll('\$', '') : thirdVendorFinalPrice}\n'),
-              vendorBasePrice: keepSingleDollarSign(
-                  thirdVendorBasePrice.contains('--')
-                      ? thirdVendorBasePrice.replaceAll('\$', '')
-                      : thirdVendorBasePrice),
+                  fourthVendorBasePrice.contains('--')
+                      ? fourthVendorBasePrice.replaceAll('\$', '')
+                      : fourthVendorBasePrice),
               vendorShipping: keepSingleDollarSign(
-                              thirdVendorShipping.contains('--')
-                                  ? thirdVendorShipping.replaceAll('\$', '')
-                                  : thirdVendorShipping)
+                              fourthVendorShipping.contains('--')
+                                  ? fourthVendorShipping.replaceAll('\$', '')
+                                  : fourthVendorShipping)
                           .replaceAll('\$', '') ==
                       '0.00'
                   ? 'Free Shipping'
-                  : keepSingleDollarSign(thirdVendorShipping.contains('--')
-                      ? thirdVendorShipping.replaceAll('\$', '')
-                      : thirdVendorShipping),
-              vendorDiscount: thirdVendorExtraDiscount,
-              vendorProductUrl: thirdVendorUrl),
-          CompetitorTile(
-            activeIndex: 3,
-            vendorImage: fourthVendorName,
-            vendorFinalPrice: keepSingleDollarSign(
-                '${fourthVendorFinalPrice.contains('--') ? fourthVendorFinalPrice.replaceAll('\$', '') : fourthVendorFinalPrice}\n'),
-            vendorBasePrice: keepSingleDollarSign(
-                fourthVendorBasePrice.contains('--')
-                    ? fourthVendorBasePrice.replaceAll('\$', '')
-                    : fourthVendorBasePrice),
-            vendorShipping: keepSingleDollarSign(
-                            fourthVendorShipping.contains('--')
-                                ? fourthVendorShipping.replaceAll('\$', '')
-                                : fourthVendorShipping)
-                        .replaceAll('\$', '') ==
-                    '0.00'
-                ? 'Free Shipping'
-                : keepSingleDollarSign(fourthVendorShipping.contains('--')
-                    ? fourthVendorShipping.replaceAll('\$', '')
-                    : fourthVendorShipping),
-            vendorDiscount: fourthVendorExtraDiscount,
-            vendorProductUrl: fourthVendorUrl,
-          ),
-          CompetitorTile(
-            activeIndex: 4,
-            vendorImage: fifthVendorName,
-            vendorFinalPrice: keepSingleDollarSign(
-                '${fifthVendorFinalPrice.contains('--') ? fifthVendorFinalPrice.replaceAll('\$', '') : fifthVendorFinalPrice}\n'),
-            vendorBasePrice: keepSingleDollarSign(
-                fifthVendorBasePrice.contains('--')
-                    ? fifthVendorBasePrice.replaceAll('\$', '')
-                    : fifthVendorBasePrice),
-            vendorShipping: keepSingleDollarSign(
-                            fifthVendorShipping.contains('--')
-                                ? fifthVendorShipping.replaceAll('\$', '')
-                                : fifthVendorShipping)
-                        .replaceAll('\$', '') ==
-                    '0.00'
-                ? 'Free Shipping'
-                : keepSingleDollarSign(fifthVendorShipping.contains('--')
-                    ? fifthVendorShipping.replaceAll('\$', '')
-                    : fifthVendorShipping),
-            vendorDiscount: fifthVendorExtraDiscount,
-            vendorProductUrl: fifthVendorUrl,
-          ),
-
-          // LineChart(
-          //   data: [
-          //     ChartData(
-          //       firstVendorName,
-          //       firstVendorPrice.contains("--")
-          //           ? 0.0
-          //           : double.tryParse(firstVendorPrice.replaceAll('\$', '')) ??
-          //               0.0,
-          //     ),
-          //     ChartData(
-          //       secondVendorName,
-          //       secondVendorPrice.contains("--")
-          //           ? 0.0
-          //           : double.tryParse(secondVendorPrice.replaceAll('\$', '')) ??
-          //               0.0,
-          //     ),
-          //     ChartData(
-          //       thirdVendorName,
-          //       thirdVendorFinalPrice.contains("--")
-          //           ? 0.0
-          //           : double.tryParse(
-          //                   thirdVendorFinalPrice.replaceAll('\$', '')) ??
-          //               0.0,
-          //     ),
-          //     ChartData(
-          //       fourthVendorName,
-          //       fourthVendorFinalPrice.contains("--")
-          //           ? 0.0
-          //           : double.tryParse(
-          //                   fourthVendorFinalPrice.replaceAll('\$', '')) ??
-          //               0.0,
-          //     ),
-          //     ChartData(
-          //       fifthVendorName,
-          //       fifthVendorFinalPrice.contains("--")
-          //           ? 0.0
-          //           : double.tryParse(
-          //                   fifthVendorFinalPrice.replaceAll('\$', '')) ??
-          //               0.0,
-          //     ),
-          //   ],
-          // )
+                  : keepSingleDollarSign(fourthVendorShipping.contains('--')
+                      ? fourthVendorShipping.replaceAll('\$', '')
+                      : fourthVendorShipping),
+              vendorDiscount: fourthVendorExtraDiscount,
+              vendorProductUrl: fourthVendorUrl,
+            ),
+            CompetitorTile(
+              activeIndex: 4,
+              vendorImage: fifthVendorName,
+              vendorFinalPrice: keepSingleDollarSign(
+                  '${fifthVendorFinalPrice.contains('--') ? fifthVendorFinalPrice.replaceAll('\$', '') : fifthVendorFinalPrice}\n'),
+              vendorBasePrice: keepSingleDollarSign(
+                  fifthVendorBasePrice.contains('--')
+                      ? fifthVendorBasePrice.replaceAll('\$', '')
+                      : fifthVendorBasePrice),
+              vendorShipping: keepSingleDollarSign(
+                              fifthVendorShipping.contains('--')
+                                  ? fifthVendorShipping.replaceAll('\$', '')
+                                  : fifthVendorShipping)
+                          .replaceAll('\$', '') ==
+                      '0.00'
+                  ? 'Free Shipping'
+                  : keepSingleDollarSign(fifthVendorShipping.contains('--')
+                      ? fifthVendorShipping.replaceAll('\$', '')
+                      : fifthVendorShipping),
+              vendorDiscount: fifthVendorExtraDiscount,
+              vendorProductUrl: fifthVendorUrl,
+            ),
+          ],
         ],
       ),
     );

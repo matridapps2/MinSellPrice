@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class MotionTabBarController extends TabController {
@@ -7,7 +6,11 @@ class MotionTabBarController extends TabController {
     Duration? animationDuration,
     required int length,
     required TickerProvider vsync,
-  }) : super(initialIndex: initialIndex, animationDuration: animationDuration, length: length, vsync: vsync);
+  }) : super(
+            initialIndex: initialIndex,
+            animationDuration: animationDuration,
+            length: length,
+            vsync: vsync);
 
   // programmatic tab change
   @override

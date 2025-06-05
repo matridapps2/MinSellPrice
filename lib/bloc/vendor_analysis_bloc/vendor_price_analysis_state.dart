@@ -2,8 +2,6 @@ part of 'vendor_price_analysis_bloc.dart';
 
 @immutable
 abstract class VendorPriceAnalysisState extends Equatable {
-
-
   @override
   List<Object> get props {
     return [];

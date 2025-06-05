@@ -87,7 +87,6 @@ class _LikedProductState extends State<LikedProduct>
                   ],
                 ),
               );
-
             }
 
             List<Map<String, dynamic>> onlyLikedProducts = [];
@@ -123,7 +122,6 @@ class _LikedProductState extends State<LikedProduct>
                   ],
                 ),
               );
-
             }
 
             return Padding(

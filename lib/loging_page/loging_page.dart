@@ -74,7 +74,6 @@ class _LoginPageState extends State<LoginPage> {
       }
       widget.onLoginSuccess();
       Navigator.of(context).pop(true);
-
     } on FirebaseAuthException catch (e) {
       String errorMsg = 'Login failed';
       if (e.code == 'user-not-found') {
@@ -176,8 +175,9 @@ class _LoginPageState extends State<LoginPage> {
                             GestureDetector(
                               onTap: () {
                                 Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (context) =>  ForgotPasswordPage()
-                                ),
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          ForgotPasswordPage()),
                                 );
                               },
                               child: const Text('Forgot Password?',

@@ -8,11 +8,9 @@ import 'package:shoppingmegamart/size.dart';
 const List<double> points = [.3, .4, .15, .1, .05];
 
 class DountChart extends CustomPainter {
+  final List<PricePropositionColor> chartData;
 
- final  List<PricePropositionColor> chartData;
-
-
- DountChart({required this.chartData});
+  DountChart({required this.chartData});
 
   /*Paints*/
 
@@ -25,7 +23,6 @@ class DountChart extends CustomPainter {
     ..color = Colors.white
     ..style = PaintingStyle.fill;
 
-
   @override
   void paint(Canvas canvas, Size size) {
     final centerPoint = Offset(size.width / 2.0, size.height / 2.0);
@@ -36,8 +33,7 @@ class DountChart extends CustomPainter {
 
     /*Drawing Segments*/
 
- _drawingSectors(canvas, rect, startAngle);
-
+    _drawingSectors(canvas, rect, startAngle);
 
     /*Drawing Lines*/
     startAngle = 0.0;
@@ -48,19 +44,25 @@ class DountChart extends CustomPainter {
     _drawingLabels(canvas, centerPoint, startAngle, radius);
   }
 
-  void _drawingLabels(Canvas canvas, Offset centerPoint, double startAngle, double radius) {
+  void _drawingLabels(
+      Canvas canvas, Offset centerPoint, double startAngle, double radius) {
     for (var element in chartData) {
       double sweepAngle = returnPercentage(model: element) * 360 * pi / 180;
 
-
-
-      drawLabels(canvas: canvas,centerPoint: centerPoint,startingAngle: startAngle,sweepAngle: sweepAngle,radius: radius,labelValue: element.value.toString());
+      drawLabels(
+          canvas: canvas,
+          centerPoint: centerPoint,
+          startingAngle: startAngle,
+          sweepAngle: sweepAngle,
+          radius: radius,
+          labelValue: element.value.toString());
 
       startAngle += sweepAngle;
     }
   }
 
-  void _drawingLines(double radius, double startAngle, Offset centerPoint, Canvas canvas) {
+  void _drawingLines(
+      double radius, double startAngle, Offset centerPoint, Canvas canvas) {
     for (var element in chartData) {
       double sweepAngle = returnPercentage(model: element) * 360 * pi / 180;
 
@@ -70,20 +72,18 @@ class DountChart extends CustomPainter {
       canvas.drawCircle(centerPoint, radius * .3, midPaint);
       startAngle += sweepAngle;
     }
-
   }
 
   void _drawingSectors(Canvas canvas, Rect rect, double startAngle) {
     for (var element in chartData) {
       double sweepAngle = returnPercentage(model: element) * 360 * pi / 180;
-      drawSectors(returnPercentage(model: element), canvas, rect, startAngle,element.color);
+      drawSectors(returnPercentage(model: element), canvas, rect, startAngle,
+          element.color);
 
       // drawLines(radius, startAngle, sweepAngle, centerPoint, canvas);
       startAngle += sweepAngle;
     }
-
   }
-
 
   /*Painting Methods*/
   void drawLines(double radius, double startAngle, double sweepAngle,
@@ -95,8 +95,8 @@ class DountChart extends CustomPainter {
     canvas.drawLine(centerPoint, p2, linePaint);
   }
 
-  double drawSectors(
-      double element, Canvas canvas, Rect rect, double startAngle, Color color) {
+  double drawSectors(double element, Canvas canvas, Rect rect,
+      double startAngle, Color color) {
     final sweepAngle = element * 360.0 * pi / 180;
     final paint = Paint()
       ..style = PaintingStyle.fill
@@ -111,10 +111,13 @@ class DountChart extends CustomPainter {
       TextStyle? style,
       double? maxWidth,
       TextAlign? textAlignment}) {
-    final textSpan =
-        TextSpan(text: value, style: style ?? TextStyle(fontSize: w * .035,color: Colors.black));
+    final textSpan = TextSpan(
+        text: value,
+        style: style ?? TextStyle(fontSize: w * .035, color: Colors.black));
     final textPainter = TextPainter(
-        text: textSpan, textAlign: textAlignment ?? TextAlign.center,textDirection: TextDirection.ltr);
+        text: textSpan,
+        textAlign: textAlignment ?? TextAlign.center,
+        textDirection: TextDirection.ltr);
     textPainter.layout(minWidth: 0, maxWidth: 50);
 
     return textPainter;
@@ -148,26 +151,20 @@ class DountChart extends CustomPainter {
     return tp.size;
   }
 
-
-
-  double returnPercentage({required PricePropositionColor model}){
-
+  double returnPercentage({required PricePropositionColor model}) {
     double percentage = 0.0;
 
     double totalProducts = 0;
 
-    for (PricePropositionColor element in chartData){
-
-      totalProducts = totalProducts+ element.value;
-
+    for (PricePropositionColor element in chartData) {
+      totalProducts = totalProducts + element.value;
     }
 
-    percentage = model.value/totalProducts ;
+    percentage = model.value / totalProducts;
 
-print(percentage);
+    print(percentage);
     return percentage;
   }
-
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {

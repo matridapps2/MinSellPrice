@@ -90,10 +90,11 @@ Future<void> setupFlutterNotifications() async {
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     var initializationSettingsAndroid =
         const AndroidInitializationSettings('ic_stat_notifications_active');
-    var initializationSettingsIOS = const DarwinInitializationSettings(requestSoundPermission: false,
+    var initializationSettingsIOS = const DarwinInitializationSettings(
+      requestSoundPermission: false,
       requestBadgePermission: false,
-
-      requestAlertPermission: false, );
+      requestAlertPermission: false,
+    );
     var initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
@@ -101,7 +102,6 @@ Future<void> setupFlutterNotifications() async {
     flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
   }
-
 
   /// We use this channel in the `AndroidManifest.xml` file to override the
   /// default FCM channel to enable heads up notifications.
@@ -111,12 +111,12 @@ Future<void> setupFlutterNotifications() async {
       ?.createNotificationChannel(channel);
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-      IOSFlutterLocalNotificationsPlugin>()
+          IOSFlutterLocalNotificationsPlugin>()
       ?.requestPermissions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
   isFlutterLocalNotificationsInitialized = true;
 }

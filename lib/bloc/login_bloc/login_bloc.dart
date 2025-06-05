@@ -30,8 +30,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
             ),
           );
         } else {
-
-
           final jsonData = jsonDecode(response);
           Map<String, dynamic> queryData = {
             idKey: jsonData[idKey],

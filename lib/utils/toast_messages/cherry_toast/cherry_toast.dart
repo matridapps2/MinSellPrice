@@ -1,13 +1,11 @@
 import 'dart:async';
 
-
 import 'package:flutter/material.dart';
 import 'package:shoppingmegamart/utils/toast_messages/cherry_toast/extension.dart';
 
 import 'arrays.dart';
 import 'cherry_toast_icon.dart';
 import 'colors.dart';
-
 
 // ignore: must_be_immutable
 class CherryToast extends StatefulWidget {
@@ -53,8 +51,8 @@ class CherryToast extends StatefulWidget {
     this.descriptionActionMargin = 0,
   }) : super(key: key) {
     assert(
-    title != null || description != null,
-    'Cherry toast must be initialized with minimum title or description',
+      title != null || description != null,
+      'Cherry toast must be initialized with minimum title or description',
     );
   }
 
@@ -93,8 +91,8 @@ class CherryToast extends StatefulWidget {
     this.descriptionActionMargin = 0,
   }) : super(key: key) {
     assert(
-    title != null || description != null,
-    'Cherry toast must be initialized with minimum title or description',
+      title != null || description != null,
+      'Cherry toast must be initialized with minimum title or description',
     );
     icon = Icons.check_circle;
     _initializeAttributes(successColor);
@@ -135,8 +133,8 @@ class CherryToast extends StatefulWidget {
     this.descriptionActionMargin = 0,
   }) : super(key: key) {
     assert(
-    title != null || description != null,
-    'Cherry toast must be initialized with minimum title or description',
+      title != null || description != null,
+      'Cherry toast must be initialized with minimum title or description',
     );
     icon = Icons.error_rounded;
     _initializeAttributes(errorColor);
@@ -177,8 +175,8 @@ class CherryToast extends StatefulWidget {
     this.descriptionActionMargin = 0,
   }) : super(key: key) {
     assert(
-    title != null || description != null,
-    'Cherry toast must be initialized with minimum title or description',
+      title != null || description != null,
+      'Cherry toast must be initialized with minimum title or description',
     );
     icon = Icons.warning_rounded;
     _initializeAttributes(warningColor);
@@ -219,8 +217,8 @@ class CherryToast extends StatefulWidget {
     this.descriptionActionMargin = 0,
   }) : super(key: key) {
     assert(
-    title != null || description != null,
-    'Cherry toast must be initialized with minimum title or description',
+      title != null || description != null,
+      'Cherry toast must be initialized with minimum title or description',
     );
     icon = Icons.info_rounded;
     _initializeAttributes(infoColor);
@@ -540,15 +538,16 @@ class _CherryToastState extends State<CherryToast>
         Container(
           decoration: widget.inheritThemeColors
               ? toastDecoration.copyWith(
-            color: Theme.of(context).colorScheme.surface,
-            boxShadow: [
-              _createToastBoxShadow(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(
-                  0.12,
-                ),
-              ),
-            ],
-          )
+                  color: Theme.of(context).colorScheme.surface,
+                  boxShadow: [
+                    _createToastBoxShadow(
+                      color:
+                          Theme.of(context).colorScheme.onSurface.withOpacity(
+                                0.12,
+                              ),
+                    ),
+                  ],
+                )
               : toastDecoration,
           constraints: widget.constraints,
           width: widget.width,
@@ -564,9 +563,9 @@ class _CherryToastState extends State<CherryToast>
                   flex: 2,
                   child: Row(
                     crossAxisAlignment:
-                    widget.description == null && widget.action == null
-                        ? CrossAxisAlignment.center
-                        : CrossAxisAlignment.start,
+                        widget.description == null && widget.action == null
+                            ? CrossAxisAlignment.center
+                            : CrossAxisAlignment.start,
                     children: [
                       //TODO refactor `iconWidget` and `titleWidget` to avoid duplication
                       if (widget.iconWidget != null)
@@ -613,7 +612,7 @@ class _CherryToastState extends State<CherryToast>
         autoDismissTimer?.cancel();
         Timer(
           widget.animationDuration,
-              () {
+          () {
             widget.closeOverlay();
           },
         );

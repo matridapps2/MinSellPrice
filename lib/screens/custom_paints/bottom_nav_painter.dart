@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shoppingmegamart/screens/custom_paints/bottom_nav_constants.dart';
 
-
 class BottomBarPainter extends CustomPainter {
   BottomBarPainter(
       {required this.position,
-        required this.color,
-        required this.showShadow,
-        required this.notchColor})
+      required this.color,
+      required this.showShadow,
+      required this.notchColor})
       : _paint = Paint()
-    ..color = color
-    ..isAntiAlias = true,
+          ..color = color
+          ..isAntiAlias = true,
         _shadowColor = Colors.grey.shade600,
         _notchPaint = Paint()
           ..color = notchColor

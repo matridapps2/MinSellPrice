@@ -56,7 +56,6 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-
             verticalSpace(verticalSpace: 5),
             SearchTextField(
                 hintText: '',
@@ -102,7 +101,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     id: id,
                   );
 
-            /*      await Navigator.push(
+                  /*      await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ContentScreen(
@@ -132,8 +131,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         dataList: const [],
                         isBrands: false,
                         searchProduct: true,
-                        productMpn: _productMpnController.text ,
-                        isCategory: false, title: 'Looking for: ${_productNameController.text}',
+                        productMpn: _productMpnController.text,
+                        isCategory: false,
+                        title: 'Looking for: ${_productNameController.text}',
                       ),
                     ),
                   );
@@ -174,8 +174,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       'Clear',
                       style: GoogleFonts.openSans(
                           color: Colors.white,
-                          fontSize: w
-                              * .06,
+                          fontSize: w * .06,
                           fontWeight: FontWeight.w700),
                     ))),
               ),
@@ -219,7 +218,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             (index) => index == searchHistory.length
                                 ? verticalSpace(verticalSpace: 120)
                                 : InkWell(
-                              splashColor: Colors.blue,
+                                    splashColor: Colors.blue,
                                     onTap: () {
                                       setState(() {
                                         _afSupplyController.text =
@@ -247,15 +246,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                             children: [
                                               RichText(
                                                 text: TextSpan(
-
                                                   style: GoogleFonts.openSans(
                                                       color: Colors.black,
                                                       fontSize: w * .04,
                                                       fontWeight:
                                                           FontWeight.bold),
                                                   children: [
-
-
                                                     TextSpan(
                                                       text: "Product MPN: ",
                                                       style:
@@ -351,7 +347,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> getSearchHistory({required int vendorId}) async {
     searchHistory = await DatabaseHelper().getHistoryData(db: widget.database);
     id = searchHistory.length + 1;
-    id +=id;
+    id += id;
     log(jsonEncode(searchHistory));
     setState(() {});
   }
@@ -388,7 +384,6 @@ class DeleteHistory extends StatelessWidget {
         );
         // getSearchHistory(vendorId: widget.vendorId);
       },
-
       child: const Padding(
         padding: EdgeInsets.all(16.0),
         child: Icon(

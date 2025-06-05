@@ -52,24 +52,24 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
         if (widget.model != null && context.mounted) {
           await Navigator.of(context)
               .push(
-            MaterialPageRoute(
-              builder: (context) => PopScope(
-                canPop: true,
-                child: Scaffold(
-                  body: CurrentProductScreen(
-                    prevData: widget.model,
-                    vendorId: widget.vendorId,
-                    database: widget.database,
-                    likedValue: widget.likedValue,
-                    notifiedValue: widget.notifiedValue,
-                    databaseData: const [],
-                    vendorShortname: widget.vendorShortName,
-                    sisterVendorShortName: widget.sisterVendorShortName,
+                MaterialPageRoute(
+                  builder: (context) => PopScope(
+                    canPop: true,
+                    child: Scaffold(
+                      body: CurrentProductScreen(
+                        prevData: widget.model,
+                        vendorId: widget.vendorId,
+                        database: widget.database,
+                        likedValue: widget.likedValue,
+                        notifiedValue: widget.notifiedValue,
+                        databaseData: const [],
+                        vendorShortname: widget.vendorShortName,
+                        sisterVendorShortName: widget.sisterVendorShortName,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          )
+              )
               .whenComplete(() => widget.futureBuilderTriggerMethod());
         }
       },
@@ -119,7 +119,7 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
                           errorWidget: (context, _, c) {
                             return CachedNetworkImage(
                                 imageUrl:
-                                'https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg');
+                                    'https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg');
                           },
                         ),
                       ),
@@ -160,8 +160,8 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
                               letterSpacing: 0,
                               fontWeight: FontWeight.w500
 
-                            // fontWeight: FontWeight.w900
-                          ),
+                              // fontWeight: FontWeight.w900
+                              ),
                         ),
                       ),
                       Padding(
@@ -187,8 +187,8 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.normal
 
-                                // fontWeight: FontWeight.w900
-                              ),
+                                  // fontWeight: FontWeight.w900
+                                  ),
                             ),
                           ],
                         ),
@@ -227,21 +227,21 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
                                 horizontalSpace(horizontalSpace: 3),
                                 AutoSizeText(
                                   widget.model.firstVendorPriceShipping ==
-                                      '--' ||
-                                      widget.model
-                                          .firstVendorPriceShipping ==
-                                          '\$0.00'
+                                              '--' ||
+                                          widget.model
+                                                  .firstVendorPriceShipping ==
+                                              '\$0.00'
                                       ? ' Free Shipping'
                                       : 'Shipping(${keepSingleDollarSign(widget.model.firstVendorPriceShipping)})',
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                       color: widget.model
-                                          .firstVendorPriceShipping ==
-                                          '--' ||
-                                          widget.model
-                                              .firstVendorPriceShipping ==
-                                              '\$0.00'
+                                                      .firstVendorPriceShipping ==
+                                                  '--' ||
+                                              widget.model
+                                                      .firstVendorPriceShipping ==
+                                                  '\$0.00'
                                           ? '#3b8039'.toColor()
                                           : '#0678cb'.toColor(),
                                       fontFamily: 'Segoe UI Bold',
@@ -250,8 +250,8 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
                                       letterSpacing: .4,
                                       fontWeight: FontWeight.normal
 
-                                    // fontWeight: FontWeight.w900
-                                  ),
+                                      // fontWeight: FontWeight.w900
+                                      ),
                                 )
                               ],
                             ),
@@ -316,7 +316,7 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
                       Center(
                         child: InkWell(
                           onTap: () async =>
-                          await MyInAppBrowser().openUrlRequest(
+                              await MyInAppBrowser().openUrlRequest(
                             urlRequest: URLRequest(
                               url: WebUri(
                                 widget.model.firstVendorUrl +

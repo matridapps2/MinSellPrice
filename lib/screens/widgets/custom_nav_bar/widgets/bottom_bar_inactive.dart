@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shoppingmegamart/screens/custom_paints/bottom_nav_constants.dart';
 
-
 /// Class to generate the inactive icon on bottom bar
 class BottomBarInActiveItem extends StatelessWidget {
   const BottomBarInActiveItem(this.index,
-      {super.key, required this.itemWidget,
-        required this.onTap,
-        required this.showLabel,
-        this.label,
-        this.labelStyle});
+      {super.key,
+      required this.itemWidget,
+      required this.onTap,
+      required this.showLabel,
+      this.label,
+      this.labelStyle});
 
   /// item index
   final int index;

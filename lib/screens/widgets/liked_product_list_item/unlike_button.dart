@@ -22,15 +22,16 @@ class UnlikeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-
-        await DatabaseHelper().addAndUpdateProduct(
-          db: database,
-          vendorId: int.parse('$vendorId$productId'),
-          productSku: productId,
-          isLiked: 0,
-          isNotified: isNotified,
-          productData: productData,
-        ).whenComplete(() => callback());
+        await DatabaseHelper()
+            .addAndUpdateProduct(
+              db: database,
+              vendorId: int.parse('$vendorId$productId'),
+              productSku: productId,
+              isLiked: 0,
+              isNotified: isNotified,
+              productData: productData,
+            )
+            .whenComplete(() => callback());
       },
       child: const Card(
         shape: CircleBorder(),

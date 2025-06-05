@@ -8,8 +8,10 @@ class LoginUserEvent extends LoginEvent {
   final String loginDataAsMap, fcmToken;
   final Database database;
 
-
-  const LoginUserEvent( {required this.database,required this.loginDataAsMap, required this.fcmToken});
+  const LoginUserEvent(
+      {required this.database,
+      required this.loginDataAsMap,
+      required this.fcmToken});
 
   @override
   // TODO: implement props

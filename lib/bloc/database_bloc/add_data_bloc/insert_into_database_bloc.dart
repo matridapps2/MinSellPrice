@@ -12,10 +12,8 @@ class InsertIntoDatabaseBloc
   InsertIntoDatabaseBloc() : super(InsertIntoDatabaseInitial()) {
     on<InsertQueryEvent>((event, emit) async {
       try {
-
-      await DatabaseHelper().insertLogin(event.database, event.data);
+        await DatabaseHelper().insertLogin(event.database, event.data);
         emit(InsertIntoDatabaseInsertedState(id: 0));
-
       } catch (e) {
         print(e.toString());
         emit(

@@ -8,12 +8,12 @@ const Map<String, dynamic> filters = {
     {
       'id': 12,
       'name': 'Brands',
-      'image':'assets/images/brand.png',
+      'image': 'assets/images/brand.png',
       'specificationoptions': [
         {
           "name": 'Heating',
-          "id":101,
-          "brands":[
+          "id": 101,
+          "brands": [
             "10 Black",
             "12002355",
             "30",
@@ -68,8 +68,8 @@ const Map<String, dynamic> filters = {
         },
         {
           "name": 'Plumbing',
-          "id":101,
-          "brands":[
+          "id": 101,
+          "brands": [
             "10 Black",
             "12002355",
             "30",
@@ -124,8 +124,8 @@ const Map<String, dynamic> filters = {
         },
         {
           "name": 'PVF',
-          "id":101,
-          "brands":[
+          "id": 101,
+          "brands": [
             "10 Black",
             "12002355",
             "30",
@@ -180,8 +180,8 @@ const Map<String, dynamic> filters = {
         },
         {
           "name": 'Tools',
-          "id":101,
-          "brands":[
+          "id": 101,
+          "brands": [
             "10 Black",
             "12002355",
             "30",
@@ -236,8 +236,8 @@ const Map<String, dynamic> filters = {
         },
         {
           "name": 'Others',
-          "id":101,
-          "brands":[
+          "id": 101,
+          "brands": [
             "10 Black",
             "12002355",
             "30",
@@ -295,8 +295,7 @@ const Map<String, dynamic> filters = {
     {
       'id': 3,
       'name': 'Percentage Preset',
-      'image':'assets/images/percentage.png',
-
+      'image': 'assets/images/percentage.png',
       'specificationoptions': [
         {'id': 30, 'name': 'Lowest by 5%'},
         {'id': 34, 'name': 'Lowest by 5%-15%'},
@@ -309,7 +308,7 @@ const Map<String, dynamic> filters = {
     {
       'id': 6,
       'name': 'Number of products',
-      'image':'assets/images/five.png',
+      'image': 'assets/images/five.png',
       'specificationoptions': [
         {'id': 22, 'name': '5'},
         {'id': 29, 'name': '10'},
@@ -321,7 +320,7 @@ const Map<String, dynamic> filters = {
     {
       'id': 3,
       'name': 'Notification Frequency',
-      'image':'assets/images/frequency.png',
+      'image': 'assets/images/frequency.png',
       'specificationoptions': [
         {'id': 30, 'name': 'Hourly'},
         {'id': 34, 'name': 'Daily'},
@@ -333,10 +332,9 @@ const Map<String, dynamic> filters = {
     {
       'id': 3,
       'name': 'Rotate Products',
-      "image":'assets/images/suffle.png',
+      "image": 'assets/images/suffle.png',
       'specificationoptions': [
         {'id': 30, 'name': 'Enable'},
-
       ]
     },
   ],

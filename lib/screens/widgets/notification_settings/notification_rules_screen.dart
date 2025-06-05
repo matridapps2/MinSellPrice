@@ -215,17 +215,20 @@ class _NotificationRulesScreenState extends State<NotificationRulesScreen> {
                                 10,
                               ),
                               child: Row(
-                                mainAxisSize:MainAxisSize.max,
+                                mainAxisSize: MainAxisSize.max,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 4.0),
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 4.0),
                                     child: Icon(
                                       Icons.edit,
                                     ),
-                                  ),  Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 4.0),
+                                  ),
+                                  Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 4.0),
                                     child: Icon(
                                       Icons.delete,
                                     ),

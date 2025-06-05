@@ -1,6 +1,6 @@
 part of 'feature_brands_bloc.dart';
 
- class FeatureBrandsState extends Equatable {
+class FeatureBrandsState extends Equatable {
   const FeatureBrandsState();
 
   @override
@@ -8,20 +8,21 @@ part of 'feature_brands_bloc.dart';
   List<Object?> get props => [];
 }
 
- class FeatureBrandsInitial extends FeatureBrandsState {
+class FeatureBrandsInitial extends FeatureBrandsState {
   @override
   List<Object> get props => [];
 }
- class FeatureBrandsLoaded extends FeatureBrandsState {
-   final List<FeaturedBrandModel> data;
 
+class FeatureBrandsLoaded extends FeatureBrandsState {
+  final List<FeaturedBrandModel> data;
 
-   const FeatureBrandsLoaded({required this.data});
+  const FeatureBrandsLoaded({required this.data});
 
   @override
   List<Object> get props => [];
 }
- class FeatureBrandsError extends FeatureBrandsState {
+
+class FeatureBrandsError extends FeatureBrandsState {
   @override
   List<Object> get props => [];
 }
