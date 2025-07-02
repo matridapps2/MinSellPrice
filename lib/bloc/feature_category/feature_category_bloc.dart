@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:shoppingmegamart/model/featured_category_model.dart';
-import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
+import 'package:minsellprice/model/featured_category_model.dart';
+import 'package:minsellprice/reposotory_services/network_reposotory.dart';
 
 part 'feature_category_event.dart';
 part 'feature_category_state.dart';

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/size.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 List<Color> get getColorsList => [

@@ -3,8 +3,8 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
-import 'package:shoppingmegamart/model/vendor_price_analysis.dart';
-import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
+import 'package:minsellprice/model/vendor_price_analysis.dart';
+import 'package:minsellprice/reposotory_services/network_reposotory.dart';
 
 part 'vendor_price_analysis_event.dart';
 

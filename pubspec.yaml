@@ -1,5 +1,5 @@
-name: shoppingmegamart
-description: ShoppingMegaMart - Your One Stop Shopping Destination
+name: minsellprice
+description: MinSellPrice - Your One Stop Shopping Destination
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -115,9 +115,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/shoppingmegamart_app_icon.png"
+  image_path: "assets/minsellprice_app_icon.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/shoppingmegamart_app_icon.png"
+  adaptive_icon_foreground: "assets/minsellprice_app_icon.png"
   remove_alpha_ios: true
   adaptive_icon_mask: true
   icon_size: 48
@@ -151,6 +151,7 @@ flutter:
     - assets/up-price.png
     - assets/social/
     - assets/shopping_mega_mart_logo.png
+    - assets/minsellprice_logo.png
 
     - assets/images/background.jpeg
     - assets/images/no_image.png
@@ -162,7 +163,7 @@ flutter:
     - assets/home_screen_assets/feature_category/
     - assets/home_screen_assets/brand-images/
     - assets/lottie_animations/custom_loader_for_msp_ecommerce.json
-    - assets/shoppingmegamart_app_icon.png
+    - assets/minsellprice_app_icon.png
     - assets/No_Image_Available.jpg
     - assets/shop_by_grills/
     - assets/grills_outdoor_cooking/

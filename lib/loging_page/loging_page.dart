@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shoppingmegamart/dashboard_screen.dart';
-import 'package:shoppingmegamart/register_page/register_page.dart';
-import 'package:shoppingmegamart/utils/toast_messages/common_toasts.dart';
+import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/register_page/register_page.dart';
+import 'package:minsellprice/utils/toast_messages/common_toasts.dart';
 
 import '../forgot_password/forgot_password.dart';
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:motion_toast/motion_toast.dart';
 
-import 'package:shoppingmegamart/utils/toast_messages/cherry_toast/cherry_toast.dart';
-import 'package:shoppingmegamart/utils/toast_messages/cherry_toast/arrays.dart'
+import 'package:minsellprice/utils/toast_messages/cherry_toast/cherry_toast.dart';
+import 'package:minsellprice/utils/toast_messages/cherry_toast/arrays.dart'
     as array;
 
 class ToastUtils {

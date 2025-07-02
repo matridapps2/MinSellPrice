@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shoppingmegamart/screens/custom_paints/bottom_nav_constants.dart';
+import 'package:minsellprice/screens/custom_paints/bottom_nav_constants.dart';
 
 class BottomBarPainter extends CustomPainter {
   BottomBarPainter(

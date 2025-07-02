@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shoppingmegamart/utils/toast_messages/cherry_toast/extension.dart';
+import 'package:minsellprice/utils/toast_messages/cherry_toast/extension.dart';
 
 import 'arrays.dart';
 import 'cherry_toast_icon.dart';

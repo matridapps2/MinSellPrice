@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import 'package:shoppingmegamart/screens/widgets/price_proposition_chart.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/screens/widgets/price_proposition_chart.dart';
+import 'package:minsellprice/size.dart';
 
 const List<double> points = [.3, .4, .15, .1, .05];
 

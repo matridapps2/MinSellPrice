@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shoppingmegamart/screens/widgets/custom_tab_bar/controller.dart';
+import 'package:minsellprice/screens/widgets/custom_tab_bar/controller.dart';
 
 import 'tab_item.dart';
 

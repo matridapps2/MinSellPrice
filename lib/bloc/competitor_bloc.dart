@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:shoppingmegamart/model/competitor_model.dart';
+import 'package:minsellprice/model/competitor_model.dart';
 
 part 'competitor_event.dart';
 

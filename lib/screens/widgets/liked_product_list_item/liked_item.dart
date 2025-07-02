@@ -5,15 +5,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/model/product_list_model.dart';
-import 'package:shoppingmegamart/screens/InAppBrowser.dart';
-import 'package:shoppingmegamart/screens/ai_price_engine/ai_pricie_engine_screen.dart';
-import 'package:shoppingmegamart/screens/widgets/custom_view_button.dart';
-import 'package:shoppingmegamart/screens/widgets/liked_product_list_item/unlike_button.dart';
-import 'package:shoppingmegamart/screens/widgets/product_screen_2.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/model/product_list_model.dart';
+import 'package:minsellprice/screens/InAppBrowser.dart';
+import 'package:minsellprice/screens/ai_price_engine/ai_pricie_engine_screen.dart';
+import 'package:minsellprice/screens/widgets/custom_view_button.dart';
+import 'package:minsellprice/screens/widgets/liked_product_list_item/unlike_button.dart';
+import 'package:minsellprice/screens/widgets/product_screen_2.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqlite_api.dart';
 
 class GridTilesProducts extends StatefulWidget {

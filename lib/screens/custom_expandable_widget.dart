@@ -4,10 +4,10 @@ import 'package:delayed_display/delayed_display.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/model/product_list_model.dart';
-import 'package:shoppingmegamart/screens/sample_product.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/model/product_list_model.dart';
+import 'package:minsellprice/screens/sample_product.dart';
+import 'package:minsellprice/size.dart';
 
 import 'InAppBrowser.dart';
 import 'my_text_styles.dart';

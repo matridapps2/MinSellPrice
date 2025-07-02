@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shoppingmegamart/screens/product_list_screen/brand_product_list_screen.dart';
+import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:developer' as developer;
 

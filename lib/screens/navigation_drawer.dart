@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:shoppingmegamart/loging_page/loging_page.dart';
+import 'package:minsellprice/loging_page/loging_page.dart';
 import 'package:sqflite/sqflite.dart';
 import '../notification_page/notification_page.dart';
 import '../register_page/register_page.dart';
@@ -114,18 +114,17 @@ class _CustomNavigationDrawerState extends State<CustomNavigationDrawer> {
               height: .2 * w,
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.shopping_cart,
-                color: Color.fromARGB(255, 237, 63, 69), size: 30),
-            title: const Text(
-              'MY CART',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          const Divider(),
+          // ListTile(
+          //   leading: const Icon(Icons.shopping_cart,
+          //       color: Color.fromARGB(255, 237, 63, 69), size: 30),
+          //   title: const Text(
+          //     'MY CART',
+          //     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          //   ),
+          //   onTap: () {
+          //     Navigator.pop(context);
+          //   },
+          // ),
           ListTile(
             leading: const Icon(Icons.notifications,
                 color: Color.fromARGB(255, 237, 63, 69), size: 30),

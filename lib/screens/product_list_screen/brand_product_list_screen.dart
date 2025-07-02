@@ -8,18 +8,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart';
-import 'package:shoppingmegamart/animation/custom_loader.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/model/product_list_model_new.dart';
-import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
-import 'package:shoppingmegamart/screens/InAppBrowser.dart';
-import 'package:shoppingmegamart/screens/ai_price_engine/ai_pricie_engine_screen.dart';
-import 'package:shoppingmegamart/screens/product_list_screen/product_list_screen.dart';
-import 'package:shoppingmegamart/screens/product_list_screen/utils/product_list_screen_api_handler.dart';
-import 'package:shoppingmegamart/screens/widgets/custom_view_button.dart';
-import 'package:shoppingmegamart/screens/widgets/product_screen_2.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/animation/custom_loader.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/colors.dart' show AppColors;
+import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/reposotory_services/network_reposotory.dart';
+import 'package:minsellprice/screens/InAppBrowser.dart';
+import 'package:minsellprice/screens/ai_price_engine/ai_pricie_engine_screen.dart';
+import 'package:minsellprice/screens/product_list_screen/product_list_screen.dart';
+import 'package:minsellprice/screens/product_list_screen/utils/product_list_screen_api_handler.dart';
+import 'package:minsellprice/screens/widgets/custom_view_button.dart';
+import 'package:minsellprice/screens/widgets/product_screen_2.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqflite.dart';
 
 class BrandProductListScreen extends StatefulWidget {
@@ -937,7 +938,7 @@ class _FilterMenuState extends State<FilterMenu> {
               onTap: () => Navigator.pop(context),
               child: Icon(
                 Icons.arrow_back_ios,
-                color: primaryColor,
+                color: AppColors.primary,
               ),
             ),
             surfaceTintColor: Colors.white,
@@ -1296,7 +1297,7 @@ class _FilterMenuState extends State<FilterMenu> {
                       Navigator.pop(context);
                     },
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(primaryColor),
+                      backgroundColor: MaterialStateProperty.all(AppColors.primary),
                       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25.0),

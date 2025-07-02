@@ -11,23 +11,23 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shoppingmegamart/bloc/all_brand_bloc/all_brand_bloc.dart';
-import 'package:shoppingmegamart/bloc/login_bloc/login_bloc.dart';
-import 'package:shoppingmegamart/bloc/vendor_details_bloc/vendor_details_bloc.dart';
-import 'package:shoppingmegamart/bloc/database_bloc/add_data_bloc/insert_into_database_bloc.dart';
-import 'package:shoppingmegamart/bloc/database_bloc/database_setup/database_bloc.dart';
-import 'package:shoppingmegamart/bloc/feature_brand_bloc/feature_brands_bloc.dart';
-import 'package:shoppingmegamart/bloc/feature_category/feature_category_bloc.dart';
-import 'package:shoppingmegamart/bloc/product_list_by_id_bloc/product_list_by_id_bloc.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/dashboard_screen.dart';
-import 'package:shoppingmegamart/permissions/permissions.dart';
-import 'package:shoppingmegamart/screens/widgets/bridge_class/bridge_class.dart';
-import 'package:shoppingmegamart/services/background_service.dart';
-import 'package:shoppingmegamart/firebase_options.dart';
+import 'package:minsellprice/bloc/all_brand_bloc/all_brand_bloc.dart';
+import 'package:minsellprice/bloc/login_bloc/login_bloc.dart';
+import 'package:minsellprice/bloc/vendor_details_bloc/vendor_details_bloc.dart';
+import 'package:minsellprice/bloc/database_bloc/add_data_bloc/insert_into_database_bloc.dart';
+import 'package:minsellprice/bloc/database_bloc/database_setup/database_bloc.dart';
+import 'package:minsellprice/bloc/feature_brand_bloc/feature_brands_bloc.dart';
+import 'package:minsellprice/bloc/feature_category/feature_category_bloc.dart';
+import 'package:minsellprice/bloc/product_list_by_id_bloc/product_list_by_id_bloc.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/permissions/permissions.dart';
+import 'package:minsellprice/screens/widgets/bridge_class/bridge_class.dart';
+import 'package:minsellprice/services/background_service.dart';
+import 'package:minsellprice/firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'auth_provider.dart' as my_auth; // adjust path if needed
-import 'package:shoppingmegamart/notification_page/notification_page.dart';
+import 'package:minsellprice/notification_page/notification_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -163,7 +163,7 @@ void main() async {
           ),
           child: MaterialApp(
             navigatorKey: navigatorKey,
-            title: 'ShoppingMegaMart',
+            title: 'MinSellPrice',
             debugShowMaterialGrid: false,
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
@@ -287,7 +287,7 @@ class _MyAppState extends State<MyApp> {
         ),
         child: MaterialApp(
           navigatorKey: navigatorKey,
-          title: 'ShoppingMegaMart',
+          title: 'MinSellPrice',
           debugShowMaterialGrid: false,
           debugShowCheckedModeBanner: false,
           theme: ThemeData(

@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_functions.dart';
-import 'package:shoppingmegamart/services/background_service.dart';
+import 'package:minsellprice/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/services/background_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 class AnimatedNotificationButton extends StatefulWidget {

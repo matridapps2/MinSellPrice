@@ -9,14 +9,14 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:shoppingmegamart/model/product_list_model_new.dart';
-import 'package:shoppingmegamart/screens/brand_screen.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/screens/brand_screen.dart';
+import 'package:minsellprice/size.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 import '../model/vendor_dashboard_model.dart';
 
-Color primaryColor = '#d90310'.toColor();
+///Color primaryColor = '#d90310'.toColor();
 Color searchBoxColor = '#f0eded'.toColor();
 final remoteConfig = FirebaseRemoteConfig.instance;
 double extractDoubleFromString(String input) {

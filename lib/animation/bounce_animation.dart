@@ -1,8 +1,10 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/screens/widgets/sample_product_screen.dart';
-import 'package:shoppingmegamart/size.dart';
+
+import '../screens/widgets/sample_product_screen.dart';
+import '../size.dart';
+
 
 class BounceAnimation extends StatefulWidget {
   const BounceAnimation({

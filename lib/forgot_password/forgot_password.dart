@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shoppingmegamart/utils/toast_messages/common_toasts.dart';
+import 'package:minsellprice/utils/toast_messages/common_toasts.dart';
 import '../loging_page/loging_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {

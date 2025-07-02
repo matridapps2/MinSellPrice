@@ -25,26 +25,27 @@ import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:msp/model/price_change_model.dart';
 
 import 'package:shimmer/shimmer.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/bloc/database_bloc/database_setup/database_bloc.dart';
-import 'package:shoppingmegamart/bloc/feature_brand_bloc/feature_brands_bloc.dart';
-import 'package:shoppingmegamart/bloc/feature_brand_bloc/model/feature_brands_model.dart';
-import 'package:shoppingmegamart/bloc/feature_category/feature_category_bloc.dart';
-import 'package:shoppingmegamart/bloc/product_list_by_id_bloc/product_list_by_id_bloc.dart';
-import 'package:shoppingmegamart/bloc/vendor_analysis_bloc/vendor_price_analysis_bloc.dart';
-import 'package:shoppingmegamart/bloc/vendor_details_bloc/vendor_details_bloc.dart';
-import 'package:shoppingmegamart/res/icon_file.dart';
-import 'package:shoppingmegamart/screens/brand_screen.dart';
-import 'package:shoppingmegamart/screens/navigation_drawer.dart';
-import 'package:shoppingmegamart/screens/product_list_screen/brand_product_list_screen.dart';
-import 'package:shoppingmegamart/screens/product_list_screen/product_list_screen.dart';
-import 'package:shoppingmegamart/screens/widgets/bridge_class/bridge_class.dart';
-import 'package:shoppingmegamart/utils/common_methods.dart';
-import 'package:shoppingmegamart/utils/custom_dropdown.dart';
-import 'package:shoppingmegamart/utils/toast_messages/common_toasts.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/bloc/database_bloc/database_setup/database_bloc.dart';
+import 'package:minsellprice/bloc/feature_brand_bloc/feature_brands_bloc.dart';
+import 'package:minsellprice/bloc/feature_brand_bloc/model/feature_brands_model.dart';
+import 'package:minsellprice/bloc/feature_category/feature_category_bloc.dart';
+import 'package:minsellprice/bloc/product_list_by_id_bloc/product_list_by_id_bloc.dart';
+import 'package:minsellprice/bloc/vendor_analysis_bloc/vendor_price_analysis_bloc.dart';
+import 'package:minsellprice/bloc/vendor_details_bloc/vendor_details_bloc.dart';
+import 'package:minsellprice/res/icon_file.dart';
+import 'package:minsellprice/screens/brand_screen.dart';
+import 'package:minsellprice/screens/navigation_drawer.dart';
+import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
+import 'package:minsellprice/screens/product_list_screen/product_list_screen.dart';
+import 'package:minsellprice/screens/widgets/bridge_class/bridge_class.dart';
+import 'package:minsellprice/utils/common_methods.dart';
+import 'package:minsellprice/utils/custom_dropdown.dart';
+import 'package:minsellprice/utils/toast_messages/common_toasts.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'animation/custom_loader.dart';
+import 'colors.dart';
 import 'loging_page/loging_page.dart';
 import 'model/brands_items.dart';
 import 'model/vendor_dashboard_model.dart';
@@ -61,7 +62,7 @@ import 'screens/widgets/sample_product_screen.dart';
 import 'services/extra_functions.dart';
 import 'size.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shoppingmegamart/screens/all_brands_screen.dart';
+import 'package:minsellprice/screens/all_brands_screen.dart';
 
 GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -270,30 +271,30 @@ class _DashboardScreenState extends State<DashboardScreen>
                         },
                         child: const Icon(
                           Icons.menu,
-                          // color: primaryColor,
-                          color: Colors.white,
+                          // color: primary,
+                          color: AppColors.primary,
                           size: 40,
                         ),
                       ),
                       // backgroundColor: Colors.white,
-                      backgroundColor: const Color.fromARGB(255, 237, 63, 69),
                       centerTitle: true,
                       title: Image.asset(
                         // 'assets/logo.png',
-                        'assets/shopping_mega_mart_logo.png',
+                        'assets/minsellprice_logo.png',
                         height: .2 * w,
                       ),
+                      actionsPadding: EdgeInsets.only(right: 15),
                       actions: const [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10.0),
-                          child: Icon(
-                            Icons.shopping_cart_outlined,
-                            // color: primaryColor,
-                            color: Colors.white,
-                            size: 40,
-                          ),
-                        ),
+                        Icon(
+                          Icons.shopping_cart,
+                          size: 35,
+                          color: AppColors.primary,
+                        )
                       ],
+                      shape: Border.all(
+                        color: AppColors.primary,
+                        width: 0
+                      ),
                     ),
                     bottomNavigationBar:
                         MediaQuery.of(context).viewInsets.bottom != 0.0
@@ -307,21 +308,21 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   SalomonBottomBarItem(
                                     icon: const Icon(Icons.home),
                                     title: const Text("Home"),
-                                    selectedColor: primaryColor,
+                                    selectedColor: AppColors.primary,
                                   ),
 
                                   /// Likes
                                   SalomonBottomBarItem(
                                     icon: const Icon(Icons.favorite_border),
                                     title: const Text("Likes"),
-                                    selectedColor: primaryColor,
+                                    selectedColor: AppColors.primary,
                                   ),
 
                                   /// Search
                                   SalomonBottomBarItem(
                                     icon: const Icon(Icons.search),
                                     title: const Text("Search"),
-                                    selectedColor: primaryColor,
+                                    selectedColor: AppColors.primary,
                                   ),
                                 ],
                               ),
@@ -485,8 +486,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         ],
       );
 
-  AspectRatio _competitiveHealthWidget(
-      VendorDetailsLoadedState state, BuildContext context) {
+  AspectRatio _competitiveHealthWidget(VendorDetailsLoadedState state, BuildContext context) {
     return AspectRatio(
       aspectRatio: .67,
       child: SizedBox(
@@ -1477,9 +1477,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     donutData = chartData;
   }
 
-  Widget _buildDrawer(
-    BuildContext context,
-  ) {
+  Widget _buildDrawer(BuildContext context,) {
     return Drawer(
       child: Padding(
         padding: const EdgeInsets.all(6.0),
@@ -4786,11 +4784,11 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           );
                         }
                       },
-                      cursorColor: primaryColor,
+                      cursorColor: AppColors.primary,
                       decoration: InputDecoration(
                         hintText: 'Search by product name...',
                         suffixIcon: InkWell(
-                          splashColor: primaryColor.withOpacity(.3),
+                          splashColor: AppColors.primary.withOpacity(.3),
                           onTap: () {
                             if (_searchController.text.length > 3) {
                               Navigator.push(
@@ -4812,16 +4810,16 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           },
                           child: Icon(
                             Icons.search,
-                            color: primaryColor,
+                            color: AppColors.primary,
                             size: 30,
                           ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 10.0,
                         ),
-                        suffixIconColor: primaryColor,
+                        suffixIconColor: AppColors.primary,
                         border: OutlineInputBorder(
-                          borderSide: BorderSide(color: primaryColor),
+                          borderSide: BorderSide(color: AppColors.primary),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(5),
                             topRight: Radius.circular(5),
@@ -4829,7 +4827,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: primaryColor),
+                          borderSide: BorderSide(color: AppColors.primary),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(5),
                             topRight: Radius.circular(5),
@@ -4837,7 +4835,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: primaryColor),
+                          borderSide: BorderSide(color: AppColors.primary),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(5),
                             topRight: Radius.circular(5),
@@ -4845,7 +4843,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           ),
                         ),
                         disabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: primaryColor),
+                          borderSide: BorderSide(color: AppColors.primary),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(5),
                             topRight: Radius.circular(5),
@@ -6572,6 +6570,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             final hasMoreBrands = allBrands.length > 10;
 
             return Column(
+              // mainAxisSize: MainAxisSize.min,
+              // crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GridView.builder(
                   shrinkWrap: true,
@@ -6670,7 +6670,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 ),
                 if (hasMoreBrands)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 20.0, top: 5),
+                    padding: const EdgeInsets.only(bottom: 20.0, top: 0),
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -6966,7 +6966,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                       ElevatedButton(
                                         onPressed: () {},
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: primaryColor,
+                                          backgroundColor: AppColors.primary,
                                         ),
                                         child: Center(
                                           child: Text(
@@ -7155,7 +7155,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             height: 45,
             width: w,
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: primaryColor, width: 2)),
+              border: Border(top: BorderSide(color: AppColors.primary, width: 2)),
               color: Colors.white,
             ),
             child: Row(
@@ -7163,7 +7163,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
-                  color: primaryColor,
+                  color: AppColors.primary,
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -7345,7 +7345,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   //                                         Text(
   //                                           newProducts[index].discountedPrice,
   //                                           style: TextStyle(
-  //                                             color: primaryColor,
+  //                                             color: primary,
   //                                             fontFamily: 'Futura BdCn BT Bold',
   //                                             wordSpacing: 1,
   //                                             letterSpacing: 1,
@@ -7367,7 +7367,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   //                                           bottom: 5, right: 5),
   //                                       child: Container(
   //                                         decoration: BoxDecoration(
-  //                                           color: primaryColor,
+  //                                           color: primary,
   //                                           borderRadius:
   //                                               BorderRadius.circular(5),
   //                                         ),
@@ -7446,7 +7446,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             height: 45,
             width: w,
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: primaryColor, width: 2)),
+              border: Border(top: BorderSide(color: AppColors.primary, width: 2)),
               color: Colors.white,
             ),
             child: Row(
@@ -7454,7 +7454,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
-                  color: primaryColor,
+                  color: AppColors.primary,
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -7633,7 +7633,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                         specOfferProducts[index]
                                             .discountedPrice,
                                         style: TextStyle(
-                                          color: primaryColor,
+                                          color: AppColors.primary,
                                           fontFamily: 'Futura BdCn BT Bold',
                                           wordSpacing: 1,
                                           letterSpacing: 1,
@@ -7654,7 +7654,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                   padding: const EdgeInsets.only(bottom: 5, right: 5),
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: primaryColor,
+                                      color: primary,
                                       borderRadius: BorderRadius.circular(5),
                                     ),
                                     child: Column(

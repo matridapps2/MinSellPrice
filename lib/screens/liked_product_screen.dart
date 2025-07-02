@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shoppingmegamart/model/product_list_model.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_constants.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_functions.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
+import 'package:minsellprice/model/product_list_model.dart';
+import 'package:minsellprice/reposotory_services/database/database_constants.dart';
+import 'package:minsellprice/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/services/extra_functions.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'widgets/liked_product_list_item/liked_item.dart';

@@ -2,9 +2,10 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/colors.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/size.dart';
 
 class BuyAtButton extends StatelessWidget {
   const BuyAtButton(
@@ -27,7 +28,7 @@ class BuyAtButton extends StatelessWidget {
               height: height ?? w * .13,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: primaryColor,
+                  color: AppColors.primary,
                   width: 3,
                 ),
                 borderRadius: BorderRadius.circular(
@@ -49,7 +50,7 @@ class BuyAtButton extends StatelessWidget {
                 child: Text(
                   'Buy At',
                   style: TextStyle(
-                    color: primaryColor,
+                    color: AppColors.primary,
                     fontFamily: 'MyriadPro-BoldCond',
                     fontSize: w * .043,
                     wordSpacing: .1,

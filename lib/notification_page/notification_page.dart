@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:shoppingmegamart/dashboard_screen.dart';
+import 'package:minsellprice/dashboard_screen.dart';
 import '../size.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';

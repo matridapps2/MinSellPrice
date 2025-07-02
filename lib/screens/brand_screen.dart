@@ -8,12 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/bloc/all_brand_bloc/all_brand_bloc.dart';
-import 'package:shoppingmegamart/screens/widgets/sample_product_screen.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/size.dart';
-import 'package:shoppingmegamart/utils/common_methods.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/bloc/all_brand_bloc/all_brand_bloc.dart';
+import 'package:minsellprice/screens/widgets/sample_product_screen.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/size.dart';
+import 'package:minsellprice/utils/common_methods.dart';
 import 'package:sqflite/sqflite.dart';
 
 class BrandScreen extends StatefulWidget {

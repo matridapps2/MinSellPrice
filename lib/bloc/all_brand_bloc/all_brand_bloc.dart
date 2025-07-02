@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
-
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:minsellprice/reposotory_services/network_reposotory.dart' show NetworkCalls;
 
 part 'all_brand_event.dart';
 

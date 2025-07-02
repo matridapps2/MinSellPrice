@@ -5,11 +5,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/screens/ai_price_engine/ai_pricie_engine_screen.dart';
-import 'package:shoppingmegamart/screens/brand_screen.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/screens/ai_price_engine/ai_pricie_engine_screen.dart';
+import 'package:minsellprice/screens/brand_screen.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/size.dart';
 
 class CustomDialogBoxScreen extends StatefulWidget {
   CustomDialogBoxScreen({

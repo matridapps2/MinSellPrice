@@ -8,11 +8,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:shoppingmegamart/bloc/database_bloc/database_setup/database_bloc.dart';
-import 'package:shoppingmegamart/bloc/login_bloc/login_bloc.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_functions.dart';
-import 'package:shoppingmegamart/screens/widgets/bridge_class/bridge_class.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/bloc/database_bloc/database_setup/database_bloc.dart';
+import 'package:minsellprice/bloc/login_bloc/login_bloc.dart';
+import 'package:minsellprice/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/screens/widgets/bridge_class/bridge_class.dart';
+import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:validators/validators.dart';
 

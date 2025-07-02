@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shoppingmegamart/animation/custom_loader.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/bloc/database_bloc/database_setup/database_bloc.dart';
-import 'package:shoppingmegamart/dashboard_screen.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_functions.dart';
-import 'package:shoppingmegamart/screens/login_screen.dart';
+import 'package:minsellprice/animation/custom_loader.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/bloc/database_bloc/database_setup/database_bloc.dart';
+import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/screens/login_screen.dart';
 
 import '../../../reposotory_services/database/database_constants.dart';
 

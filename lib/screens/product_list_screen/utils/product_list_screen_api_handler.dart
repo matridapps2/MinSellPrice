@@ -1,9 +1,9 @@
 import 'dart:developer';
 import 'dart:convert';
 
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/model/product_list_model_new.dart';
-import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/reposotory_services/network_reposotory.dart';
 
 import '../product_list_screen.dart';
 

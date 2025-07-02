@@ -4,13 +4,14 @@ import 'dart:developer';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_constants.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_functions.dart';
-import 'package:shoppingmegamart/screens/ai_price_engine/ai_pricie_engine_screen.dart';
-import 'package:shoppingmegamart/screens/product_list_screen/product_list_screen.dart';
-import 'package:shoppingmegamart/screens/widgets/sample_product_screen.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/colors.dart';
+import 'package:minsellprice/reposotory_services/database/database_constants.dart';
+import 'package:minsellprice/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/screens/ai_price_engine/ai_pricie_engine_screen.dart';
+import 'package:minsellprice/screens/product_list_screen/product_list_screen.dart';
+import 'package:minsellprice/screens/widgets/sample_product_screen.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/size.dart';
 
 import 'package:sqflite/sqflite.dart';
 
@@ -141,7 +142,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 }
               },
               child: Card(
-                color: primaryColor,
+                color: AppColors.primary,
                 child: SizedBox(
                     width: w * .7,
                     height: 50,

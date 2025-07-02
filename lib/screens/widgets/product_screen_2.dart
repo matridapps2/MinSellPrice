@@ -8,18 +8,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/dashboard_screen.dart';
-import 'package:shoppingmegamart/model/product_list_model.dart';
-import 'package:shoppingmegamart/model/product_list_model_new.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_constants.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_functions.dart';
-import 'package:shoppingmegamart/screens/InAppBrowser.dart';
-import 'package:shoppingmegamart/screens/ai_price_engine/ai_pricie_engine_screen.dart';
-import 'package:shoppingmegamart/screens/sample_product.dart';
-import 'package:shoppingmegamart/screens/widgets/animated_notification_button.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/model/product_list_model.dart';
+import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/reposotory_services/database/database_constants.dart';
+import 'package:minsellprice/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/screens/InAppBrowser.dart';
+import 'package:minsellprice/screens/ai_price_engine/ai_pricie_engine_screen.dart';
+import 'package:minsellprice/screens/sample_product.dart';
+import 'package:minsellprice/screens/widgets/animated_notification_button.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/size.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sqflite/sqflite.dart';
@@ -1833,7 +1833,7 @@ class CompetitorTile extends StatelessWidget {
                                         urlRequest: URLRequest(
                                           url: WebUri(
                                             vendorProductUrl +
-                                                '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
+                                                '?utm_source=minsellprice.com&utm_medium=mobile-app',
                                           ),
                                         ),
                                         options: InAppBrowserClassOptions(

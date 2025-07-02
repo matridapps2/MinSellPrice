@@ -1,4 +1,4 @@
-package com.matrid.shoppingmegamart;
+package com.matrid.minsellprice;
 
 import io.flutter.embedding.android.FlutterActivity;
 

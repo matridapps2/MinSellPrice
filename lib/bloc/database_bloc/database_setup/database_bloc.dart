@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 import 'package:sqflite/sqflite.dart';
 
 part 'database_event.dart';

@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:shoppingmegamart/screens/custom_paints/bottom_nav_constants.dart';
-import 'package:shoppingmegamart/screens/custom_paints/bottom_nav_painter.dart';
+import 'package:minsellprice/screens/custom_paints/bottom_nav_constants.dart';
+import 'package:minsellprice/screens/custom_paints/bottom_nav_painter.dart';
 
 import 'widgets/bottom_bar_inactive.dart';
 

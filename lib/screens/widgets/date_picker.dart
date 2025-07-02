@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/bloc/vendor_details_bloc/vendor_details_bloc.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
+import 'package:minsellprice/bloc/vendor_details_bloc/vendor_details_bloc.dart';
+import 'package:minsellprice/services/extra_functions.dart';
 
 class DatePickerFormField extends StatefulWidget {
   const DatePickerFormField({super.key, required this.vendorId});

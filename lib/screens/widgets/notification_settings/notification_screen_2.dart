@@ -5,8 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/screens/widgets/notification_settings/notification_settings_screen.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/screens/widgets/notification_settings/notification_settings_screen.dart';
+import 'package:minsellprice/size.dart';
 
 class NotificationSettingsScreen2 extends StatefulWidget {
   const NotificationSettingsScreen2({super.key});

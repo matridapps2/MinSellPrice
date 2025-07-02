@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shoppingmegamart/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 import 'package:sqflite/sqflite.dart';
 
 class UnlikeButton extends StatelessWidget {

@@ -7,12 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/bloc/product_list_by_id_bloc/product_list_by_id_bloc.dart';
-import 'package:shoppingmegamart/model/product_list_model.dart';
-import 'package:shoppingmegamart/screens/InAppBrowser.dart';
-import 'package:shoppingmegamart/screens/widgets/custom_loader.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/bloc/product_list_by_id_bloc/product_list_by_id_bloc.dart';
+import 'package:minsellprice/model/product_list_model.dart';
+import 'package:minsellprice/screens/InAppBrowser.dart';
+import 'package:minsellprice/screens/widgets/custom_loader.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/size.dart';
 
 class SampleProductDesign extends StatefulWidget {
   const SampleProductDesign({

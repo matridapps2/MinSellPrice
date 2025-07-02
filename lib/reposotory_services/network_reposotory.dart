@@ -4,14 +4,14 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/model/competitor_model.dart';
-import 'package:shoppingmegamart/model/discount_model.dart';
-import 'package:shoppingmegamart/model/price_change_model.dart';
-import 'package:shoppingmegamart/model/product_list_model.dart';
-import 'package:shoppingmegamart/model/product_list_model_new.dart';
-import 'package:shoppingmegamart/model/vendor_dashboard_model.dart';
-import 'package:shoppingmegamart/model/vendor_price_analysis.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/model/competitor_model.dart';
+import 'package:minsellprice/model/discount_model.dart';
+import 'package:minsellprice/model/price_change_model.dart';
+import 'package:minsellprice/model/product_list_model.dart';
+import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/model/vendor_dashboard_model.dart';
+import 'package:minsellprice/model/vendor_price_analysis.dart';
 import 'package:retry/retry.dart';
 
 class NetworkCalls {

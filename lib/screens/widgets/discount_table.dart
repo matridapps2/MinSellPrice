@@ -3,9 +3,9 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/model/vendor_dashboard_model.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/model/vendor_dashboard_model.dart';
+import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'sample_product_screen.dart';

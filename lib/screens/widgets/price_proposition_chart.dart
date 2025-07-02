@@ -3,10 +3,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_carousel_slider/carousel_slider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
-import 'package:shoppingmegamart/screens/custom_paints/dount_chart.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/screens/custom_paints/dount_chart.dart';
+import 'package:minsellprice/size.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class PricePropositionChart extends StatefulWidget {

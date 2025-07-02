@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shoppingmegamart/model/discount_model.dart';
-import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
+import 'package:minsellprice/model/discount_model.dart';
+import 'package:minsellprice/reposotory_services/network_reposotory.dart';
 
 part 'discount_event.dart';
 

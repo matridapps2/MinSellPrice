@@ -1,9 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:shoppingmegamart/app.dart';
-import 'package:shoppingmegamart/model/product_list_model.dart';
-import 'package:shoppingmegamart/reposotory_services/network_reposotory.dart';
-import 'package:shoppingmegamart/services/extra_functions.dart';
+import 'package:minsellprice/app.dart';
+import 'package:minsellprice/model/product_list_model.dart';
+import 'package:minsellprice/reposotory_services/network_reposotory.dart';
+import 'package:minsellprice/services/extra_functions.dart';
 
 part 'product_list_by_id_event.dart';
 part 'product_list_by_id_state.dart';

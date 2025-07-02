@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shoppingmegamart/model/vendor_dashboard_model.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/model/vendor_dashboard_model.dart';
+import 'package:minsellprice/size.dart';
 
 typedef TooltipTriggeredCallback = void Function();
 

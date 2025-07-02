@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shoppingmegamart/utils/toast_messages/toast_utils.dart';
+import 'package:minsellprice/utils/toast_messages/toast_utils.dart';
 
 class CommonToasts {
   CommonToasts._();

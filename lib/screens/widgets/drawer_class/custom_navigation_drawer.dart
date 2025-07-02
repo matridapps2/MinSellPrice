@@ -1,7 +1,7 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shoppingmegamart/size.dart';
+import 'package:minsellprice/size.dart';
 
 class NavigationDrawerPanel extends StatefulWidget {
   const NavigationDrawerPanel({Key? key, required this.data}) : super(key: key);
