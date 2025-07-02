@@ -18,6 +18,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:minsellprice/screens/account_screen.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -220,6 +221,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                       database: database,
                       vendorId: vendorId,
                     ),
+                    AccountScreen(
+                      database: database,
+                      vendorId: vendorId,
+                    )
                   ],
                 ),
               );
@@ -249,7 +254,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     key: scaffoldKey,
                     extendBody: true,
                     resizeToAvoidBottomInset: false,
-                    drawer: CustomNavigationDrawer(),
+                   // drawer: CustomNavigationDrawer(),
                     //_buildDrawer(context),
 
                     //     CustomNavigationDrawer(
@@ -265,17 +270,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                     appBar: AppBar(
                       surfaceTintColor: Colors.white,
                       toolbarHeight: .18 * w,
-                      leading: InkWell(
-                        onTap: () {
-                          scaffoldKey.currentState?.openDrawer();
-                        },
-                        child: const Icon(
-                          Icons.menu,
-                          // color: primary,
-                          color: AppColors.primary,
-                          size: 40,
-                        ),
-                      ),
+                      // leading: InkWell(
+                      //   onTap: () {
+                      //     scaffoldKey.currentState?.openDrawer();
+                      //   },
+                      //   child: const Icon(
+                      //     Icons.menu,
+                      //     // color: primary,
+                      //     color: AppColors.primary,
+                      //     size: 40,
+                      //   ),
+                      // ),
                       // backgroundColor: Colors.white,
                       centerTitle: true,
                       title: Image.asset(
@@ -322,6 +327,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   SalomonBottomBarItem(
                                     icon: const Icon(Icons.search),
                                     title: const Text("Search"),
+                                    selectedColor: AppColors.primary,
+                                  ),
+
+                                  /// account
+                                  SalomonBottomBarItem(
+                                    icon: const Icon(Icons.account_circle_rounded),
+                                    title: const Text("Account"),
                                     selectedColor: AppColors.primary,
                                   ),
                                 ],

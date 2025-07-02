@@ -60,7 +60,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   color: const Color.fromARGB(255, 237, 63, 69),
                   alignment: Alignment.center,
                   child: Image.asset(
-                    'assets/shopping_mega_mart_logo.png',
+                    'assets/minsellprice_app_icon.png',
                     height: 60,
                     fit: BoxFit.contain,
                   ),
