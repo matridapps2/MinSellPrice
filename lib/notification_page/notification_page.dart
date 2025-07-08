@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/dashboard_screen.dart';
+import '../colors.dart';
 import '../size.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -71,7 +72,7 @@ class _NotificationPageState extends State<NotificationPage> {
       appBar: AppBar(
         surfaceTintColor: Colors.white,
         toolbarHeight: .18 * w,
-        backgroundColor: const Color.fromARGB(255, 237, 63, 69),
+        backgroundColor: AppColors.primary,
         centerTitle: true,
         leading: selectionMode
             ? IconButton(

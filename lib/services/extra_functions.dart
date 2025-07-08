@@ -10,7 +10,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
-import 'package:minsellprice/screens/brand_screen.dart';
 import 'package:minsellprice/size.dart';
 import 'package:palette_generator/palette_generator.dart';
 
@@ -38,7 +37,7 @@ List<String> getUniqueBrands(List< /*ProductListModel*/ VendorProduct> brands) {
   List<String> temp = [];
 
   for (var brand in brands) {
-    temp.add(brand.firstVendorName ?? '');
+    temp.add(brand.vendorName ?? '');
   }
   uniqueBrands = Set<String>.from(temp).toList();
   return uniqueBrands;
@@ -459,16 +458,16 @@ bool isItemPresentInOtherList(
   return false; // Return false if index is out of range or currentList is empty
 }
 
-List<int> getBrandIds(
-    List<AllBrandModel> allItems, List<String> selectedHistory) {
-  List<int> result = [];
-  for (var item in allItems) {
-    if (selectedHistory.contains(item.key.toLowerCase())) {
-      result.add(item.brandId);
-    }
-  }
-  return result;
-}
+// List<int> getBrandIds(
+//     List<AllBrandModel> allItems, List<String> selectedHistory) {
+//   List<int> result = [];
+//   for (var item in allItems) {
+//     if (selectedHistory.contains(item.key.toLowerCase())) {
+//       result.add(item.brandId);
+//     }
+//   }
+//   return result;
+// }
 
 Color returnMainVendorPriceColor(
     {required String rpVendorProductId,

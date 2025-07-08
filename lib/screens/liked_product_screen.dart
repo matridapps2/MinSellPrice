@@ -163,16 +163,18 @@ class _LikedProductState extends State<LikedProduct>
                     return const SizedBox();
                   }
 
-                  return GridTilesProducts(
-                    model: model,
-                    vendorId: widget.vendorId,
-                    likedValue: likedValue,
-                    notifiedValue: notifiedValue,
-                    database: widget.database,
-                    futureBuilderTriggerMethod: () => setState(() {}),
-                    vendorShortName: vendorShortName,
-                    sisterVendorShortName: sisterVendorShortName,
-                  );
+                  return SizedBox();
+
+                  //   GridTilesProducts(
+                  //   model: model,
+                  //   vendorId: widget.vendorId,
+                  //   likedValue: likedValue,
+                  //   notifiedValue: notifiedValue,
+                  //   database: widget.database,
+                  //   futureBuilderTriggerMethod: () => setState(() {}),
+                  //   vendorShortName: vendorShortName,
+                  //   sisterVendorShortName: sisterVendorShortName,
+                  // );
                 },
               ),
             );

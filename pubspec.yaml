@@ -168,6 +168,7 @@ flutter:
     - assets/shop_by_grills/
     - assets/grills_outdoor_cooking/
     - assets/no_image/no_image.jpg
+    - assets/app_logo/logo.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 

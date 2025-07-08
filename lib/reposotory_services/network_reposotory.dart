@@ -10,6 +10,7 @@ import 'package:minsellprice/model/discount_model.dart';
 import 'package:minsellprice/model/price_change_model.dart';
 import 'package:minsellprice/model/product_list_model.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/model/brand_product_detail_model.dart';
 import 'package:minsellprice/model/vendor_dashboard_model.dart';
 import 'package:minsellprice/model/vendor_price_analysis.dart';
 import 'package:retry/retry.dart';
@@ -225,7 +226,6 @@ class NetworkCalls {
       if (response.statusCode == 200) {
         toReturn = productListModelNewFromJson(response.body);
         log('getProductListBySearch response - ${response.body}');
-        log('getProductListBySearch vendorProducts Empty - ${toReturn.vendorProducts.isEmpty}');
       } else {
         toReturn = null;
       }
@@ -236,10 +236,11 @@ class NetworkCalls {
     return toReturn;
   }
 
-  Future<String?> getProductListByBrandID(String brandId) async {
+  Future<String?> getProductListByBrandName(
+      String brandName, int pageNumber) async {
     try {
       String uri =
-          'https://growth.matridtech.net/api/brand-product/$brandId?test';
+          'https://www.minsellprice.com/api/brands/$brandName?page_no=$pageNumber';
 
       log('Brand Product API: $uri');
       final response = await retry(
@@ -260,6 +261,72 @@ class NetworkCalls {
         return response.body;
       } else {
         log('getProductListByBrandID failed with status code: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      log('Exception: ${e.toString()}');
+      return null;
+    }
+  }
+
+  Future<String?> getProductListByBrandNameAndProductId(
+      String brandName, String brandId, int productId) async {
+    try {
+      String uri =
+          'https://www.minsellprice.com/api/brands/$brandName/$brandId?product_id=$productId';
+
+      log('Brand Product Detail API: $uri');
+      final response = await retry(
+        () async => await http.get(Uri.parse(uri)),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
+      );
+
+      log('getProductListByBrandNameAndProductId Status code - ${response.statusCode}');
+      if (response.statusCode == 200) {
+        log('getProductListByBrandNameAndProductId response - ${response.body}');
+        return response.body;
+      } else {
+        log('getProductListByBrandNameAndProductId failed with status code: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      log('Exception: ${e.toString()}');
+      return null;
+    }
+  }
+
+  Future<BrandProductDetailResponse?> getBrandProductDetail(
+      String brandName, String brandId, int productId) async {
+    try {
+      String uri =
+          'https://www.minsellprice.com/api/brands/$brandName/$brandId?product_id=$productId';
+
+      log('Brand Product Detail API: $uri');
+      final response = await retry(
+        () async => await http.get(Uri.parse(uri)),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
+      );
+
+      log('getBrandProductDetail Status code - ${response.statusCode}');
+      if (response.statusCode == 200) {
+        log('getBrandProductDetail response - ${response.body}');
+        return brandProductDetailResponseFromJson(response.body);
+      } else {
+        log('getBrandProductDetail failed with status code: ${response.statusCode}');
         return null;
       }
     } catch (e) {

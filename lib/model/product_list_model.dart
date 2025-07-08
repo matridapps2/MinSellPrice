@@ -1,5 +1,14 @@
 import 'dart:convert';
 
+// Helper function for brand product detail API
+BrandProductDetailModel brandProductDetailModelFromJson(String str) {
+  return BrandProductDetailModel.fromJson(json.decode(str));
+}
+
+String brandProductDetailModelToJson(BrandProductDetailModel data) {
+  return json.encode(data.toJson());
+}
+
 List<ProductListModel> productListModelFromJson(String str) {
   return List<ProductListModel>.from(json.decode(str).map((x) {
     return ProductListModel.fromJson(x);
@@ -484,6 +493,217 @@ class ProductListModel {
       "SecondVendorName": secondVendorName,
       "SecondVendorUrl": secondVendorUrl,
       "vendorprice_count": vendorpriceCount,
+    };
+  }
+}
+
+//****************************************************************************//
+///                  MODEL FOR BRAND PRODUCT DETAIL API                     ///
+//****************************************************************************//
+
+class BrandProductDetailModel {
+  final int brandId;
+  final ProductData productData;
+  final List<VendorProductData> vendorProductData;
+
+  BrandProductDetailModel({
+    required this.brandId,
+    required this.productData,
+    required this.vendorProductData,
+  });
+
+  factory BrandProductDetailModel.fromJson(Map<String, dynamic> json) {
+    return BrandProductDetailModel(
+      brandId: json['brand_id'] ?? 0,
+      productData: ProductData.fromJson(json['product_data'] ?? {}),
+      vendorProductData: (json['vendor_product_data'] as List<dynamic>?)
+              ?.map((x) => VendorProductData.fromJson(x))
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'brand_id': brandId,
+      'product_data': productData.toJson(),
+      'vendor_product_data': vendorProductData.map((x) => x.toJson()).toList(),
+    };
+  }
+}
+
+class ProductData {
+  final int brandId;
+  final String brandName;
+  final String brandKey;
+  final int productId;
+  final String productMpn;
+  final String productName;
+  final String msrp;
+  final String productImage;
+
+  ProductData({
+    required this.brandId,
+    required this.brandName,
+    required this.brandKey,
+    required this.productId,
+    required this.productMpn,
+    required this.productName,
+    required this.msrp,
+    required this.productImage,
+  });
+
+  factory ProductData.fromJson(Map<String, dynamic> json) {
+    return ProductData(
+      brandId: json['brand_id'] ?? 0,
+      brandName: json['brand_name'] ?? '',
+      brandKey: json['brand_key'] ?? '',
+      productId: json['product_id'] ?? 0,
+      productMpn: json['product_mpn'] ?? '',
+      productName: json['product_name'] ?? '',
+      msrp: json['msrp'] ?? '',
+      productImage: json['product_image'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'brand_id': brandId,
+      'brand_name': brandName,
+      'brand_key': brandKey,
+      'product_id': productId,
+      'product_mpn': productMpn,
+      'product_name': productName,
+      'msrp': msrp,
+      'product_image': productImage,
+    };
+  }
+}
+
+class VendorProductData {
+  final int brandId;
+  final String brandName;
+  final String brandKey;
+  final int productId;
+  final String productMpn;
+  final String msrp;
+  final String productImage;
+  final int vendorProductId;
+  final String? vendorSku;
+  final String? vk11;
+  final String source;
+  final String vendorpricePrice;
+  final String vendorpriceFinalprice;
+  final String? vendorpriceShipping;
+  final String vendorpriceExtraDiscount;
+  final String isSuspicious;
+  final int vendorPricingId;
+  final String vendorpriceDate;
+  final String? vendorpriceDeliveryDate;
+  final String vendorpriceIsbackorder;
+  final String? vendorpriceOffers;
+  final String? deliveryText;
+  final String? vendorpriceStockText;
+  final String? vendorpriceStock;
+  final String vendorName;
+  final String vendorWebsite;
+  final String vendorUrl;
+  final String vendorRawUrl;
+
+  VendorProductData({
+    required this.brandId,
+    required this.brandName,
+    required this.brandKey,
+    required this.productId,
+    required this.productMpn,
+    required this.msrp,
+    required this.productImage,
+    required this.vendorProductId,
+    this.vendorSku,
+    this.vk11,
+    required this.source,
+    required this.vendorpricePrice,
+    required this.vendorpriceFinalprice,
+    this.vendorpriceShipping,
+    required this.vendorpriceExtraDiscount,
+    required this.isSuspicious,
+    required this.vendorPricingId,
+    required this.vendorpriceDate,
+    this.vendorpriceDeliveryDate,
+    required this.vendorpriceIsbackorder,
+    this.vendorpriceOffers,
+    this.deliveryText,
+    this.vendorpriceStockText,
+    this.vendorpriceStock,
+    required this.vendorName,
+    required this.vendorWebsite,
+    required this.vendorUrl,
+    required this.vendorRawUrl,
+  });
+
+  factory VendorProductData.fromJson(Map<String, dynamic> json) {
+    return VendorProductData(
+      brandId: json['brand_id'] ?? 0,
+      brandName: json['brand_name'] ?? '',
+      brandKey: json['brand_key'] ?? '',
+      productId: json['product_id'] ?? 0,
+      productMpn: json['product_mpn'] ?? '',
+      msrp: json['msrp'] ?? '',
+      productImage: json['product_image'] ?? '',
+      vendorProductId: json['vendor_product_id'] ?? 0,
+      vendorSku: json['vendor_sku'],
+      vk11: json['vk11'],
+      source: json['source'] ?? '',
+      vendorpricePrice: json['vendorprice_price'] ?? '',
+      vendorpriceFinalprice: json['vendorprice_finalprice'] ?? '',
+      vendorpriceShipping: json['vendorprice_shipping'],
+      vendorpriceExtraDiscount: json['vendorprice_extra_discount'] ?? '',
+      isSuspicious: json['is_suspicious'] ?? '',
+      vendorPricingId: json['vendor_pricing_id'] ?? 0,
+      vendorpriceDate: json['vendorprice_date'] ?? '',
+      vendorpriceDeliveryDate: json['vendorprice_delivery_date'],
+      vendorpriceIsbackorder: json['vendorprice_isbackorder'] ?? '',
+      vendorpriceOffers: json['vendorprice_offers'],
+      deliveryText: json['delivery_text'],
+      vendorpriceStockText: json['vendorprice_stock_text'],
+      vendorpriceStock: json['vendorprice_stock'],
+      vendorName: json['vendor_name'] ?? '',
+      vendorWebsite: json['vendor_website'] ?? '',
+      vendorUrl: json['vendor_url'] ?? '',
+      vendorRawUrl: json['vendor_raw_url'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'brand_id': brandId,
+      'brand_name': brandName,
+      'brand_key': brandKey,
+      'product_id': productId,
+      'product_mpn': productMpn,
+      'msrp': msrp,
+      'product_image': productImage,
+      'vendor_product_id': vendorProductId,
+      'vendor_sku': vendorSku,
+      'vk11': vk11,
+      'source': source,
+      'vendorprice_price': vendorpricePrice,
+      'vendorprice_finalprice': vendorpriceFinalprice,
+      'vendorprice_shipping': vendorpriceShipping,
+      'vendorprice_extra_discount': vendorpriceExtraDiscount,
+      'is_suspicious': isSuspicious,
+      'vendor_pricing_id': vendorPricingId,
+      'vendorprice_date': vendorpriceDate,
+      'vendorprice_delivery_date': vendorpriceDeliveryDate,
+      'vendorprice_isbackorder': vendorpriceIsbackorder,
+      'vendorprice_offers': vendorpriceOffers,
+      'delivery_text': deliveryText,
+      'vendorprice_stock_text': vendorpriceStockText,
+      'vendorprice_stock': vendorpriceStock,
+      'vendor_name': vendorName,
+      'vendor_website': vendorWebsite,
+      'vendor_url': vendorUrl,
+      'vendor_raw_url': vendorRawUrl,
     };
   }
 }

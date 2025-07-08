@@ -8,17 +8,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:minsellprice/bloc/all_brand_bloc/all_brand_bloc.dart';
-import 'package:minsellprice/bloc/login_bloc/login_bloc.dart';
-import 'package:minsellprice/bloc/vendor_details_bloc/vendor_details_bloc.dart';
-import 'package:minsellprice/bloc/database_bloc/add_data_bloc/insert_into_database_bloc.dart';
-import 'package:minsellprice/bloc/database_bloc/database_setup/database_bloc.dart';
-import 'package:minsellprice/bloc/feature_brand_bloc/feature_brands_bloc.dart';
-import 'package:minsellprice/bloc/feature_category/feature_category_bloc.dart';
-import 'package:minsellprice/bloc/product_list_by_id_bloc/product_list_by_id_bloc.dart';
 import 'package:minsellprice/services/extra_functions.dart';
 import 'package:minsellprice/dashboard_screen.dart';
 import 'package:minsellprice/permissions/permissions.dart';
@@ -31,7 +22,9 @@ import 'package:minsellprice/notification_page/notification_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-const Color primaryColor = Color(0xFFd90310);
+import 'colors.dart';
+
+const Color primaryColor = AppColors.primary;
 
 Future<void> permission() async {
   if (await Permission.scheduleExactAlarm.isDenied) {
@@ -43,7 +36,6 @@ bool _notificationClicked = false;
 String _initialNotificationData = '';
 
 void main() async {
-  Bloc.observer = SimpleBlocObserver();
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
       options: Platform.isAndroid
@@ -68,7 +60,7 @@ void main() async {
 
     if (swAvailable && swInterceptAvailable) {
       AndroidServiceWorkerController serviceWorkerController =
-          AndroidServiceWorkerController.instance();
+      AndroidServiceWorkerController.instance();
 
       await serviceWorkerController
           .setServiceWorkerClient(AndroidServiceWorkerClient(
@@ -89,16 +81,16 @@ void main() async {
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
     final notificationJson = message.notification != null
         ? jsonEncode({
-            'title': message.notification?.title ?? '',
-            'message': message.notification?.body ?? '',
-            'image': message.notification?.android?.imageUrl ??
-                message.notification?.apple?.imageUrl ??
-                message.data['image'] ??
-                '',
-            'name': message.data['name'] ?? '',
-            'time': DateTime.now().toIso8601String(),
-            'isRead': false,
-          })
+      'title': message.notification?.title ?? '',
+      'message': message.notification?.body ?? '',
+      'image': message.notification?.android?.imageUrl ??
+          message.notification?.apple?.imageUrl ??
+          message.data['image'] ??
+          '',
+      'name': message.data['name'] ?? '',
+      'time': DateTime.now().toIso8601String(),
+      'isRead': false,
+    })
         : '';
     if (notificationJson.isNotEmpty) {
       final prefs = await SharedPreferences.getInstance();
@@ -121,83 +113,45 @@ void main() async {
   runApp(
     ChangeNotifierProvider(
       create: (_) => my_auth.AuthProvider(),
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-            create: (context) => DatabaseBloc(),
-          ),
-          BlocProvider(
-            create: (context) => LoginBloc(),
-          ),
-          BlocProvider(
-            create: (context) => VendorDetailsBloc(),
-          ),
-          BlocProvider(
-            create: (context) => InsertIntoDatabaseBloc(),
-          ),
-          // BlocProvider(
-          //   create: (context) => BrandPriceAnalysisBloc(),
-          // ),
-          BlocProvider(
-            create: (context) => ProductListByIdBloc(),
-          ),
-          // BlocProvider(
-          //   create: (context) => DiscountBloc(),
-          // ),
-          // BlocProvider(
-          //   create: (context) => PriceChangeBloc(),
-          // ),
-          BlocProvider(
-            create: (context) => AllBrandBloc(),
-          ),
-          BlocProvider(
-            create: (context) => FeatureCategoryBloc(),
-          ),
-          BlocProvider(
-            create: (context) => FeatureBrandsBloc(),
-          ),
-        ],
-        child: ConnectionNotifier(
-          connectionNotificationOptions: const ConnectionNotificationOptions(
-            alignment: AlignmentDirectional.topCenter,
-          ),
-          child: MaterialApp(
-            navigatorKey: navigatorKey,
-            title: 'MinSellPrice',
-            debugShowMaterialGrid: false,
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              fontFamily: 'Segoe UI',
-              primarySwatch: MaterialColor(_d90310, colorCodes),
-              useMaterial3: true,
-              // Disable Material 3 if needed
-              // Customize other theme properties as desired
-              // For example, you can set the primary color:
-              primaryColor: Colors.white,
-              // Or adjust the text selection theme:
-              textSelectionTheme: const TextSelectionThemeData(
-                selectionColor: Colors.blue,
-                cursorColor: Colors.blue,
-              ),
-              cardColor: Colors.white,
-              appBarTheme:
-                  AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
-              // Set the card theme:
-              cardTheme: CardTheme(
-                color: Colors.white,
-                margin: const EdgeInsets.all(2),
-                // Set the desired card color
-                elevation: 4, // Adjust elevation if needed
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(8), // Customize card shape
-                ),
+      child: ConnectionNotifier(
+        connectionNotificationOptions: const ConnectionNotificationOptions(
+          alignment: AlignmentDirectional.topCenter,
+        ),
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'FlutterMinSellPrice',
+          debugShowMaterialGrid: false,
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            fontFamily: 'Segoe UI',
+            primarySwatch: MaterialColor(_d90310, colorCodes),
+            useMaterial3: true,
+            // Disable Material 3 if needed
+            // Customize other theme properties as desired
+            // For example, you can set the primary color:
+            primaryColor: Colors.white,
+            // Or adjust the text selection theme:
+            textSelectionTheme: const TextSelectionThemeData(
+              selectionColor: Colors.blue,
+              cursorColor: Colors.blue,
+            ),
+            cardColor: Colors.white,
+            appBarTheme:
+            AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
+            // Set the card theme:
+            cardTheme: CardTheme(
+              color: Colors.white,
+              margin: const EdgeInsets.all(2),
+              // Set the desired card color
+              elevation: 4, // Adjust elevation if needed
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8), // Customize card shape
               ),
             ),
-            home: const SafeArea(
-              top: true,
-              child: BridgeClass(),
-            ),
+          ),
+          home: const SafeArea(
+            top: true,
+            child: BridgeClass(),
           ),
         ),
       ),
@@ -220,14 +174,14 @@ class _MyAppState extends State<MyApp> {
         // Prepare notification data as JSON string
         final notificationJson = _initialNotificationData.isNotEmpty
             ? jsonEncode({
-                'title': '',
-                'message': _initialNotificationData,
-                'image':
-                    '', // Add image URL if available in initial notification
-                'name': '',
-                'time': DateTime.now().toIso8601String(),
-                'isRead': false,
-              })
+          'title': '',
+          'message': _initialNotificationData,
+          'image':
+          '', // Add image URL if available in initial notification
+          'name': '',
+          'time': DateTime.now().toIso8601String(),
+          'isRead': false,
+        })
             : '';
         if (notificationJson.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
@@ -245,82 +199,45 @@ class _MyAppState extends State<MyApp> {
         _initialNotificationData = '';
       }
     });
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => DatabaseBloc(),
-        ),
-        BlocProvider(
-          create: (context) => LoginBloc(),
-        ),
-        BlocProvider(
-          create: (context) => VendorDetailsBloc(),
-        ),
-        BlocProvider(
-          create: (context) => InsertIntoDatabaseBloc(),
-        ),
-        // BlocProvider(
-        //   create: (context) => BrandPriceAnalysisBloc(),
-        // ),
-        BlocProvider(
-          create: (context) => ProductListByIdBloc(),
-        ),
-        // BlocProvider(
-        //   create: (context) => DiscountBloc(),
-        // ),
-        // BlocProvider(
-        //   create: (context) => PriceChangeBloc(),
-        // ),
-        BlocProvider(
-          create: (context) => AllBrandBloc(),
-        ),
-        BlocProvider(
-          create: (context) => FeatureCategoryBloc(),
-        ),
-        BlocProvider(
-          create: (context) => FeatureBrandsBloc(),
-        ),
-      ],
-      child: ConnectionNotifier(
-        connectionNotificationOptions: const ConnectionNotificationOptions(
-          alignment: AlignmentDirectional.topCenter,
-        ),
-        child: MaterialApp(
-          navigatorKey: navigatorKey,
-          title: 'MinSellPrice',
-          debugShowMaterialGrid: false,
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            fontFamily: 'Segoe UI',
-            primarySwatch: MaterialColor(_d90310, colorCodes),
-            useMaterial3: true,
-            // Disable Material 3 if needed
-            // Customize other theme properties as desired
-            // For example, you can set the primary color:
-            primaryColor: Colors.white,
-            // Or adjust the text selection theme:
-            textSelectionTheme: const TextSelectionThemeData(
-              selectionColor: Colors.blue,
-              cursorColor: Colors.blue,
-            ),
-            cardColor: Colors.white,
-            appBarTheme:
-                AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
-            // Set the card theme:
-            cardTheme: CardTheme(
-              color: Colors.white,
-              margin: const EdgeInsets.all(2),
-              // Set the desired card color
-              elevation: 4, // Adjust elevation if needed
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8), // Customize card shape
-              ),
+    return ConnectionNotifier(
+      connectionNotificationOptions: const ConnectionNotificationOptions(
+        alignment: AlignmentDirectional.topCenter,
+      ),
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        title: 'MinSellPrice',
+        debugShowMaterialGrid: false,
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          fontFamily: 'Segoe UI',
+          primarySwatch: MaterialColor(_d90310, colorCodes),
+          useMaterial3: true,
+          // Disable Material 3 if needed
+          // Customize other theme properties as desired
+          // For example, you can set the primary color:
+          primaryColor: Colors.white,
+          // Or adjust the text selection theme:
+          textSelectionTheme: const TextSelectionThemeData(
+            selectionColor: Colors.blue,
+            cursorColor: Colors.blue,
+          ),
+          cardColor: Colors.white,
+          appBarTheme:
+          AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
+          // Set the card theme:
+          cardTheme: CardTheme(
+            color: Colors.white,
+            margin: const EdgeInsets.all(2),
+            // Set the desired card color
+            elevation: 4, // Adjust elevation if needed
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8), // Customize card shape
             ),
           ),
-          home: const SafeArea(
-            top: true,
-            child: BridgeClass(),
-          ),
+        ),
+        home: const SafeArea(
+          top: true,
+          child: BridgeClass(),
         ),
       ),
     );
