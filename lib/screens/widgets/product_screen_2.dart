@@ -9,13 +9,13 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:minsellprice/app.dart';
+import 'package:minsellprice/colors.dart' show AppColors;
 import 'package:minsellprice/dashboard_screen.dart';
 import 'package:minsellprice/model/product_list_model.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/reposotory_services/database/database_constants.dart';
 import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 import 'package:minsellprice/screens/InAppBrowser.dart';
-import 'package:minsellprice/screens/ai_price_engine/ai_pricie_engine_screen.dart';
 import 'package:minsellprice/screens/sample_product.dart';
 import 'package:minsellprice/screens/widgets/animated_notification_button.dart';
 import 'package:minsellprice/services/extra_functions.dart';
@@ -24,6 +24,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:minsellprice/reposotory_services/network_reposotory.dart';
+import 'package:minsellprice/model/brand_product_detail_model.dart';
+import '../../custom_sizebox.dart';
 import 'sample_product_screen.dart';
 
 class CurrentProductScreen extends StatefulWidget {
@@ -447,6 +450,32 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
 
   int isLiked = 0;
 
+  /*API Methods*/
+  Future<BrandProductDetailResponse?> fetchBrandProductDetail() async {
+    try {
+      // Example usage of the new API
+      // You can replace these values with actual data from your product
+      final response = await NetworkCalls().getBrandProductDetail(
+        'Bull Grills', // brandName
+        '44000', // brandId
+        203034, // productId
+      );
+
+      if (response != null) {
+        print('Brand product detail fetched successfully');
+        print('Product: ${response.productDetail.productName}');
+        print('Vendors: ${response.vendorProducts.length}');
+        return response;
+      } else {
+        print('Failed to fetch brand product detail');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching brand product detail: $e');
+      return null;
+    }
+  }
+
   /*Sharing Methods*/
 
   @override
@@ -457,103 +486,101 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
     ProductListModel? productData;
     if (widget.data != null) {
       // Convert VendorProduct to ProductListModel
-
       try {
         final vendorProduct = widget.data!;
-        log('image url ' + vendorProduct.productImage);
         productData = ProductListModel(
           productId: vendorProduct.productId,
           productName: vendorProduct.productName,
-          productImage: vendorProduct.productImage,
+          productImage: vendorProduct.productImage ?? '',
           productMpn: vendorProduct.productMpn,
-          brandName: vendorProduct.brandName,
-          vendorSku: vendorProduct.vendorSku,
-          weight: vendorProduct.weight,
-          materialGroup: vendorProduct.materialGroup,
-          lastGoodReceipt: vendorProduct.lastGoodReceipt,
-          ruleName: vendorProduct.ruleName,
-          firstVendorPrice: vendorProduct.firstVendorPrice,
-          firstVendorBasePrice: vendorProduct.firstVendorBasePrice,
-          firstVendorPriceShipping: vendorProduct.firstVendorPriceShipping,
-          firstVendorExtraDiscount: vendorProduct.firstVendorExtraDiscount,
-          firstVendorName: vendorProduct.firstVendorName,
-          firstVendorUrl: vendorProduct.firstVendorUrl,
-          secondVendorPrice: vendorProduct.secondVendorPrice,
-          secondVendorBasePrice: vendorProduct.secondVendorBasePrice,
-          secondVendorPriceShipping: vendorProduct.secondVendorPriceShipping,
-          secondVendorExtraDsicount: vendorProduct.secondVendorExtraDiscount,
-          secondVendorName: vendorProduct.secondVendorName,
-          secondVendorUrl: vendorProduct.secondVendorUrl,
-          thirdVendorName: vendorProduct.thirdVendorName,
-          thirdVendorUrl: vendorProduct.thirdVendorUrl,
-          thirdVendorFinalPrice: vendorProduct.thirdVendorPrice,
-          thirdVendorBasePrice: vendorProduct.thirdVendorBasePrice,
-          thirdVendorShipping: vendorProduct.thirdVendorPriceShipping,
-          thirdVendorExtraDiscount: vendorProduct.thirdVendorExtraDiscount,
-          fourthVendorName: vendorProduct.fourthVendorName,
-          fourthVendorUrl: vendorProduct.fourthVendorUrl,
-          fourthVendorFinalPrice: vendorProduct.fourthVendorPrice,
-          fourthVendorBasePrice: vendorProduct.fourthVendorBasePrice,
-          fourthVendorShipping: vendorProduct.fourthVendorPriceShipping,
-          fourthVendorExtraDiscount: vendorProduct.fourthVendorExtraDiscount,
-          fifthVendorName: vendorProduct.fifthVendorName,
-          fifthVendorUrl: vendorProduct.fifthVendorUrl,
-          fifthVendorFinalPrice: vendorProduct.fifthVendorPrice,
-          fifthVendorBasePrice: vendorProduct.fifthVendorBasePrice,
-          fifthVendorShipping: vendorProduct.fifthVendorPriceShipping,
-          fifthVendorExtraDiscount: vendorProduct.fifthVendorExtraDiscount,
-          vendorProductId: vendorProduct.vendorProductId,
-          firstVendorProductId: vendorProduct.firstVendorProductId,
-          secondVendorProductId: vendorProduct.secondVendorProductId,
-          thirdVendorProductId: vendorProduct.thirdVendorProductId,
-          fourthVendorProductId: vendorProduct.fourthVendorProductId,
-          fifthVendorProductId: vendorProduct.fifthVendorProductId,
-          competitorId: vendorProduct.competitorId ?? '',
-          vendorPriceFinalPrice: vendorProduct.vendorPriceFinalPrice,
-          sisterExtraDiscount: vendorProduct.sisterExtraDiscount ?? '',
-          sisterVendorBasePrice: vendorProduct.sisterVendorBasePrice ?? '',
-          sisterVendorPriceDate: vendorProduct.sisterVendorPriceDate ?? '',
-          sisterVendorFinalPrice: vendorProduct.sisterVendorFinalPrice ?? '',
-          sisterVendorShipping: vendorProduct.sisterVendorShipping ?? '',
+          brandName: vendorProduct.vendorName, // Using vendorName as brandName
+          vendorSku: '', // Not available in new model
+          weight: '', // Not available in new model
+          materialGroup: '', // Not available in new model
+          lastGoodReceipt: '', // Not available in new model
+          ruleName: '', // Not available in new model
+          firstVendorPrice: vendorProduct.vendorpricePrice,
+          firstVendorBasePrice: vendorProduct.vendorpricePrice,
+          firstVendorPriceShipping: '',
+          firstVendorExtraDiscount: '',
+          firstVendorName: vendorProduct.vendorName,
+          firstVendorUrl: vendorProduct.vendorUrl,
+          secondVendorPrice: '',
+          secondVendorBasePrice: '',
+          secondVendorPriceShipping: '',
+          secondVendorExtraDsicount: '',
+          secondVendorName: '',
+          secondVendorUrl: '',
+          thirdVendorName: '',
+          thirdVendorUrl: '',
+          thirdVendorFinalPrice: '',
+          thirdVendorBasePrice: '',
+          thirdVendorShipping: '',
+          thirdVendorExtraDiscount: '',
+          fourthVendorName: '',
+          fourthVendorUrl: '',
+          fourthVendorFinalPrice: '',
+          fourthVendorBasePrice: '',
+          fourthVendorShipping: '',
+          fourthVendorExtraDiscount: '',
+          fifthVendorName: '',
+          fifthVendorUrl: '',
+          fifthVendorFinalPrice: '',
+          fifthVendorBasePrice: '',
+          fifthVendorShipping: '',
+          fifthVendorExtraDiscount: '',
+          vendorProductId: 0, // Not available in new model
+          firstVendorProductId: '',
+          secondVendorProductId: '',
+          thirdVendorProductId: '',
+          fourthVendorProductId: '',
+          fifthVendorProductId: '',
+          competitorId: '',
+          vendorPriceFinalPrice: vendorProduct.vendorpricePrice,
+          sisterExtraDiscount: '',
+          sisterVendorBasePrice: '',
+          sisterVendorPriceDate: '',
+          sisterVendorFinalPrice: '',
+          sisterVendorShipping: '',
           vendorPriceDate: vendorProduct.vendorpriceDate,
-          rpSellVariation: vendorProduct.rpVariationSellPrice,
-          brandId: vendorProduct.brandId,
-          gcode: vendorProduct.gcode,
-          msrp: vendorProduct.msrp,
-          brandKey: vendorProduct.brandKey,
-          mainImage: vendorProduct.mainImage,
-          secondarySku: vendorProduct.secondarySku,
+          rpSellVariation: '',
+          brandId: '',
+          gcode: '',
+          msrp: '',
+          brandKey: '',
+          mainImage: vendorProduct.productImage ?? '',
+          secondarySku: '',
           vendorName: vendorProduct.vendorName,
           vendorpricePrice: vendorProduct.vendorpricePrice,
-          vendorpriceShipping: vendorProduct.vendorpriceShipping,
-          extraDiscount: vendorProduct.extraDiscount,
-          vendorBaseUrl: vendorProduct.vendorBaseUrl ?? '',
-          atp: vendorProduct.atp,
-          sales: vendorProduct.sales,
-          sellPrice: vendorProduct.sellPrice,
-          z3Price: vendorProduct.z3Price,
-          mapPrice: vendorProduct.mapPrice,
-          vk11: vendorProduct.vk11,
-          movingAverage: vendorProduct.movingAverage,
-          purchasePrice: vendorProduct.purchasePrice,
-          saleAtpRatio: vendorProduct.saleAtpRatio,
-          amountInvested: vendorProduct.amountInvested,
-          rt: vendorProduct.rt,
-          days: vendorProduct.days,
-          msp: vendorProduct.msp,
-          rp: vendorProduct.rp,
-          rpCriteria: vendorProduct.rpCriteria,
-          competitor: vendorProduct.competitor ?? '',
-          currentDiscount: vendorProduct.currentDiscount,
-          gpPercent: vendorProduct.gpPercent,
-          shipping: vendorProduct.shipping,
-          currentGp: vendorProduct.currentGp,
-          adjustedPrice: vendorProduct.adjustedPrice,
-          firstVendorPercentage: vendorProduct.firstVendorPercentage,
-          secondVendorPercentage: vendorProduct.secondVendorPercentage,
-          vendorpriceCount: vendorProduct.vendorpriceCount,
-          defaultcompetitor: vendorProduct.defaultcompetitor ?? '',
-          rpVariation: vendorProduct.rpVariation,
+          vendorpriceShipping: '',
+          extraDiscount: '',
+          vendorBaseUrl: '',
+          atp: '',
+          sales: '',
+          sellPrice: '',
+          z3Price: '',
+          mapPrice: '',
+          vk11: '',
+          movingAverage: '',
+          purchasePrice: '',
+          saleAtpRatio: '',
+          amountInvested: '',
+          rt: '',
+          days: '',
+          msp: '',
+          rp: '',
+          rpCriteria: '',
+          competitor: '',
+          currentDiscount: '',
+          gpPercent: '',
+          shipping: '',
+          currentGp: '',
+          adjustedPrice: '',
+          firstVendorPercentage: '',
+          secondVendorPercentage: '',
+          vendorpriceCount: vendorProduct.vendorIdCount.toString(),
+          defaultcompetitor: '',
+          rpVariation: '',
           vendorUrl: vendorProduct.vendorUrl,
         );
       } catch (e) {
@@ -688,9 +715,8 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color.fromARGB(255, 237, 63, 69),
             child: Image.asset(
-              'assets/shopping_mega_mart_logo.png',
+              'assets/minsellprice_logo.png',
               height: .2 * w,
             ),
           ),
@@ -740,7 +766,10 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
             },
             child: const Padding(
               padding: EdgeInsets.all(8.0),
-              child: Icon(Icons.share),
+              child: Icon(
+                Icons.share,
+                color: AppColors.primary,
+              ),
             ),
           ),
         ],
@@ -855,388 +884,6 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
                               const SizedBox(
                                 height: 5,
                               ),
-                              /*  SizedBox(
-                                width: w,
-                                child: FittedBox(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-
-                                      Container(
-                                        width: w * .5,
-                                        decoration:
-                                            const BoxDecoration(),
-                                        padding:
-                                            const EdgeInsets.all(4),
-                                        child: Column(
-                                          mainAxisSize:
-                                              MainAxisSize.min,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment
-                                                  .spaceEvenly,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            RichText(
-                                              text: TextSpan(
-                                                text: 'SKU: ',
-                                                style: GoogleFonts
-                                                    .openSans(
-                                                        color: Colors
-                                                            .black),
-                                                children: [
-                                                  TextSpan(
-                                                    text: widget
-                                                        .data.vendorSku,
-                                                    style: GoogleFonts
-                                                        .openSans(
-                                                            color: Colors
-                                                                .black,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                  ),
-                                                  const TextSpan(
-                                                      text: '\nMPN: '),
-                                                  TextSpan(
-                                                    text: widget.data
-                                                        .productMpn,
-                                                    style: GoogleFonts
-                                                        .openSans(
-                                                            color: Colors
-                                                                .black,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                  ),
-                                                  const TextSpan(
-                                                      text:
-                                                          '\nWEIGHT(LBS): '),
-                                                  TextSpan(
-                                                    text: widget
-                                                        .data.weight,
-                                                    style: GoogleFonts
-                                                        .openSans(
-                                                            color: Colors
-                                                                .black,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                  ),
-                                                  const TextSpan(
-                                                      text:
-                                                          '\nMATERIAL GROUP: '),
-                                                  TextSpan(
-                                                    text: widget.data
-                                                        .materialGroup,
-                                                    style: GoogleFonts
-                                                        .openSans(
-                                                            color: Colors
-                                                                .black,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              height: 5,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Column(
-                                        children: [
-                                          InkWell(
-                                            onTap: () {
-                                              showModalBottomSheet(
-                                                context: context,
-                                                elevation: 10,
-                                                shape:
-                                                    RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius
-                                                          .circular(
-                                                              10.0),
-                                                ),
-                                                isScrollControlled:
-                                                    true,
-                                                builder: (BuildContext
-                                                    context) {
-                                                  return Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize
-                                                            .min,
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .start,
-                                                    children: <Widget>[
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(
-                                                                8.0),
-                                                        child: Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize
-                                                                  .max,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            AutoSizeText(
-                                                              'Additional Information'
-                                                                  .toUpperCase(),
-                                                              style: GoogleFonts
-                                                                  .openSans(
-                                                                fontSize:
-                                                                    0.045 *
-                                                                        w,
-                                                                color: Colors
-                                                                    .black,
-                                                                fontWeight:
-                                                                    FontWeight.bold,
-                                                              ),
-                                                            ),
-                                                            InkWell(
-                                                              onTap:
-                                                                  () {
-                                                                Navigator
-                                                                    .pop(
-                                                                  context,
-                                                                );
-                                                              },
-                                                              child:
-                                                                  const Padding(
-                                                                padding:
-                                                                    EdgeInsets.all(4.0),
-                                                                child:
-                                                                    Icon(
-                                                                  Icons
-                                                                      .close,
-                                                                  size:
-                                                                      35,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      Card(
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                            vertical:
-                                                                16.0,
-                                                            horizontal:
-                                                                8,
-                                                          ),
-                                                          child:
-                                                              SizedBox(
-                                                            width: w,
-                                                            child:
-                                                                RichText(
-                                                              text:
-                                                                  TextSpan(
-                                                                text:
-                                                                    'Brand: ',
-                                                                style: GoogleFonts
-                                                                    .openSans(
-                                                                  fontSize:
-                                                                      0.04 * w,
-                                                                  fontWeight:
-                                                                      FontWeight.bold,
-                                                                  color:
-                                                                      Colors.black,
-                                                                ),
-                                                                children: [
-                                                                  TextSpan(
-                                                                    text:
-                                                                        widget.data!.brandName,
-                                                                    style: GoogleFonts.openSans(
-                                                                        fontSize: 0.04 * w,
-                                                                        fontWeight: FontWeight.bold,
-                                                                        color: Colors.green),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Card(
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                            vertical:
-                                                                16.0,
-                                                            horizontal:
-                                                                8,
-                                                          ),
-                                                          child:
-                                                              SizedBox(
-                                                            width: w,
-                                                            child:
-                                                                RichText(
-                                                              text:
-                                                                  TextSpan(
-                                                                text:
-                                                                    'Vendor SKU: ',
-                                                                style: GoogleFonts
-                                                                    .openSans(
-                                                                  fontSize:
-                                                                      0.04 * w,
-                                                                  fontWeight:
-                                                                      FontWeight.bold,
-                                                                  color:
-                                                                      Colors.black,
-                                                                ),
-                                                                children: [
-                                                                  TextSpan(
-                                                                    text:
-                                                                        widget.data!.vendorSku,
-                                                                    style: GoogleFonts.openSans(
-                                                                        fontSize: 0.04 * w,
-                                                                        fontWeight: FontWeight.bold,
-                                                                        color: Colors.green),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-
-                                                      Card(
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                            vertical:
-                                                                16.0,
-                                                            horizontal:
-                                                                8,
-                                                          ),
-                                                          child:
-                                                              SizedBox(
-                                                            width: w,
-                                                            child:
-                                                                RichText(
-                                                              text:
-                                                                  TextSpan(
-                                                                text:
-                                                                    'Product MPN: ',
-                                                                style: GoogleFonts
-                                                                    .openSans(
-                                                                  fontSize:
-                                                                      0.04 * w,
-                                                                  fontWeight:
-                                                                      FontWeight.bold,
-                                                                  color:
-                                                                      Colors.black,
-                                                                ),
-                                                                children: [
-                                                                  TextSpan(
-                                                                    text:
-                                                                        widget.data!.productMpn,
-                                                                    style: GoogleFonts.openSans(
-                                                                        fontSize: 0.04 * w,
-                                                                        fontWeight: FontWeight.bold,
-                                                                        color: Colors.green),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Card(
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                            vertical:
-                                                                16.0,
-                                                            horizontal:
-                                                                8,
-                                                          ),
-                                                          child:
-                                                              SizedBox(
-                                                            width: w,
-                                                            child:
-                                                                RichText(
-                                                              text:
-                                                                  TextSpan(
-                                                                text:
-                                                                    'Product Weight(LBS.): ',
-                                                                style: GoogleFonts
-                                                                    .openSans(
-                                                                  fontSize:
-                                                                      0.04 * w,
-                                                                  fontWeight:
-                                                                      FontWeight.bold,
-                                                                  color:
-                                                                      Colors.black,
-                                                                ),
-                                                                children: [
-                                                                  TextSpan(
-                                                                    text:
-                                                                        widget.data!.weight,
-                                                                    style: GoogleFonts.openSans(
-                                                                        fontSize: 0.04 * w,
-                                                                        fontWeight: FontWeight.bold,
-                                                                        color: Colors.green),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-
-
-                                                    ],
-                                                  );
-                                                },
-                                              );
-                                            },
-                                            child: const Padding(
-                                              padding:
-                                                  EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 8,
-                                              ),
-                                              child: Icon(
-                                                Icons.info_outline,
-                                              ),
-                                            ),
-                                          ),
-                                          */
-                              /*AnimatedNotificationButton(
-                                            productName:
-                                                widget.data!.productName,
-                                            vendorIdProductId: widget
-                                                .data.vendorProductId,
-                                            isLiked: isLiked,
-                                            productSKU:
-                                                widget.data!.productId,
-                                            database: widget.database,
-                                            vendorId: widget.vendorId,
-                                            notifiedIntValue:
-                                                _notifiedValue,
-                                            productData: jsonEncode(
-                                                widget.data!.toJson()),
-                                          ),*/ /*
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),*/
                             ],
                           ),
                         ),
@@ -1249,74 +896,10 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
                           trackVisibility: true,
                           thumbVisibility: true,
                           controller: _competitorScrollbar,
-                          child: CompetitorClass(
-                            firstVendorPrice: productData.firstVendorPrice,
-                            firstVendorBasePrice:
-                                productData.firstVendorBasePrice,
-                            firstVendorPriceShipping:
-                                productData.firstVendorPriceShipping,
-                            firstVendorExtraDiscount:
-                                productData.firstVendorExtraDiscount,
-                            firstVendorName: productData.firstVendorName,
-                            firstVendorUrl: productData.firstVendorUrl,
-                            secondVendorPrice: productData.secondVendorPrice,
-                            secondVendorBasePrice:
-                                productData.secondVendorBasePrice,
-                            secondVendorPriceShipping:
-                                productData.secondVendorPriceShipping,
-                            secondVendorExtraDsicount:
-                                productData.secondVendorExtraDsicount,
-                            secondVendorName: productData.secondVendorName,
-                            secondVendorUrl: productData.secondVendorUrl,
-                            thirdVendorName: productData.thirdVendorName,
-                            thirdVendorUrl: productData.thirdVendorUrl,
-                            thirdVendorFinalPrice:
-                                productData.thirdVendorFinalPrice,
-                            thirdVendorBasePrice:
-                                productData.thirdVendorBasePrice,
-                            thirdVendorShipping:
-                                productData.thirdVendorShipping,
-                            thirdVendorExtraDiscount:
-                                productData.thirdVendorExtraDiscount,
-                            fourthVendorName: productData.fourthVendorName,
-                            fourthVendorUrl: productData.fourthVendorUrl,
-                            fourthVendorFinalPrice:
-                                productData.fourthVendorFinalPrice,
-                            fourthVendorBasePrice:
-                                productData.fourthVendorBasePrice,
-                            fourthVendorShipping:
-                                productData.fourthVendorShipping,
-                            fourthVendorExtraDiscount:
-                                productData.fourthVendorExtraDiscount,
-                            fifthVendorName: productData.fifthVendorName,
-                            fifthVendorUrl: productData.fifthVendorUrl,
-                            fifthVendorFinalPrice:
-                                productData.fifthVendorFinalPrice,
-                            fifthVendorBasePrice:
-                                productData.fifthVendorBasePrice,
-                            fifthVendorShipping:
-                                productData.fifthVendorShipping,
-                            fifthVendorExtraDiscount:
-                                productData.fifthVendorExtraDiscount,
-                            scrollController: _competitorScrollbar,
-                            firstVendorProductId:
-                                productData.firstVendorProductId,
-                            secondVendorProductId:
-                                productData.secondVendorProductId,
-                            thirdVendorProductId:
-                                productData.thirdVendorProductId,
-                            fourthVendorProductId:
-                                productData.fourthVendorProductId,
-                            fifthVendorProductId:
-                                productData.fifthVendorProductId,
-                            competitorId: productData.competitorId,
-                            vendorpriceFinalprice:
-                                productData.vendorPriceFinalPrice,
-                          )),
+                          child: SizedBox()),
                     ),
                   ],
                 ),
-                animation(lottieController: _lottieController),
                 // Positioned(top: h *.45,child:
                 //   ),
               ],
@@ -1363,600 +946,4 @@ class _CurrentProductScreenState extends State<CurrentProductScreen>
 
   @override
   bool get wantKeepAlive => true;
-}
-
-class CompetitorClass extends StatelessWidget {
-  const CompetitorClass({
-    super.key,
-    required this.firstVendorPrice,
-    required this.firstVendorBasePrice,
-    required this.firstVendorPriceShipping,
-    required this.firstVendorExtraDiscount,
-    required this.firstVendorName,
-    required this.firstVendorUrl,
-    required this.secondVendorPrice,
-    required this.secondVendorBasePrice,
-    required this.secondVendorPriceShipping,
-    required this.secondVendorExtraDsicount,
-    required this.secondVendorName,
-    required this.secondVendorUrl,
-    required this.thirdVendorName,
-    required this.thirdVendorUrl,
-    required this.thirdVendorFinalPrice,
-    required this.thirdVendorBasePrice,
-    required this.thirdVendorShipping,
-    required this.thirdVendorExtraDiscount,
-    required this.fourthVendorName,
-    required this.fourthVendorUrl,
-    required this.fourthVendorFinalPrice,
-    required this.fourthVendorBasePrice,
-    required this.fourthVendorShipping,
-    required this.fourthVendorExtraDiscount,
-    required this.fifthVendorName,
-    required this.fifthVendorUrl,
-    required this.fifthVendorFinalPrice,
-    required this.fifthVendorBasePrice,
-    required this.fifthVendorShipping,
-    required this.fifthVendorExtraDiscount,
-    required this.scrollController,
-    required this.firstVendorProductId,
-    required this.secondVendorProductId,
-    required this.thirdVendorProductId,
-    required this.fourthVendorProductId,
-    required this.fifthVendorProductId,
-    required this.competitorId,
-    required this.vendorpriceFinalprice,
-  });
-
-  final ScrollController scrollController;
-  final String competitorId;
-  final String vendorpriceFinalprice;
-  final String firstVendorPrice;
-  final String firstVendorBasePrice;
-  final String firstVendorPriceShipping;
-  final String firstVendorExtraDiscount;
-  final String firstVendorName;
-  final String firstVendorProductId;
-  final String firstVendorUrl;
-  final String secondVendorPrice;
-  final String secondVendorBasePrice;
-  final String secondVendorPriceShipping;
-  final String secondVendorExtraDsicount;
-  final String secondVendorName;
-  final String secondVendorProductId;
-  final String secondVendorUrl;
-
-  /*Third Competitor Detail*/
-
-  final String thirdVendorName,
-      thirdVendorUrl,
-      thirdVendorFinalPrice,
-      thirdVendorBasePrice,
-      thirdVendorShipping,
-      thirdVendorProductId,
-      thirdVendorExtraDiscount;
-
-/*Fourth Competitor Detail*/
-
-  final String fourthVendorName,
-      fourthVendorUrl,
-      fourthVendorFinalPrice,
-      fourthVendorBasePrice,
-      fourthVendorShipping,
-      fourthVendorProductId,
-      fourthVendorExtraDiscount;
-
-/*Fifth Competitor Detail*/
-
-  final String fifthVendorName,
-      fifthVendorUrl,
-      fifthVendorFinalPrice,
-      fifthVendorBasePrice,
-      fifthVendorShipping,
-      fifthVendorProductId,
-      fifthVendorExtraDiscount;
-
-  @override
-  Widget build(BuildContext context) {
-    final totalCompetitors = totalNumberOfCompetitors(
-      firstVendorPrice: firstVendorPrice,
-      secondVendorPrice: secondVendorPrice,
-      thirdVendorPrice: thirdVendorFinalPrice,
-      fourthVendorPrice: fourthVendorFinalPrice,
-      fifthVendorPrice: fifthVendorFinalPrice,
-    );
-
-    return SingleChildScrollView(
-      controller: scrollController,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          /*Experiment Widget*/
-          verticalSpace(verticalSpace: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28.0),
-            child: SizedBox(
-              width: w,
-              child: AutoSizeText(
-                totalCompetitors == 0
-                    ? 'Not Available'
-                    : 'Available at $totalCompetitors store',
-                style: GoogleFonts.montserrat(
-                  fontSize: 0.06 * w,
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          if (totalCompetitors > 0) ...[
-            CompetitorTile(
-                activeIndex: 0,
-                vendorImage: firstVendorName,
-                vendorFinalPrice: firstVendorPrice,
-                vendorBasePrice: firstVendorBasePrice,
-                vendorShipping: keepSingleDollarSign(firstVendorPriceShipping
-                                    .contains('--')
-                                ? firstVendorPriceShipping.replaceAll('\$', '')
-                                : firstVendorPriceShipping)
-                            .replaceAll('\$', '') ==
-                        '0.00'
-                    ? 'Free Shipping'
-                    : keepSingleDollarSign(
-                        firstVendorPriceShipping.contains('--')
-                            ? firstVendorPriceShipping.replaceAll('\$', '')
-                            : firstVendorPriceShipping),
-                vendorDiscount: firstVendorExtraDiscount == '0.0' ||
-                        firstVendorExtraDiscount == '--'
-                    ? ''
-                    : firstVendorExtraDiscount,
-                vendorProductUrl: firstVendorUrl),
-            CompetitorTile(
-                activeIndex: 1,
-                vendorImage: secondVendorName,
-                vendorFinalPrice: keepSingleDollarSign(
-                    '${secondVendorPrice.contains('--') ? secondVendorPrice.replaceAll('\$', '') : secondVendorPrice}\n'),
-                vendorBasePrice: keepSingleDollarSign(
-                    secondVendorBasePrice.contains('--')
-                        ? secondVendorBasePrice.replaceAll('\$', '')
-                        : secondVendorBasePrice),
-                vendorShipping: keepSingleDollarSign(secondVendorPriceShipping
-                                    .contains('--')
-                                ? secondVendorPriceShipping.replaceAll('\$', '')
-                                : secondVendorPriceShipping)
-                            .replaceAll('\$', '') ==
-                        '0.00'
-                    ? 'Free Shipping'
-                    : keepSingleDollarSign(
-                        secondVendorPriceShipping.contains('--')
-                            ? secondVendorPriceShipping.replaceAll('\$', '')
-                            : secondVendorPriceShipping),
-                vendorDiscount: secondVendorExtraDsicount,
-                vendorProductUrl: secondVendorUrl),
-            CompetitorTile(
-                activeIndex: 2,
-                vendorImage: thirdVendorName,
-                vendorFinalPrice: keepSingleDollarSign(
-                    '${thirdVendorFinalPrice.contains('--') ? thirdVendorFinalPrice.replaceAll('\$', '') : thirdVendorFinalPrice}\n'),
-                vendorBasePrice: keepSingleDollarSign(
-                    thirdVendorBasePrice.contains('--')
-                        ? thirdVendorBasePrice.replaceAll('\$', '')
-                        : thirdVendorBasePrice),
-                vendorShipping: keepSingleDollarSign(
-                                thirdVendorShipping.contains('--')
-                                    ? thirdVendorShipping.replaceAll('\$', '')
-                                    : thirdVendorShipping)
-                            .replaceAll('\$', '') ==
-                        '0.00'
-                    ? 'Free Shipping'
-                    : keepSingleDollarSign(thirdVendorShipping.contains('--')
-                        ? thirdVendorShipping.replaceAll('\$', '')
-                        : thirdVendorShipping),
-                vendorDiscount: thirdVendorExtraDiscount,
-                vendorProductUrl: thirdVendorUrl),
-            CompetitorTile(
-              activeIndex: 3,
-              vendorImage: fourthVendorName,
-              vendorFinalPrice: keepSingleDollarSign(
-                  '${fourthVendorFinalPrice.contains('--') ? fourthVendorFinalPrice.replaceAll('\$', '') : fourthVendorFinalPrice}\n'),
-              vendorBasePrice: keepSingleDollarSign(
-                  fourthVendorBasePrice.contains('--')
-                      ? fourthVendorBasePrice.replaceAll('\$', '')
-                      : fourthVendorBasePrice),
-              vendorShipping: keepSingleDollarSign(
-                              fourthVendorShipping.contains('--')
-                                  ? fourthVendorShipping.replaceAll('\$', '')
-                                  : fourthVendorShipping)
-                          .replaceAll('\$', '') ==
-                      '0.00'
-                  ? 'Free Shipping'
-                  : keepSingleDollarSign(fourthVendorShipping.contains('--')
-                      ? fourthVendorShipping.replaceAll('\$', '')
-                      : fourthVendorShipping),
-              vendorDiscount: fourthVendorExtraDiscount,
-              vendorProductUrl: fourthVendorUrl,
-            ),
-            CompetitorTile(
-              activeIndex: 4,
-              vendorImage: fifthVendorName,
-              vendorFinalPrice: keepSingleDollarSign(
-                  '${fifthVendorFinalPrice.contains('--') ? fifthVendorFinalPrice.replaceAll('\$', '') : fifthVendorFinalPrice}\n'),
-              vendorBasePrice: keepSingleDollarSign(
-                  fifthVendorBasePrice.contains('--')
-                      ? fifthVendorBasePrice.replaceAll('\$', '')
-                      : fifthVendorBasePrice),
-              vendorShipping: keepSingleDollarSign(
-                              fifthVendorShipping.contains('--')
-                                  ? fifthVendorShipping.replaceAll('\$', '')
-                                  : fifthVendorShipping)
-                          .replaceAll('\$', '') ==
-                      '0.00'
-                  ? 'Free Shipping'
-                  : keepSingleDollarSign(fifthVendorShipping.contains('--')
-                      ? fifthVendorShipping.replaceAll('\$', '')
-                      : fifthVendorShipping),
-              vendorDiscount: fifthVendorExtraDiscount,
-              vendorProductUrl: fifthVendorUrl,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class CompetitorTile extends StatelessWidget {
-  final int activeIndex;
-  final String vendorImage,
-      vendorFinalPrice,
-      vendorBasePrice,
-      vendorShipping,
-      vendorDiscount,
-      vendorProductUrl;
-
-  const CompetitorTile({
-    super.key,
-    required this.activeIndex,
-    required this.vendorImage,
-    required this.vendorFinalPrice,
-    required this.vendorBasePrice,
-    required this.vendorShipping,
-    required this.vendorDiscount,
-    required this.vendorProductUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 28.0,
-      ),
-      child: SizedBox(
-        height: w * .38,
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: [
-            Center(
-              child: SizedBox(
-                height: w * .33,
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  margin: EdgeInsets.zero,
-                  child: Container(
-                    width: w,
-                    margin: EdgeInsets.zero,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.grey,
-                        width: .3,
-                      ),
-                    ),
-                    child: Column(
-                      // textBaseline: TextBaseline.alphabetic,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: w,
-                          height: 55,
-                          child: Stack(
-                            children: [
-                              Align(
-                                alignment: Alignment.topLeft,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 15.0, vertical: 3),
-                                  child: SizedBox(
-                                    width: w * .28,
-                                    child: AutoSizeText(
-                                      keepSingleDollarSign(vendorFinalPrice),
-                                      maxLines: 1,
-                                      style: GoogleFonts.albertSans(
-                                        color: Colors.black,
-                                        fontSize: w * .09,
-                                        letterSpacing: 0,
-                                        fontWeight: FontWeight.bold,
-                                        // fontFamily: 'JT Marnie Light',
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 10,
-                                right: 12,
-                                child: Row(
-                                  children: [
-                                    CachedNetworkImage(
-                                      imageUrl:
-                                          '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/$vendorImage.jpg',
-                                      width: w * .25,
-                                      fit: BoxFit.fill,
-                                      errorWidget: (_, c, e) => Container(
-                                        width: w * .2,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Center(
-                                          child: AutoSizeText(
-                                            vendorImage == '--'
-                                                ? 'N/A'
-                                                : vendorImage,
-                                            maxLines: 1,
-                                            textAlign: TextAlign.center,
-                                            style: GoogleFonts.albertSans(
-                                              color: Colors.black,
-                                              fontSize: w * .035,
-                                              letterSpacing: 0,
-                                              fontWeight: FontWeight.normal,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    horizontalSpace(horizontalSpace: 10),
-                                    CircleAvatar(
-                                      radius: 21,
-                                      backgroundColor:
-                                          Colors.black.withOpacity(.6),
-                                      child: const CircleAvatar(
-                                        radius: 20,
-                                        backgroundColor: Colors.white,
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.keyboard_arrow_down,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    horizontalSpace(horizontalSpace: 10),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                        verticalSpace(verticalSpace: 5),
-                        SizedBox(
-                          width: w,
-                          height: 50,
-                          child: Stack(
-                            // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Positioned(
-                                left: 14,
-                                child: SizedBox(
-                                  height: 48,
-                                  width: w * .4,
-                                  child: (vendorShipping.contains('--') ||
-                                              vendorShipping == '\$0.00' ||
-                                              vendorShipping.replaceAll(
-                                                      '\$', '') ==
-                                                  'Free Shipping') &&
-                                          (vendorDiscount.contains('0.00') ||
-                                              vendorDiscount.contains('--'))
-                                      ? Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.local_shipping_outlined,
-                                              color: Colors.green,
-                                            ),
-                                            horizontalSpace(horizontalSpace: 6),
-                                            AutoSizeText(
-                                              (vendorShipping.contains('--') ||
-                                                      vendorShipping.replaceAll(
-                                                              '\$', '') ==
-                                                          '+ 0.00'
-                                                  ? 'Free Shipping'
-                                                  : vendorShipping),
-                                              style: GoogleFonts.aBeeZee(
-                                                color: Colors.green,
-                                                fontSize: w * .04,
-                                                letterSpacing: 0,
-                                                fontWeight: FontWeight.normal,
-                                                // fontFamily: 'JT Marnie Light',
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: RichText(
-                                            textAlign: TextAlign.center,
-                                            text: TextSpan(
-                                              text: vendorBasePrice,
-                                              style: GoogleFonts.albertSans(
-                                                color: Colors.black,
-                                                fontSize: w * .04,
-                                                letterSpacing: 0,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              children: [
-                                                const TextSpan(text: ' + 🚚 '),
-                                                TextSpan(
-                                                  text:
-                                                      vendorShipping.replaceAll(
-                                                          'Free Shipping',
-                                                          '\$0.00'),
-                                                  style: GoogleFonts.albertSans(
-                                                    color: Colors.grey,
-                                                    fontSize: w * .04,
-                                                    letterSpacing: 0,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                returnDiscountTextSpan(
-                                                  basePrice: vendorBasePrice,
-                                                  discountPercent:
-                                                      vendorDiscount,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                ),
-                              ),
-                              Positioned(
-                                right: 16,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: InkWell(
-                                    splashColor: Colors.blue,
-                                    onTap: () async {
-                                      await MyInAppBrowser().openUrlRequest(
-                                        urlRequest: URLRequest(
-                                          url: WebUri(
-                                            vendorProductUrl +
-                                                '?utm_source=minsellprice.com&utm_medium=mobile-app',
-                                          ),
-                                        ),
-                                        options: InAppBrowserClassOptions(
-                                          crossPlatform: InAppBrowserOptions(
-                                            toolbarTopBackgroundColor:
-                                                Colors.blue,
-                                          ),
-                                        ),
-                                      );
-                                      log('Opening Pansgear URL: ${vendorProductUrl}?utm_source=shoppingmegamart.com&utm_medium=mobile-app');
-                                    },
-                                    child: Card(
-                                      color: Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(14),
-                                          side: const BorderSide(
-                                              width: 1, color: Colors.grey)),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(14)),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 30.0,
-                                            vertical: 8.0,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              AutoSizeText(
-                                                'Visit',
-                                                style: GoogleFonts.aBeeZee(
-                                                  color: Colors.black,
-                                                  fontSize: w * .04,
-                                                  letterSpacing: 0,
-                                                  fontWeight: FontWeight.normal,
-                                                  // fontFamily: 'JT Marnie Light',
-                                                ),
-                                              ),
-                                              horizontalSpace(
-                                                  horizontalSpace: 10),
-                                              Transform.rotate(
-                                                angle: 24,
-                                                child: const Icon(
-                                                  Icons.arrow_forward,
-                                                  color: Colors.blue,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        verticalSpace(verticalSpace: 5),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            activeIndex == 0
-                ? Positioned(
-                    top: 0,
-                    child: Container(
-                      width: w * .32,
-                      decoration: BoxDecoration(
-                        color: '#ff6501'.toColor(),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          bottomRight: Radius.circular(12),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 2.0, horizontal: 2.0),
-                        child: Center(
-                          child: AutoSizeText(
-                            'Lowest total price',
-                            maxLines: 1,
-                            style: GoogleFonts.aBeeZee(
-                                color: Colors.white,
-                                fontSize: w * .018,
-                                fontWeight: FontWeight.w200),
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                : const SizedBox(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  TextSpan returnDiscountTextSpan(
-      {required String basePrice, required String discountPercent}) {
-    try {
-      final basePriceValue = double.parse(basePrice.replaceAll('\$', ''));
-      final discountValueValue = double.parse(discountPercent);
-
-      return discountValueValue != 0.00
-          ? TextSpan(
-              text:
-                  '\n-$discountPercent% (\$${returnDiscountPrice(mainPrice: basePrice, discountPercentage: discountPercent)})',
-              style: GoogleFonts.albertSans(
-                color: Colors.orange,
-                fontSize: w * .04,
-                letterSpacing: 0,
-                fontWeight: FontWeight.normal,
-              ),
-            )
-          : const TextSpan();
-    } catch (e) {
-      return const TextSpan();
-    }
-  }
 }

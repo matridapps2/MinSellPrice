@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:minsellprice/bloc/vendor_details_bloc/vendor_details_bloc.dart';
 import 'package:minsellprice/services/extra_functions.dart';
 
 class DatePickerFormField extends StatefulWidget {
@@ -53,16 +52,16 @@ class _DatePickerFormFieldState extends State<DatePickerFormField> {
         selectedDate = pickedDate;
       });
       if (mounted) {
-        context.read<VendorDetailsBloc>().add(
-              VendorDetailsFetchingEvent(
-                vendorId: widget.vendorId.toString(),
-                date: dateFormat
-                    .format(
-                      selectedDate,
-                    )
-                    .replaceAll('/', '-'),
-              ),
-            );
+        // context.read<VendorDetailsBloc>().add(
+        //       VendorDetailsFetchingEvent(
+        //         vendorId: widget.vendorId.toString(),
+        //         date: dateFormat
+        //             .format(
+        //               selectedDate,
+        //             )
+        //             .replaceAll('/', '-'),
+        //       ),
+        //     );
       }
     }
   }

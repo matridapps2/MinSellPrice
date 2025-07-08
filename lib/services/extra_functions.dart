@@ -38,7 +38,7 @@ List<String> getUniqueBrands(List< /*ProductListModel*/ VendorProduct> brands) {
   List<String> temp = [];
 
   for (var brand in brands) {
-    temp.add(brand.firstVendorName ?? '');
+    temp.add(brand.vendorName ?? '');
   }
   uniqueBrands = Set<String>.from(temp).toList();
   return uniqueBrands;

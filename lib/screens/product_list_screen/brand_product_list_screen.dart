@@ -1,27 +1,22 @@
 import 'dart:developer';
 import 'dart:convert';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:http/http.dart';
 import 'package:minsellprice/animation/custom_loader.dart';
-import 'package:minsellprice/app.dart';
 import 'package:minsellprice/colors.dart' show AppColors;
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/reposotory_services/network_reposotory.dart';
 import 'package:minsellprice/screens/InAppBrowser.dart';
 import 'package:minsellprice/screens/ai_price_engine/ai_pricie_engine_screen.dart';
-import 'package:minsellprice/screens/product_list_screen/product_list_screen.dart';
-import 'package:minsellprice/screens/product_list_screen/utils/product_list_screen_api_handler.dart';
 import 'package:minsellprice/screens/widgets/custom_view_button.dart';
-import 'package:minsellprice/screens/widgets/product_screen_2.dart';
 import 'package:minsellprice/services/extra_functions.dart';
 import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../custom_sizebox.dart';
+import '../brand_product_detail_screen.dart';
 
 class BrandProductListScreen extends StatefulWidget {
   const BrandProductListScreen({
@@ -74,29 +69,27 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   }
 
   void _initState() async {
-    log('Brand Id: ${widget.brandId}');
+    log('Brand Name: ${widget.brandName}');
     await _fetchBrandProducts();
   }
 
   Future<void> _fetchBrandProducts() async {
     setState(() => _isLoading = true);
     try {
-      final allProductsResponse = await NetworkCalls()
-          .getProductListByBrandID(widget.brandId.toString());
-      final Map<String, dynamic> decoded =
-          jsonDecode(allProductsResponse ?? '{}');
-      final List<dynamic> jsonList = decoded['vendor_products'] ?? [];
-      final List<VendorProduct> fetchedProducts =
-          jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+      final allProductsResponse = await NetworkCalls().getProductListByBrandName(widget.brandName.toString(), currentPage + 1);
+      final Map<String, dynamic> decoded = jsonDecode(allProductsResponse ?? '{}');
 
-      // Prepare unique vendors and temp list
+      final List<dynamic> jsonList = decoded['brand_product'] ?? [];
+      final List<VendorProduct> fetchedProducts =
+      jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+
       List<String> uniqueVendorsLocal = getUniqueBrands(fetchedProducts);
       uniqueVendorsLocal =
           uniqueVendorsLocal.where((element1) => element1 != '--').toList();
       List<String> tempList = [];
       for (final vendor in uniqueVendorsLocal) {
         tempList.add(
-            '$vendor Total Product(s): ${fetchedProducts.where((element) => element.firstVendorName == vendor).toList().length} ');
+            '$vendor Total Product(s): ${fetchedProducts.where((element) => element.vendorName == vendor).toList().length} ');
       }
 
       int start = currentPage * itemsPerPage;
@@ -153,7 +146,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                   ),
                   actions: [
                     Image.asset(
-                      'assets/shoppingmegamart_app_icon.png',
+                      'assets/minsellprice_app_icon.png',
                       height: .23 * w,
                       fit: BoxFit.fill,
                     ),
@@ -185,7 +178,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                       ),
                       actions: [
                         Image.asset(
-                          'assets/shoppingmegamart_app_icon.png',
+                          'assets/minsellprice_app_icon.png',
                           height: .23 * w,
                           fit: BoxFit.fill,
                         ),
@@ -218,31 +211,31 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                   )
                 : Scaffold(
                     key: _scaffoldKey,
-                    endDrawer: FilterMenu(
-                      uniqueVendors: uniqueVendors,
-                      priceSorting: priceSorting,
-                      priceSelection: (int? value) {
-                        setState(() {
-                          priceSorting = value;
-                        });
-                      },
-                      vendorSelection: (List<String> value) {
-                        setState(() {
-                          filterVendor = value;
-                        });
-                      },
-                      filterVendors: filterVendor,
-                      submitAction: () {
-                        sortingOfList(mainList: brandProducts);
-
-                        Fluttertoast.showToast(msg: 'Filter Submitted');
-                      },
-                      clearAction: () {
-                        setState(() {
-                          sortingOfList(mainList: brandProducts);
-                        });
-                      },
-                    ),
+                    // endDrawer: FilterMenu(
+                    //   uniqueVendors: uniqueVendors,
+                    //   priceSorting: priceSorting,
+                    //   priceSelection: (int? value) {
+                    //     setState(() {
+                    //       priceSorting = value;
+                    //     });
+                    //   },
+                    //   vendorSelection: (List<String> value) {
+                    //     setState(() {
+                    //       filterVendor = value;
+                    //     });
+                    //   },
+                    //   filterVendors: filterVendor,
+                    //   // submitAction: () {
+                    //   //   sortingOfList(mainList: brandProducts);
+                    //   //
+                    //   //   Fluttertoast.showToast(msg: 'Filter Submitted');
+                    //   // },
+                    //   // clearAction: () {
+                    //   //   setState(() {
+                    //   //     sortingOfList(mainList: brandProducts);
+                    //   //   });
+                    //   // },
+                    // ),
                     appBar: AppBar(
                       surfaceTintColor: Colors.white,
                       toolbarHeight: .18 * w,
@@ -262,7 +255,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                       ),
                       actions: [
                         Image.asset(
-                          'assets/shoppingmegamart_app_icon.png',
+                          'assets/minsellprice_app_icon.png',
                           fit: BoxFit.fill,
                         ),
                       ],
@@ -373,26 +366,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                       builder: (context) =>
                                                           SafeArea(
                                                         child: Scaffold(
-                                                          body:
-                                                              CurrentProductScreen(
-                                                            data: finalList[
-                                                                index],
-                                                            vendorId: AppInfo
-                                                                .kVendorId,
-                                                            database:
-                                                                widget.database,
-                                                            likedValue: 0,
-                                                            notifiedValue: 0,
-                                                            databaseData:
-                                                                widget.dataList,
-                                                            vendorShortname: '',
-                                                            sisterVendorShortName:
-                                                                '',
+                                                          body: BrandProductDetailScreen(brandName: '', brandId: '', productId: finalList[index].productId,
+
                                                           ),
                                                         ),
                                                       ),
                                                     ),
-                                                  );
+                                                 );
                                                 },
                                                 child: Card(
                                                   shape:
@@ -412,10 +392,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         verticalSpace(
                                                             verticalSpace: 5),
                                                         Center(
-                                                            child:
-                                                                Image.network(
-                                                          finalList[index]
-                                                              .productImage,
+                                                            child: Image.network(
+                                                              '${finalList[index].productImage}',
                                                           height: w * .3,
                                                           fit: BoxFit.cover,
                                                           loadingBuilder: (context,
@@ -573,8 +551,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           child: RichText(
                                                             text: TextSpan(
                                                               text: finalList[
-                                                                      index]
-                                                                  .firstVendorPrice,
+                                                                      index].vendorpricePrice,
                                                               style: TextStyle(
                                                                 color: '#e3121b'
                                                                     .toColor(),
@@ -613,21 +590,23 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                       horizontalSpace:
                                                                           3),
                                                                   AutoSizeText(
-                                                                    finalList[index].firstVendorPriceShipping ==
+                                                                    finalList[index].vendorpricePrice ==
                                                                                 '--' ||
-                                                                            finalList[index].firstVendorPriceShipping ==
+                                                                            finalList[index].vendorpricePrice ==
                                                                                 '\$0.00'
                                                                         ? ' Free Shipping'
-                                                                        : 'Shipping(${finalList[index].firstVendorPriceShipping})',
+                                                                        : 'Shipping(${finalList[index].vendorpricePrice})',
                                                                     maxLines: 3,
                                                                     overflow:
                                                                         TextOverflow
                                                                             .ellipsis,
                                                                     style: TextStyle(
-                                                                        color: finalList[index].firstVendorPriceShipping == '--' || finalList[index].firstVendorPriceShipping == '\$0.00'
+                                                                        color:
+                                                                        finalList[index].vendorpricePrice == '--' || finalList[index].vendorpricePrice == '\$0.00'
                                                                             ? '#3b8039'
                                                                                 .toColor()
-                                                                            : '#0678cb'
+                                                                            :
+                                                                        '#0678cb'
                                                                                 .toColor(),
                                                                         fontFamily:
                                                                             'Segoe UI Bold',
@@ -648,44 +627,28 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                             ),
                                                           ),
                                                         ),
-                                                        verticalSpace(
-                                                            verticalSpace: 11),
+                                                        verticalSpace(verticalSpace: 11),
                                                         Center(
                                                           child: InkWell(
-                                                            onTap: () async =>
-                                                                await MyInAppBrowser()
-                                                                    .openUrlRequest(
+                                                            onTap: () async => await MyInAppBrowser().openUrlRequest(
                                                               urlRequest:
                                                                   URLRequest(
                                                                 url: WebUri(
                                                                   // finalList[index].firstVendorUrl == '--' ? getOtherSeller.containsKey('${finalList[index].productId}') ? getOtherSeller['${finalList[index].productId}']!.firstVendorUrl : '--' :
-                                                                  finalList[index]
-                                                                          .firstVendorUrl +
-                                                                      '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
+                                                                  finalList[index].vendorUrl + '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
                                                                 ),
                                                               ),
-                                                              options:
-                                                                  InAppBrowserClassOptions(
-                                                                crossPlatform:
-                                                                    InAppBrowserOptions(
-                                                                  toolbarTopBackgroundColor:
-                                                                      const Color
-                                                                          .fromARGB(
-                                                                          255,
-                                                                          237,
-                                                                          63,
-                                                                          69),
+                                                              options: InAppBrowserClassOptions(
+                                                                crossPlatform: InAppBrowserOptions(
+                                                                  toolbarTopBackgroundColor: const Color.fromARGB(255, 237, 63, 69),
                                                                 ),
                                                               ),
                                                             ),
                                                             child: BuyAtButton(
-                                                                imageUrl: finalList[
-                                                                        index]
-                                                                    .firstVendorName),
+                                                                imageUrl: finalList[index].vendorName),
                                                           ),
                                                         ),
-                                                        verticalSpace(
-                                                            verticalSpace: 15)
+                                                        verticalSpace(verticalSpace: 15)
                                                       ],
                                                     ),
                                                   ),
@@ -827,43 +790,43 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
     );
   }
 
-  void sortingOfList({required List<VendorProduct> mainList}) {
-    setState(() {
-      if (filterVendor.isNotEmpty) {
-        tempProductList = mainList.where((product) {
-          return filterVendor.contains(product.firstVendorName);
-        }).toList();
-      } else {
-        tempProductList = mainList;
-      }
-
-      if (priceSorting != null) {
-        if (priceSorting == 1) {
-          tempProductList.sort((a, b) =>
-              extractDoubleFromString(a.firstVendorPrice)
-                  .compareTo(extractDoubleFromString(b.firstVendorPrice)));
-        } else {
-          tempProductList.sort((a, b) =>
-              extractDoubleFromString(b.firstVendorPrice)
-                  .compareTo(extractDoubleFromString(a.firstVendorPrice)));
-        }
-      } else if (priceSorting == null && filterVendor.isNotEmpty) {
-        tempProductList.clear();
-        tempProductList = mainList.where((product) {
-          return filterVendor.contains(product.firstVendorName);
-        }).toList();
-      } else if (filterVendor.isEmpty && priceSorting == null) {
-        tempProductList = mainList;
-      }
-
-      currentPage = 0;
-      startIndex = currentPage * itemsPerPage;
-      endIndex = (startIndex + itemsPerPage > tempProductList.length)
-          ? tempProductList.length
-          : startIndex + itemsPerPage;
-      finalList = tempProductList.sublist(startIndex, endIndex);
-    });
-  }
+  // void sortingOfList({required List<VendorProduct> mainList}) {
+  //   setState(() {
+  //     if (filterVendor.isNotEmpty) {
+  //       tempProductList = mainList.where((product) {
+  //         return filterVendor.contains(product.firstVendorName);
+  //       }).toList();
+  //     } else {
+  //       tempProductList = mainList;
+  //     }
+  //
+  //     if (priceSorting != null) {
+  //       if (priceSorting == 1) {
+  //         tempProductList.sort((a, b) =>
+  //             extractDoubleFromString(a.firstVendorPrice)
+  //                 .compareTo(extractDoubleFromString(b.firstVendorPrice)));
+  //       } else {
+  //         tempProductList.sort((a, b) =>
+  //             extractDoubleFromString(b.firstVendorPrice)
+  //                 .compareTo(extractDoubleFromString(a.firstVendorPrice)));
+  //       }
+  //     } else if (priceSorting == null && filterVendor.isNotEmpty) {
+  //       tempProductList.clear();
+  //       tempProductList = mainList.where((product) {
+  //         return filterVendor.contains(product.firstVendorName);
+  //       }).toList();
+  //     } else if (filterVendor.isEmpty && priceSorting == null) {
+  //       tempProductList = mainList;
+  //     }
+  //
+  //     currentPage = 0;
+  //     startIndex = currentPage * itemsPerPage;
+  //     endIndex = (startIndex + itemsPerPage > tempProductList.length)
+  //         ? tempProductList.length
+  //         : startIndex + itemsPerPage;
+  //     finalList = tempProductList.sublist(startIndex, endIndex);
+  //   });
+  // }
 
   showBottomModalDialog({
     required BuildContext context,
@@ -885,444 +848,444 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   }
 }
 
-class FilterMenu extends StatefulWidget {
-  const FilterMenu({
-    super.key,
-    required this.uniqueVendors,
-    this.priceSorting,
-    required this.priceSelection,
-    required this.vendorSelection,
-    required this.filterVendors,
-    required this.submitAction,
-    required this.clearAction,
-  });
-
-  final List<String> uniqueVendors, filterVendors;
-  final ValueChanged<List<String>> vendorSelection;
-  final VoidCallback submitAction, clearAction;
-  final ValueChanged<int?> priceSelection;
-  final int? priceSorting;
-
-  @override
-  State<FilterMenu> createState() => _FilterMenuState();
-}
-
-class _FilterMenuState extends State<FilterMenu> {
-  int? tempPriceSorting;
-  List<String> filterVendor = [];
-
-  @override
-  void initState() {
-    // TODO: implement initState
-
-    setState(() {
-      filterVendor = widget.filterVendors;
-      tempPriceSorting = widget.priceSorting;
-    });
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      width: w * .9,
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppBar(
-            elevation: 10,
-            leading: InkWell(
-              onTap: () => Navigator.pop(context),
-              child: Icon(
-                Icons.arrow_back_ios,
-                color: AppColors.primary,
-              ),
-            ),
-            surfaceTintColor: Colors.white,
-            toolbarHeight: .14 * w,
-            backgroundColor: Colors.white,
-            centerTitle: false,
-            title: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2.0),
-              child: SizedBox(
-                width: w * .5,
-                child: AutoSizeText(
-                  'Filters',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: w * .04),
-                ),
-              ),
-            ),
-            automaticallyImplyLeading: false,
-            actions: const [SizedBox()],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-            child: Text(
-              'First Lowest Vendors',
-              style: TextStyle(
-                fontSize: .06 * w,
-                fontFamily: 'Futura BdCn BT Bold',
-                fontWeight: FontWeight.w300,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.only(left: 8),
-            constraints: BoxConstraints(maxHeight: h * .48),
-            child: Scrollbar(
-              trackVisibility: true,
-              thumbVisibility: true,
-              thickness: 4,
-              interactive: true,
-              controller: _scrollController,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: List.generate(
-                    widget.uniqueVendors.length,
-                    (index) => Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: OutlinedButton(
-                        style: ButtonStyle(
-                          padding: MaterialStateProperty.resolveWith((states) {
-                            return const EdgeInsets.all(4);
-                          }),
-                          shape: MaterialStateProperty.resolveWith(
-                            (states) {
-                              return const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(5),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            filterVendor.contains(widget.uniqueVendors[index]
-                                    .split('Total')[0]
-                                    .trimRight())
-                                ? filterVendor.remove(widget
-                                    .uniqueVendors[index]
-                                    .split('Total')[0]
-                                    .trimRight())
-                                : filterVendor.add(widget.uniqueVendors[index]
-                                    .split('Total')[0]
-                                    .trimRight());
-                          });
-                        },
-                        child: SizedBox(
-                          width: w * .8,
-                          child: Row(
-                            children: [
-                              Checkbox(
-                                  value: filterVendor.contains(widget
-                                      .uniqueVendors[index]
-                                      .split('Total')[0]
-                                      .trimRight()),
-                                  onChanged: (values) {
-                                    setState(() {
-                                      filterVendor.contains(widget
-                                              .uniqueVendors[index]
-                                              .split('Total')[0]
-                                              .trimRight())
-                                          ? filterVendor.remove(widget
-                                              .uniqueVendors[index]
-                                              .split('Total')[0]
-                                              .trimRight())
-                                          : filterVendor.add(widget
-                                              .uniqueVendors[index]
-                                              .split('Total')[0]
-                                              .trimRight());
-                                      // _discountEnabled =
-                                      // !_discountEnabled;
-                                    });
-                                  }),
-                              RichText(
-                                text: TextSpan(
-                                    text: widget.uniqueVendors[index]
-                                        .split('Total')[0],
-                                    style: const TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold),
-                                    children: [
-                                      TextSpan(
-                                        text: widget.uniqueVendors[index]
-                                                    .split('Total')
-                                                    .length >
-                                                1
-                                            ? '\n${widget.uniqueVendors[index].split('Total')[1].trimLeft().split(':')[0]}: '
-                                            : '',
-                                        style: const TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.normal,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: widget.uniqueVendors[index]
-                                                    .split(':')
-                                                    .length >
-                                                1
-                                            ? widget.uniqueVendors[index]
-                                                .split(':')[1]
-                                                .trimLeft()
-                                            : '',
-                                        style: const TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ]),
-                                // t: const TextStyle(color: Colors.black),
-                              ),
-                              const Spacer(),
-                              CachedNetworkImage(
-                                imageUrl:
-                                    '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/${widget.uniqueVendors[index].split('Total')[0].trimRight()}.jpg',
-                                width: w * .2,
-                                height: w * .05,
-                                errorWidget: (_, c, e) => SizedBox(
-                                  child: Container(
-                                    width: w * .3,
-                                    height: w * .1,
-                                    padding: const EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                        color: Colors.black,
-                                        borderRadius: BorderRadius.circular(6)),
-                                    child: Center(
-                                      child: AutoSizeText(
-                                        widget.uniqueVendors[index]
-                                            .split('Total')[0],
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: w * .03,
-                                          letterSpacing: 0,
-                                          // fontFamily: 'JT Marnie Light',
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          verticalSpace(verticalSpace: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-            child: Text(
-              'Price',
-              style: TextStyle(
-                fontSize: .06 * w,
-                fontFamily: 'Futura BdCn BT Bold',
-                fontWeight: FontWeight.w300,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: OutlinedButton(
-              style: ButtonStyle(
-                padding: MaterialStateProperty.resolveWith((states) {
-                  return const EdgeInsets.all(4);
-                }),
-                shape: MaterialStateProperty.resolveWith(
-                  (states) {
-                    return const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(5),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              onPressed: () {
-                setState(() {
-                  tempPriceSorting != null
-                      ? tempPriceSorting != 1
-                          ? tempPriceSorting = 1
-                          : tempPriceSorting = null
-                      : tempPriceSorting = 1;
-                  // _discountEnabled =
-                  // !_discountEnabled;
-                });
-              },
-              child: SizedBox(
-                width: w * .8,
-                child: Row(
-                  children: [
-                    Checkbox(
-                        value: tempPriceSorting == 1,
-                        onChanged: (values) {
-                          setState(() {
-                            tempPriceSorting != null
-                                ? tempPriceSorting != 1
-                                    ? tempPriceSorting = 1
-                                    : tempPriceSorting = null
-                                : tempPriceSorting = 1;
-                            // _discountEnabled =
-                            // !_discountEnabled;
-                          });
-                        }),
-                    const Text(
-                      'Price: Low To High',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          verticalSpace(verticalSpace: 10),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: OutlinedButton(
-              style: ButtonStyle(
-                padding: MaterialStateProperty.resolveWith((states) {
-                  return const EdgeInsets.all(4);
-                }),
-                shape: MaterialStateProperty.resolveWith(
-                  (states) {
-                    return const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(5),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              onPressed: () {
-                setState(() {
-                  tempPriceSorting != null
-                      ? tempPriceSorting != 2
-                          ? tempPriceSorting = 2
-                          : tempPriceSorting = null
-                      : tempPriceSorting = 2;
-                  // _discountEnabled =
-                  // !_discountEnabled;
-                });
-              },
-              child: SizedBox(
-                width: w * .8,
-                child: Row(
-                  children: [
-                    Checkbox(
-                        value: tempPriceSorting == 2,
-                        onChanged: (values) {
-                          setState(() {
-                            tempPriceSorting != null
-                                ? tempPriceSorting != 2
-                                    ? tempPriceSorting = 2
-                                    : tempPriceSorting = null
-                                : tempPriceSorting = 2;
-                            // _discountEnabled =
-                            // !_discountEnabled;
-                          });
-                        }),
-                    const Text(
-                      'Price: High To Low',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              horizontalSpace(horizontalSpace: 6),
-              SizedBox(
-                width: MediaQuery.of(context).size.width * .28,
-                height: 40,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      widget.vendorSelection(filterVendor);
-                      widget.priceSelection(tempPriceSorting);
-                      widget.submitAction();
-                    });
-                    Navigator.pop(context);
-                  },
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(Colors.blue),
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                    ),
-                  ),
-                  child: const Text(
-                    'Submit',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width * .28,
-                  height: 40,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      filterVendor = [];
-                      tempPriceSorting = null;
-                      widget.priceSelection(null);
-                      widget.vendorSelection([]);
-                      widget.clearAction();
-                      setState(() {});
-                      Navigator.pop(context);
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(AppColors.primary),
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25.0),
-                        ),
-                      ),
-                    ),
-                    child: const Text(
-                      'Clear',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          verticalSpace(verticalSpace: 10),
-        ],
-      ),
-      //elevation: 20.0,
-      //semanticLabel: 'endDrawer',
-    );
-  }
-
-  final _scrollController = ScrollController();
-}
+// class FilterMenu extends StatefulWidget {
+//   const FilterMenu({
+//     super.key,
+//     required this.uniqueVendors,
+//     this.priceSorting,
+//     required this.priceSelection,
+//     required this.vendorSelection,
+//     required this.filterVendors,
+//     required this.submitAction,
+//     required this.clearAction,
+//   });
+//
+//   final List<String> uniqueVendors, filterVendors;
+//   final ValueChanged<List<String>> vendorSelection;
+//   final VoidCallback submitAction, clearAction;
+//   final ValueChanged<int?> priceSelection;
+//   final int? priceSorting;
+//
+//   @override
+//   State<FilterMenu> createState() => _FilterMenuState();
+// }
+//
+// class _FilterMenuState extends State<FilterMenu> {
+//   int? tempPriceSorting;
+//   List<String> filterVendor = [];
+//
+//   @override
+//   void initState() {
+//     // TODO: implement initState
+//
+//     setState(() {
+//       filterVendor = widget.filterVendors;
+//       tempPriceSorting = widget.priceSorting;
+//     });
+//     super.initState();
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Drawer(
+//       width: w * .9,
+//       backgroundColor: Colors.white,
+//       surfaceTintColor: Colors.white,
+//
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           AppBar(
+//             elevation: 10,
+//             leading: InkWell(
+//               onTap: () => Navigator.pop(context),
+//               child: Icon(
+//                 Icons.arrow_back_ios,
+//                 color: AppColors.primary,
+//               ),
+//             ),
+//             surfaceTintColor: Colors.white,
+//             toolbarHeight: .14 * w,
+//             backgroundColor: Colors.white,
+//             centerTitle: false,
+//             title: Padding(
+//               padding: const EdgeInsets.symmetric(horizontal: 2.0),
+//               child: SizedBox(
+//                 width: w * .5,
+//                 child: AutoSizeText(
+//                   'Filters',
+//                   maxLines: 1,
+//                   overflow: TextOverflow.ellipsis,
+//                   style: TextStyle(fontSize: w * .04),
+//                 ),
+//               ),
+//             ),
+//             automaticallyImplyLeading: false,
+//             actions: const [SizedBox()],
+//           ),
+//           Padding(
+//             padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
+//             child: Text(
+//               'First Lowest Vendors',
+//               style: TextStyle(
+//                 fontSize: .06 * w,
+//                 fontFamily: 'Futura BdCn BT Bold',
+//                 fontWeight: FontWeight.w300,
+//               ),
+//             ),
+//           ),
+//           Container(
+//             padding: const EdgeInsets.only(left: 8),
+//             constraints: BoxConstraints(maxHeight: h * .48),
+//             child: Scrollbar(
+//               trackVisibility: true,
+//               thumbVisibility: true,
+//               thickness: 4,
+//               interactive: true,
+//               controller: _scrollController,
+//               child: SingleChildScrollView(
+//                 controller: _scrollController,
+//                 child: Column(
+//                   mainAxisAlignment: MainAxisAlignment.center,
+//                   crossAxisAlignment: CrossAxisAlignment.center,
+//                   children: List.generate(
+//                     widget.uniqueVendors.length,
+//                     (index) => Padding(
+//                       padding: const EdgeInsets.all(8.0),
+//                       child: OutlinedButton(
+//                         style: ButtonStyle(
+//                           padding: MaterialStateProperty.resolveWith((states) {
+//                             return const EdgeInsets.all(4);
+//                           }),
+//                           shape: MaterialStateProperty.resolveWith(
+//                             (states) {
+//                               return const RoundedRectangleBorder(
+//                                 borderRadius: BorderRadius.all(
+//                                   Radius.circular(5),
+//                                 ),
+//                               );
+//                             },
+//                           ),
+//                         ),
+//                         onPressed: () {
+//                           setState(() {
+//                             filterVendor.contains(widget.uniqueVendors[index]
+//                                     .split('Total')[0]
+//                                     .trimRight())
+//                                 ? filterVendor.remove(widget
+//                                     .uniqueVendors[index]
+//                                     .split('Total')[0]
+//                                     .trimRight())
+//                                 : filterVendor.add(widget.uniqueVendors[index]
+//                                     .split('Total')[0]
+//                                     .trimRight());
+//                           });
+//                         },
+//                         child: SizedBox(
+//                           width: w * .8,
+//                           child: Row(
+//                             children: [
+//                               Checkbox(
+//                                   value: filterVendor.contains(widget
+//                                       .uniqueVendors[index]
+//                                       .split('Total')[0]
+//                                       .trimRight()),
+//                                   onChanged: (values) {
+//                                     setState(() {
+//                                       filterVendor.contains(widget
+//                                               .uniqueVendors[index]
+//                                               .split('Total')[0]
+//                                               .trimRight())
+//                                           ? filterVendor.remove(widget
+//                                               .uniqueVendors[index]
+//                                               .split('Total')[0]
+//                                               .trimRight())
+//                                           : filterVendor.add(widget
+//                                               .uniqueVendors[index]
+//                                               .split('Total')[0]
+//                                               .trimRight());
+//                                       // _discountEnabled =
+//                                       // !_discountEnabled;
+//                                     });
+//                                   }),
+//                               RichText(
+//                                 text: TextSpan(
+//                                     text: widget.uniqueVendors[index]
+//                                         .split('Total')[0],
+//                                     style: const TextStyle(
+//                                         color: Colors.black,
+//                                         fontWeight: FontWeight.bold),
+//                                     children: [
+//                                       TextSpan(
+//                                         text: widget.uniqueVendors[index]
+//                                                     .split('Total')
+//                                                     .length >
+//                                                 1
+//                                             ? '\n${widget.uniqueVendors[index].split('Total')[1].trimLeft().split(':')[0]}: '
+//                                             : '',
+//                                         style: const TextStyle(
+//                                           color: Colors.blue,
+//                                           fontWeight: FontWeight.normal,
+//                                         ),
+//                                       ),
+//                                       TextSpan(
+//                                         text: widget.uniqueVendors[index]
+//                                                     .split(':')
+//                                                     .length >
+//                                                 1
+//                                             ? widget.uniqueVendors[index]
+//                                                 .split(':')[1]
+//                                                 .trimLeft()
+//                                             : '',
+//                                         style: const TextStyle(
+//                                           color: Colors.blue,
+//                                           fontWeight: FontWeight.bold,
+//                                         ),
+//                                       ),
+//                                     ]),
+//                                 // t: const TextStyle(color: Colors.black),
+//                               ),
+//                               const Spacer(),
+//                               CachedNetworkImage(
+//                                 imageUrl:
+//                                     '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/${widget.uniqueVendors[index].split('Total')[0].trimRight()}.jpg',
+//                                 width: w * .2,
+//                                 height: w * .05,
+//                                 errorWidget: (_, c, e) => SizedBox(
+//                                   child: Container(
+//                                     width: w * .3,
+//                                     height: w * .1,
+//                                     padding: const EdgeInsets.all(2),
+//                                     decoration: BoxDecoration(
+//                                         color: Colors.black,
+//                                         borderRadius: BorderRadius.circular(6)),
+//                                     child: Center(
+//                                       child: AutoSizeText(
+//                                         widget.uniqueVendors[index]
+//                                             .split('Total')[0],
+//                                         maxLines: 1,
+//                                         overflow: TextOverflow.ellipsis,
+//                                         textAlign: TextAlign.center,
+//                                         style: TextStyle(
+//                                           color: Colors.white,
+//                                           fontSize: w * .03,
+//                                           letterSpacing: 0,
+//                                           // fontFamily: 'JT Marnie Light',
+//                                         ),
+//                                       ),
+//                                     ),
+//                                   ),
+//                                 ),
+//                               ),
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//           verticalSpace(verticalSpace: 10),
+//           Padding(
+//             padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
+//             child: Text(
+//               'Price',
+//               style: TextStyle(
+//                 fontSize: .06 * w,
+//                 fontFamily: 'Futura BdCn BT Bold',
+//                 fontWeight: FontWeight.w300,
+//               ),
+//             ),
+//           ),
+//           Padding(
+//             padding: const EdgeInsets.all(8.0),
+//             child: OutlinedButton(
+//               style: ButtonStyle(
+//                 padding: MaterialStateProperty.resolveWith((states) {
+//                   return const EdgeInsets.all(4);
+//                 }),
+//                 shape: MaterialStateProperty.resolveWith(
+//                   (states) {
+//                     return const RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.all(
+//                         Radius.circular(5),
+//                       ),
+//                     );
+//                   },
+//                 ),
+//               ),
+//               onPressed: () {
+//                 setState(() {
+//                   tempPriceSorting != null
+//                       ? tempPriceSorting != 1
+//                           ? tempPriceSorting = 1
+//                           : tempPriceSorting = null
+//                       : tempPriceSorting = 1;
+//                   // _discountEnabled =
+//                   // !_discountEnabled;
+//                 });
+//               },
+//               child: SizedBox(
+//                 width: w * .8,
+//                 child: Row(
+//                   children: [
+//                     Checkbox(
+//                         value: tempPriceSorting == 1,
+//                         onChanged: (values) {
+//                           setState(() {
+//                             tempPriceSorting != null
+//                                 ? tempPriceSorting != 1
+//                                     ? tempPriceSorting = 1
+//                                     : tempPriceSorting = null
+//                                 : tempPriceSorting = 1;
+//                             // _discountEnabled =
+//                             // !_discountEnabled;
+//                           });
+//                         }),
+//                     const Text(
+//                       'Price: Low To High',
+//                       style: TextStyle(color: Colors.black),
+//                     ),
+//                     const Spacer(),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ),
+//           verticalSpace(verticalSpace: 10),
+//           Padding(
+//             padding: const EdgeInsets.all(8.0),
+//             child: OutlinedButton(
+//               style: ButtonStyle(
+//                 padding: MaterialStateProperty.resolveWith((states) {
+//                   return const EdgeInsets.all(4);
+//                 }),
+//                 shape: MaterialStateProperty.resolveWith(
+//                   (states) {
+//                     return const RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.all(
+//                         Radius.circular(5),
+//                       ),
+//                     );
+//                   },
+//                 ),
+//               ),
+//               onPressed: () {
+//                 setState(() {
+//                   tempPriceSorting != null
+//                       ? tempPriceSorting != 2
+//                           ? tempPriceSorting = 2
+//                           : tempPriceSorting = null
+//                       : tempPriceSorting = 2;
+//                   // _discountEnabled =
+//                   // !_discountEnabled;
+//                 });
+//               },
+//               child: SizedBox(
+//                 width: w * .8,
+//                 child: Row(
+//                   children: [
+//                     Checkbox(
+//                         value: tempPriceSorting == 2,
+//                         onChanged: (values) {
+//                           setState(() {
+//                             tempPriceSorting != null
+//                                 ? tempPriceSorting != 2
+//                                     ? tempPriceSorting = 2
+//                                     : tempPriceSorting = null
+//                                 : tempPriceSorting = 2;
+//                             // _discountEnabled =
+//                             // !_discountEnabled;
+//                           });
+//                         }),
+//                     const Text(
+//                       'Price: High To Low',
+//                       style: TextStyle(color: Colors.black),
+//                     ),
+//                     const Spacer(),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ),
+//           const Spacer(),
+//           Row(
+//             children: [
+//               horizontalSpace(horizontalSpace: 6),
+//               SizedBox(
+//                 width: MediaQuery.of(context).size.width * .28,
+//                 height: 40,
+//                 child: ElevatedButton(
+//                   onPressed: () {
+//                     setState(() {
+//                       widget.vendorSelection(filterVendor);
+//                       widget.priceSelection(tempPriceSorting);
+//                       widget.submitAction();
+//                     });
+//                     Navigator.pop(context);
+//                   },
+//                   style: ButtonStyle(
+//                     backgroundColor: MaterialStateProperty.all(Colors.blue),
+//                     shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+//                       RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(25.0),
+//                       ),
+//                     ),
+//                   ),
+//                   child: const Text(
+//                     'Submit',
+//                     style: TextStyle(
+//                       fontWeight: FontWeight.bold,
+//                       color: Colors.white,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//               const Spacer(),
+//               Padding(
+//                 padding: const EdgeInsets.symmetric(horizontal: 6.0),
+//                 child: SizedBox(
+//                   width: MediaQuery.of(context).size.width * .28,
+//                   height: 40,
+//                   child: ElevatedButton(
+//                     onPressed: () {
+//                       filterVendor = [];
+//                       tempPriceSorting = null;
+//                       widget.priceSelection(null);
+//                       widget.vendorSelection([]);
+//                       widget.clearAction();
+//                       setState(() {});
+//                       Navigator.pop(context);
+//                     },
+//                     style: ButtonStyle(
+//                       backgroundColor: MaterialStateProperty.all(AppColors.primary),
+//                       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+//                         RoundedRectangleBorder(
+//                           borderRadius: BorderRadius.circular(25.0),
+//                         ),
+//                       ),
+//                     ),
+//                     child: const Text(
+//                       'Clear',
+//                       style: TextStyle(
+//                         fontWeight: FontWeight.bold,
+//                         color: Colors.white,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
+//           verticalSpace(verticalSpace: 10),
+//         ],
+//       ),
+//       //elevation: 20.0,
+//       //semanticLabel: 'endDrawer',
+//     );
+//   }
+//
+//   final _scrollController = ScrollController();
+// }

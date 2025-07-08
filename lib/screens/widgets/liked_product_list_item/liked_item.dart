@@ -11,7 +11,6 @@ import 'package:minsellprice/screens/InAppBrowser.dart';
 import 'package:minsellprice/screens/ai_price_engine/ai_pricie_engine_screen.dart';
 import 'package:minsellprice/screens/widgets/custom_view_button.dart';
 import 'package:minsellprice/screens/widgets/liked_product_list_item/unlike_button.dart';
-import 'package:minsellprice/screens/widgets/product_screen_2.dart';
 import 'package:minsellprice/services/extra_functions.dart';
 import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqlite_api.dart';
@@ -50,27 +49,27 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
     return InkWell(
       onTap: () async {
         if (widget.model != null && context.mounted) {
-          await Navigator.of(context)
-              .push(
-                MaterialPageRoute(
-                  builder: (context) => PopScope(
-                    canPop: true,
-                    child: Scaffold(
-                      body: CurrentProductScreen(
-                        prevData: widget.model,
-                        vendorId: widget.vendorId,
-                        database: widget.database,
-                        likedValue: widget.likedValue,
-                        notifiedValue: widget.notifiedValue,
-                        databaseData: const [],
-                        vendorShortname: widget.vendorShortName,
-                        sisterVendorShortName: widget.sisterVendorShortName,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              .whenComplete(() => widget.futureBuilderTriggerMethod());
+          // await Navigator.of(context)
+          //     .push(
+          //       MaterialPageRoute(
+          //         builder: (context) => PopScope(
+          //           canPop: true,
+          //           child: Scaffold(
+          //           //   body: CurrentProductScreen(
+          //           //     prevData: widget.model,
+          //           //     vendorId: widget.vendorId,
+          //           //     database: widget.database,
+          //           //     likedValue: widget.likedValue,
+          //           //     notifiedValue: widget.notifiedValue,
+          //           //     databaseData: const [],
+          //           //     vendorShortname: widget.vendorShortName,
+          //           //     sisterVendorShortName: widget.sisterVendorShortName,
+          //           //   ),
+          //           // ),
+          //         ),
+          //       ),
+          //     )
+          //     .whenComplete(() => widget.futureBuilderTriggerMethod());
         }
       },
       child: Padding(
@@ -79,25 +78,25 @@ class _GridTilesProductsState extends State<GridTilesProducts> {
           children: [
             GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SafeArea(
-                      child: Scaffold(
-                        body: CurrentProductScreen(
-                          prevData: widget.model,
-                          vendorId: AppInfo.kVendorId,
-                          database: widget.database,
-                          likedValue: widget.likedValue,
-                          notifiedValue: widget.notifiedValue,
-                          databaseData: const [],
-                          vendorShortname: '',
-                          sisterVendorShortName: '',
-                        ),
-                      ),
-                    ),
-                  ),
-                );
+                // Navigator.push(
+                //   context,
+                  // MaterialPageRoute(
+                  //   builder: (context) => SafeArea(
+                  //     child: Scaffold(
+                  //       body: CurrentProductScreen(
+                  //         prevData: widget.model,
+                  //         vendorId: AppInfo.kVendorId,
+                  //         database: widget.database,
+                  //         likedValue: widget.likedValue,
+                  //         notifiedValue: widget.notifiedValue,
+                  //         databaseData: const [],
+                  //         vendorShortname: '',
+                  //         sisterVendorShortName: '',
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
+                // );
               },
               child: Card(
                 shape: const RoundedRectangleBorder(

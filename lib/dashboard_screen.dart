@@ -111,7 +111,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   int vendorId = 0;
 
-  VendorPriceAnalysisBloc bloc1 = VendorPriceAnalysisBloc();
+  //VendorPriceAnalysisBloc bloc1 = VendorPriceAnalysisBloc();
 
   DateTime date = DateTime.now().subtract(
     const Duration(days: 1),
@@ -143,7 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void initState() {
     // TODO: implement initState
-    context.read<DatabaseBloc>().add(DatabaseInitEvent());
+    //context.read<DatabaseBloc>().add(DatabaseInitEvent());
     _screens = [
       const Center(
         child: CustomLoader(),
@@ -194,13 +194,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: BlocListener<DatabaseBloc, DatabaseState>(
           listener: (context, state) async {
             // TODO: implement listener
-
-            if (state is DatabaseLoadedState) {
-              setState(() {
-                database = state.database;
-              });
-              final Map<String, dynamic> userData =
-                  await DatabaseHelper().getUserInformation(db: database);
+              final Map<String, dynamic> userData = await DatabaseHelper().getUserInformation(db: database);
 
               setState(() {
                 vendorName = userData[vendor_nameKey];
@@ -231,21 +225,15 @@ class _DashboardScreenState extends State<DashboardScreen>
               Future.delayed(const Duration(seconds: 1));
 
               await DatabaseHelper().showAllProducts(db: database);
-            } else {
+
               Fluttertoast.showToast(msg: 'Database not init');
-            }
           },
           child: GestureDetector(
             onTap: () {
               FocusScopeNode currentFocus = FocusScope.of(context);
               currentFocus.unfocus();
             },
-            child: BlocListener<VendorDetailsBloc, VendorDetailsState>(
-              listener: (context, state) {
-                // if(state != VendorDetailsLoadedState || state != VendorDetailsErrorState){
-                // }
-              },
-              child: MyInheritedWidget(
+            child: MyInheritedWidget(
                 // null,
                 vendorName: '',
                 vendorId: '',
@@ -337,7 +325,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                     selectedColor: AppColors.primary,
                                   ),
                                 ],
-                              ),
+                            ),
                     // CustomBottomNavBar(
                     //         onTap: (index) =>
                     //             setState(() => _activeIndex = index),
@@ -4615,8 +4603,11 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   bool _showMoreCategory = false;
 
   final _scrollController = ScrollController();
-  late Future<List<Map<String, dynamic>>> _brandsFuture;
+  late Future<Map<String, List<dynamic>>> _brandsFuture;
   late Future<List<Map<String, dynamic>>> _bannersFuture;
+  late List<Map<String, dynamic>> _homeGardenBrands = [];
+  late List<Map<String, dynamic>> _shoesApparels = [];
+  
 
   List<List<FeaturedBrandModel>> makeFourElementsRow(
       {required List<FeaturedBrandModel> list}) {
@@ -4657,9 +4648,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     context.read<FeatureBrandsBloc>().add(const FeatureBrandsEvent());
     setupRemoteConfig();
     _bannersFuture = getBanners();
-    _brandsFuture = _brandsFutureSingleton ??= fetchBrands();
     _mainContentBigImagesFuture = getMainContentBigImages();
     _mainContentSmallImagesFuture = getMainContentSmallImages();
+    _initCall();
   }
 
   @override
@@ -4668,11 +4659,22 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     super.dispose();
   }
 
+  Future<void> _initCall() async {
+    _brandsFuture = fetchBrands();
+    final brandsData = await _brandsFuture;
+
+    setState(() {
+      _homeGardenBrands = (brandsData["Home & Garden Brands"] ?? [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
+
+      _shoesApparels = (brandsData["Shoes & Apparels"] ?? [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    });
+  }
   List<String> categoryList = [];
   List<String> featureCategoryList = [];
-
-  //List<Map<String, dynamic>> _allBrands = [];
-  //int _visibleCount = 10;
 
   List<String> newProductsDropDownCategoryList = [
     'Gas Grills',
@@ -4780,20 +4782,18 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       textInputAction: TextInputAction.search,
                       onFieldSubmitted: (value) {
                         if (value.length > 3) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProductListScreen(
-                                titleValue: value,
-                                database: widget.database,
-                                searchProduct: true,
-                                dataList: const [],
-                                isBrands: false,
-                                isCategory: false,
-                                title: 'Looking for: ${_searchController.text}',
-                              ),
-                            ),
-                          );
+                          // Navigator.push(context, MaterialPageRoute(
+                          //     builder: (context) => ProductListScreen(
+                          //       titleValue: value,
+                          //       database: widget.database,
+                          //       searchProduct: true,
+                          //       dataList: const [],
+                          //       isBrands: false,
+                          //       isCategory: false,
+                          //       title: 'Looking for: ${_searchController.text}',
+                          //     ),
+                          //   ),
+                          // );
                         }
                       },
                       cursorColor: AppColors.primary,
@@ -4803,21 +4803,21 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           splashColor: AppColors.primary.withOpacity(.3),
                           onTap: () {
                             if (_searchController.text.length > 3) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ProductListScreen(
-                                    titleValue: _searchController.text,
-                                    database: widget.database,
-                                    dataList: const [],
-                                    isBrands: false,
-                                    searchProduct: true,
-                                    isCategory: false,
-                                    title:
-                                        'Looking for: ${_searchController.text}',
-                                  ),
-                                ),
-                              );
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => ProductListScreen(
+                              //       titleValue: _searchController.text,
+                              //       database: widget.database,
+                              //       dataList: const [],
+                              //       isBrands: false,
+                              //       searchProduct: true,
+                              //       isCategory: false,
+                              //       title:
+                              //           'Looking for: ${_searchController.text}',
+                              //     ),
+                              //   ),
+                              // );
                             }
                           },
                           child: Icon(
@@ -4951,53 +4951,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       _mainContentBigImages(),
                       _mainContentSmallImages(),
                       verticalSpace(verticalSpace: 15),
-                      //  _grillsMenu(),
-                      //    verticalSpace(verticalSpace: 25),
-                      // _newProductsTitleRow(),
-                      // verticalSpace(verticalSpace: 15),
-                      // _newProductsRow(),
-                      // verticalSpace(verticalSpace: 25),
-                      // _specialOfferProductsTitleRow(),
-                      // verticalSpace(verticalSpace: 15),
-                      // _specialOfferProductsRow(),
-                      // verticalSpace(verticalSpace: 25),
-                      // _shopByBrandTitleRow(),
-
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20.0),
-                        child: Text(
-                          'Grills & Outdoor Cooking',
-                          style: TextStyle(
-                            fontSize: 27, fontWeight: FontWeight.bold,
-                            //fontFamily: 'Futura BdCn BT Bold',
-                            fontFamily: 'Segoe UI',
-                          ),
-                        ),
-                      ),
-
-                      verticalSpace(verticalSpace: 25),
-                      grillsOutdoor(),
-
-                      verticalSpace(verticalSpace: 15),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20.0),
-                        child: Text(
-                          'Shop by Grill Size',
-                          style: TextStyle(
-                            fontSize: 27, fontWeight: FontWeight.bold,
-                            //fontFamily: 'Futura BdCn BT Bold',
-                            fontFamily: 'Segoe UI',
-                          ),
-                        ),
-                      ),
-                      verticalSpace(verticalSpace: 25),
-                      _shopByGrills(),
 
                       verticalSpace(verticalSpace: 5),
                       Padding(
                         padding: const EdgeInsets.only(left: 20.0),
                         child: Text(
-                          'Shop by Brand',
+                          'Home & Garden',
                           style: TextStyle(
                             fontSize: 27,
                             fontWeight: FontWeight.bold,
@@ -5006,1510 +4965,22 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         ),
                       ),
                       verticalSpace(verticalSpace: 25),
-                      _allBrandsScreen(),
+                      _homeGardenBrandsDesign(),
+                      verticalSpace(verticalSpace: 5),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 20.0),
+                        child: Text(
+                          'Shoes & Apparels',
+                          style: TextStyle(
+                            fontSize: 27,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Segoe UI',
+                          ),
+                        ),
+                      ),
+                      verticalSpace(verticalSpace: 25),
+                      _shoesApparelsDesign(),
                       verticalSpace(verticalSpace: 45),
-
-                      // /*Padding(
-                      //   padding: const EdgeInsets.symmetric(
-                      //       horizontal: 18.0, vertical: 5),
-                      //   child: AutoSizeText(
-                      //     'Shop By Category',
-                      //     textAlign: TextAlign.start,
-                      //     style: TextStyle(
-                      //       fontSize: .06 * w,
-                      //       fontFamily: 'Futura BdCn BT Bold',
-                      //       fontWeight: FontWeight.w300,
-                      //     ),
-                      //   ),
-                      // ),
-                      // Padding(
-                      //   padding: const EdgeInsets.only(left: 12.0),
-                      //   child: SingleChildScrollView(
-                      //     scrollDirection: Axis.horizontal,
-                      //     child: Row(
-                      //       children: List.generate(
-                      //         4,
-                      //         (index) => Padding(
-                      //           padding: const EdgeInsets.all(8.0),
-                      //           child: Container(
-                      //             height: .35 * w,
-                      //             width: .32 * w,
-                      //             decoration: BoxDecoration(
-                      //                 border: Border.all(color: Colors.grey),
-                      //                 borderRadius: const BorderRadius.all(
-                      //                     Radius.circular(5))),
-                      //             child: Column(
-                      //               children: [
-                      //                 Padding(
-                      //                   padding: const EdgeInsets.all(2.0),
-                      //                   child: Image.asset(
-                      //                     'assets/home_screen_assets/category/image-one.jpg',
-                      //                   ),
-                      //                 ),
-                      //                 Text(
-                      //                   'Power Tools',
-                      //                   style: TextStyle(
-                      //                     fontSize: .04 * w,
-                      //                     fontWeight: FontWeight.bold,
-                      //                   ),
-                      //                 )
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),*/
-                      // /*
-                      // verticalSpace(verticalSpace: 15),
-                      // BlocBuilder<FeatureBrandsBloc, FeatureBrandsState>(
-                      //   builder: (context, state) {
-                      //     return state is FeatureBrandsLoaded
-                      //         ? Column(
-                      //             crossAxisAlignment: CrossAxisAlignment.start,
-                      //             children: makeFourElementsRow(
-                      //                     list: state.data)
-                      //                 .map(
-                      //                   (row) => Padding(
-                      //                     padding: const EdgeInsets.only(
-                      //                       left: 16.0,
-                      //                     ),
-                      //                     child: SingleChildScrollView(
-                      //                       scrollDirection: Axis.horizontal,
-                      //                       child: Row(
-                      //                         children: row
-                      //                             .map(
-                      //                               (item) => Padding(
-                      //                                 padding:
-                      //                                     const EdgeInsets.all(
-                      //                                         4.0),
-                      //                                 child: InkWell(
-                      //                                   onTap: () {
-                      //                                     Navigator.push(
-                      //                                       context,
-                      //                                       MaterialPageRoute(
-                      //                                         builder: (context) =>
-                      //                                             ProductListScreen(
-                      //                                           titleValue: item
-                      //                                               .brandKey
-                      //                                               .toUpperCase(),
-                      //                                           database: widget
-                      //                                               .database,
-                      //                                           dataList: const [],
-                      //                                           isBrands: true,
-                      //                                           imageUrl:
-                      //                                               'http://growth.matridtech.net/brand-logo/brands/${item.brandKey}.png',
-                      //                                           isCategory:
-                      //                                               false,
-                      //                                           title: '',
-                      //                                         ),
-                      //                                       ),
-                      //                                     ).whenComplete(() => context
-                      //                                         .read<
-                      //                                             ProductListByIdBloc>()
-                      //                                         .add(const ProductListByIdLoadingEvent(
-                      //                                             vendorId:
-                      //                                                 '${AppInfo.kVendorId}',
-                      //                                             date:
-                      //                                                 '2024-03-05',
-                      //                                             dataId:
-                      //                                                 '14371',
-                      //                                             featuredProducts:
-                      //                                                 false,
-                      //                                             fromSearchScreen:
-                      //                                                 false,
-                      //                                             brandProductsEnabled:
-                      //                                                 false,
-                      //                                             isCategory:
-                      //                                                 false)));
-                      //                                   },
-                      //                                   child: Card(
-                      //                                     shape:
-                      //                                         RoundedRectangleBorder(
-                      //                                       borderRadius:
-                      //                                           BorderRadius
-                      //                                               .circular(
-                      //                                         20,
-                      //                                       ),
-                      //                                     ),
-                      //                                     shadowColor:
-                      //                                         Colors.grey,
-                      //                                     elevation: 4,
-                      //                                     color: Colors.white,
-                      //                                     surfaceTintColor:
-                      //                                         Colors.white,
-                      //                                     child: Padding(
-                      //                                       padding:
-                      //                                           const EdgeInsets
-                      //                                               .symmetric(
-                      //                                               horizontal:
-                      //                                                   6.0,
-                      //                                               vertical:
-                      //                                                   4),
-                      //                                       child:
-                      //                                           CachedNetworkImage(
-                      //                                         imageUrl:
-                      //                                             'http://growth.matridtech.net/brand-logo/brands/${item.brandKey}.png',
-                      //                                         width: w * .35,
-                      //                                         height: w * .2,
-                      //                                         errorWidget:
-                      //                                             (context, _,
-                      //                                                     c) =>
-                      //                                                 Card(
-                      //                                           color: Colors
-                      //                                               .white,
-                      //                                           surfaceTintColor:
-                      //                                               Colors
-                      //                                                   .white,
-                      //                                           child: Padding(
-                      //                                             padding:
-                      //                                                 const EdgeInsets
-                      //                                                     .all(
-                      //                                                     6.0),
-                      //                                             child:
-                      //                                                 CachedNetworkImage(
-                      //                                               imageUrl:
-                      //                                                   'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Image_not_available.png/800px-Image_not_available.png?20210219185637',
-                      //                                             ),
-                      //                                           ),
-                      //                                         ),
-                      //                                       ),
-                      //                                     ),
-                      //                                   ),
-                      //                                 )
-                      //                                 */
-                      // /*FutureBuilder(
-                      //                                       future: updatePaletteGenerator(imageUrl: 'http://growth.matridtech.net/brand-logo/brands/${item.brandKey}.png'),
-                      //                                     builder: (context, snapshot) {
-                      //                                       if (snapshot.connectionState == ConnectionState.waiting) {
-                      //                                         return const CircularProgressIndicator();
-                      //                                       } else if (snapshot.hasError) {
-                      //                                         return Card(
-                      //                                           color: Colors.white,
-                      //                                           surfaceTintColor: Colors.white,
-                      //                                           child: Padding(
-                      //                                             padding: const EdgeInsets.all(4.0),
-                      //                                             child: CachedNetworkImage(
-                      //                                               imageUrl:
-                      //                                               'http://growth.matridtech.net/brand-logo/brands/${item.brandKey}.png',
-                      //                                               width: w * .4,
-                      //                                               height: w * .25,
-                      //                                               errorWidget: (context, _,
-                      //                                                   c) =>
-                      //                                                   Card(
-                      //                                                     color: Colors.white,
-                      //                                                     surfaceTintColor: Colors.white,
-                      //                                                     child: Padding(
-                      //                                                       padding: const EdgeInsets.all(4.0),
-                      //                                                       child: CachedNetworkImage(
-                      //                                                         imageUrl:
-                      //                                                         'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Image_not_available.png/800px-Image_not_available.png?20210219185637',
-                      //                                                       ),
-                      //                                                     ),
-                      //                                                   ),
-                      //                                             ),
-                      //                                           ),
-                      //                                         );
-                      //                                       } else {
-                      //                                         // This is your dominant color
-                      //                                         Color dominantColor = snapshot.data!.dominantColor!.color;
-                      //                                         return Card(
-                      //                                           color: dominantColor.withOpacity(.5),
-                      //                                           surfaceTintColor: dominantColor.withOpacity(.5),
-                      //                                           child: Padding(
-                      //                                             padding: const EdgeInsets.all(4.0),
-                      //                                             child: CachedNetworkImage(
-                      //                                               imageUrl:
-                      //                                               'http://growth.matridtech.net/brand-logo/brands/${item.brandKey}.png',
-                      //                                               width: w * .4,
-                      //                                               height: w * .25,
-                      //                                               errorWidget: (context, _,
-                      //                                                   c) =>
-                      //                                                   CachedNetworkImage(
-                      //                                                     imageUrl:
-                      //                                                     'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Image_not_available.png/800px-Image_not_available.png?20210219185637',
-                      //                                                   ),
-                      //                                             ),
-                      //                                           ),
-                      //                                         );
-                      //                                       }
-                      //                                     }
-                      //                                   )*/
-                      // /*
-                      //                                 ,
-                      //                               ),
-                      //                             )
-                      //                             .toList(),
-                      //                       ),
-                      //                     ),
-                      //                   ),
-                      //                 )
-                      //                 .toList(),
-                      //           )
-                      //         : const Center(
-                      //             child: CustomLoader(),
-                      //           );
-                      //   },
-                      // ),*/
-                      // // verticalSpace(verticalSpace: 15),
-                      // // Padding(
-                      // //   padding: const EdgeInsets.symmetric(
-                      // //       horizontal: 18.0, vertical: 5),
-                      // //   child: AutoSizeText(
-                      // //     'Feature Products',
-                      // //     textAlign: TextAlign.start,
-                      // //     style: TextStyle(
-                      // //       fontSize: .06 * w,
-                      // //       fontFamily: 'Futura BdCn BT Bold',
-                      // //       fontWeight: FontWeight.w300,
-                      // //     ),
-                      // //   ),
-                      // // ),
-                      // // BlocBuilder<ProductListByIdBloc, ProductListByIdState>(
-                      // //   builder: (context, state) {
-                      // //     return state is ProductListByIdLoading
-                      // //         ? const Align(
-                      // //             alignment: Alignment.topCenter,
-                      // //             child: CustomLoader(),
-                      // //           )
-                      // //         : state is ProductListByIdLoadedState
-                      // //             ? Column(
-                      // //                 children: [
-                      // //                   Center(
-                      // //                     child: Wrap(
-                      // //                       runSpacing: 10,
-                      // //                       children: List.generate(
-                      // //                         state.productList
-                      // //                                     .where((element) =>
-                      // //                                         !element
-                      // //                                             .firstVendorPrice
-                      // //                                             .contains(
-                      // //                                                 '--'))
-                      // //                                     .toList()
-                      // //                                     .length <=
-                      // //                                 6
-                      // //                             ? state.productList
-                      // //                                 .where((element) =>
-                      // //                                     !element
-                      // //                                         .firstVendorPrice
-                      // //                                         .contains('--'))
-                      // //                                 .toList()
-                      // //                                 .length
-                      // //                             : _showMoreProduct == true
-                      // //                                 ? state.productList
-                      // //                                     .where((element) =>
-                      // //                                         !element
-                      // //                                             .firstVendorPrice
-                      // //                                             .contains(
-                      // //                                                 '--'))
-                      // //                                     .toList()
-                      // //                                     .length
-                      // //                                 : 6,
-                      // //                         (index) => state.productList
-                      // //                                 .where((element) =>
-                      // //                                     !element
-                      // //                                         .firstVendorPrice
-                      // //                                         .contains('--'))
-                      // //                                 .toList()[index]
-                      // //                                 .firstVendorPrice
-                      // //                                 .contains('--')
-                      // //                             ? const SizedBox()
-                      // //                             : Padding(
-                      // //                                 padding: const EdgeInsets
-                      // //                                     .symmetric(
-                      // //                                     horizontal: 4.0),
-                      // //                                 child: GestureDetector(
-                      // //                                   onTap: () {
-                      // //                                     Navigator.push(
-                      // //                                       context,
-                      // //                                       MaterialPageRoute(
-                      // //                                         builder:
-                      // //                                             (context) =>
-                      // //                                                 SafeArea(
-                      // //                                           child: Scaffold(
-                      // //                                             body:
-                      // //                                                 CurrentProductScreen(
-                      // //                                               data: state
-                      // //                                                   .productList
-                      // //                                                   .where((element) => !element
-                      // //                                                       .firstVendorPrice
-                      // //                                                       .contains('--'))
-                      // //                                                   .toList()[index],
-                      // //                                               vendorId:
-                      // //                                                   AppInfo.kVendorId,
-                      // //                                               database: widget
-                      // //                                                   .database,
-                      // //                                               likedValue:
-                      // //                                                   0,
-                      // //                                               notifiedValue:
-                      // //                                                   0,
-                      // //                                               databaseData:
-                      // //                                                   databaseData,
-                      // //                                               vendorShortname:
-                      // //                                                   '',
-                      // //                                               sisterVendorShortName:
-                      // //                                                   '',
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                         ),
-                      // //                                       ),
-                      // //                                     );
-                      // //                                   },
-                      // //                                   child: Card(
-                      // //                                     shape:
-                      // //                                         const RoundedRectangleBorder(
-                      // //                                       side: BorderSide(
-                      // //                                         color:
-                      // //                                             Colors.grey,
-                      // //                                       ),
-                      // //                                     ),
-                      // //                                     child: Container(
-                      // //                                       width: w * .44,
-                      // //                                       color: Colors.white,
-                      // //                                       child: Column(
-                      // //                                         crossAxisAlignment:
-                      // //                                             CrossAxisAlignment
-                      // //                                                 .start,
-                      // //                                         children: [
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   5),
-                      // //                                           Center(
-                      // //                                             child:
-                      // //                                                 CachedNetworkImage(
-                      // //                                               imageUrl: state
-                      // //                                                   .productList
-                      // //                                                   .where((element) => !element
-                      // //                                                       .firstVendorPrice
-                      // //                                                       .contains(
-                      // //                                                           '--'))
-                      // //                                                   .toList()[
-                      // //                                                       index]
-                      // //                                                   .productImage,
-                      // //                                               height:
-                      // //                                                   w * .3,
-                      // //                                               errorWidget:
-                      // //                                                   (context,
-                      // //                                                       _,
-                      // //                                                       c) {
-                      // //                                                 return CachedNetworkImage(
-                      // //                                                     imageUrl:
-                      // //                                                         'https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg');
-                      // //                                               },
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   2),
-                      // //                                           Container(
-                      // //                                             constraints: BoxConstraints(
-                      // //                                                 minHeight:
-                      // //                                                     w *
-                      // //                                                         .2,
-                      // //                                                 maxHeight:
-                      // //                                                     w * .21),
-                      // //                                             child:
-                      // //                                                 Padding(
-                      // //                                               padding: const EdgeInsets
-                      // //                                                   .only(
-                      // //                                                   left: 8,
-                      // //                                                   right:
-                      // //                                                       10.0,
-                      // //                                                   top: 8),
-                      // //                                               child: Text(
-                      // //                                                 state
-                      // //                                                     .productList
-                      // //                                                     .where((element) => !element
-                      // //                                                         .firstVendorPrice
-                      // //                                                         .contains('--'))
-                      // //                                                     .toList()[index]
-                      // //                                                     .productName,
-                      // //                                                 maxLines:
-                      // //                                                     3,
-                      // //                                                 overflow:
-                      // //                                                     TextOverflow
-                      // //                                                         .ellipsis,
-                      // //                                                 style: TextStyle(
-                      // //                                                     color: '#222223'
-                      // //                                                         .toColor(),
-                      // //                                                     fontFamily:
-                      // //                                                         'Myriad Arabic',
-                      // //                                                     fontSize: w *
-                      // //                                                         .06,
-                      // //                                                     height:
-                      // //                                                         1,
-                      // //                                                     wordSpacing:
-                      // //                                                         0,
-                      // //                                                     letterSpacing:
-                      // //                                                         0,
-                      // //                                                     fontWeight:
-                      // //                                                         FontWeight.w900),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           Padding(
-                      // //                                             padding: const EdgeInsets
-                      // //                                                 .symmetric(
-                      // //                                                 horizontal:
-                      // //                                                     8.0,
-                      // //                                                 vertical:
-                      // //                                                     3),
-                      // //                                             child:
-                      // //                                                 AutoSizeText(
-                      // //                                               'MPN# ${state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].productMpn}',
-                      // //                                               maxLines: 1,
-                      // //                                               overflow:
-                      // //                                                   TextOverflow
-                      // //                                                       .ellipsis,
-                      // //                                               style: TextStyle(
-                      // //                                                   color: Colors
-                      // //                                                       .black,
-                      // //                                                   fontFamily:
-                      // //                                                       'Segoe UI',
-                      // //                                                   fontSize: w *
-                      // //                                                       .04,
-                      // //                                                   wordSpacing:
-                      // //                                                       0,
-                      // //                                                   letterSpacing:
-                      // //                                                       0,
-                      // //                                                   fontWeight:
-                      // //                                                       FontWeight.w500
-                      // //
-                      // //                                                   // fontWeight: FontWeight.w900
-                      // //                                                   ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           Padding(
-                      // //                                             padding: const EdgeInsets
-                      // //                                                 .symmetric(
-                      // //                                                 horizontal:
-                      // //                                                     8.0,
-                      // //                                                 vertical:
-                      // //                                                     5),
-                      // //                                             child: Row(
-                      // //                                               children: [
-                      // //                                                 Icon(
-                      // //                                                   Icons
-                      // //                                                       .check,
-                      // //                                                   color: '#3b8039'
-                      // //                                                       .toColor(),
-                      // //                                                   size:
-                      // //                                                       23,
-                      // //                                                 ),
-                      // //                                                 horizontalSpace(
-                      // //                                                     horizontalSpace:
-                      // //                                                         8),
-                      // //                                                 Text(
-                      // //                                                   'In Stock',
-                      // //                                                   maxLines:
-                      // //                                                       3,
-                      // //                                                   overflow:
-                      // //                                                       TextOverflow.ellipsis,
-                      // //                                                   style: TextStyle(
-                      // //                                                       color: '#3b8039'
-                      // //                                                           .toColor(),
-                      // //                                                       fontFamily:
-                      // //                                                           'Segoe UI Bold',
-                      // //                                                       fontSize: w *
-                      // //                                                           .043,
-                      // //                                                       wordSpacing:
-                      // //                                                           2,
-                      // //                                                       letterSpacing:
-                      // //                                                           0,
-                      // //                                                       fontWeight:
-                      // //                                                           FontWeight.normal
-                      // //
-                      // //                                                       // fontWeight: FontWeight.w900
-                      // //                                                       ),
-                      // //                                                 ),
-                      // //                                               ],
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           Padding(
-                      // //                                             padding: const EdgeInsets
-                      // //                                                 .symmetric(
-                      // //                                                 horizontal:
-                      // //                                                     8.0,
-                      // //                                                 vertical:
-                      // //                                                     5),
-                      // //                                             child:
-                      // //                                                 RichText(
-                      // //                                               text:
-                      // //                                                   TextSpan(
-                      // //                                                 text: state
-                      // //                                                     .productList
-                      // //                                                     .where((element) => !element
-                      // //                                                         .firstVendorPrice
-                      // //                                                         .contains('--'))
-                      // //                                                     .toList()[index]
-                      // //                                                     .firstVendorPrice,
-                      // //                                                 style:
-                      // //                                                     TextStyle(
-                      // //                                                   color: '#e3121b'
-                      // //                                                       .toColor(),
-                      // //                                                   fontFamily:
-                      // //                                                       'MyriadPro-BoldCond',
-                      // //                                                   fontSize:
-                      // //                                                       w * .08,
-                      // //                                                   wordSpacing:
-                      // //                                                       .1,
-                      // //                                                   letterSpacing:
-                      // //                                                       0,
-                      // //                                                   fontWeight:
-                      // //                                                       FontWeight.bold,
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           Padding(
-                      // //                                             padding:
-                      // //                                                 const EdgeInsets
-                      // //                                                     .symmetric(
-                      // //                                               horizontal:
-                      // //                                                   8.0,
-                      // //                                             ),
-                      // //                                             child:
-                      // //                                                 SizedBox(
-                      // //                                               width:
-                      // //                                                   w * .46,
-                      // //                                               child:
-                      // //                                                   FittedBox(
-                      // //                                                 child:
-                      // //                                                     Row(
-                      // //                                                   children: [
-                      // //                                                     Icon(
-                      // //                                                       Icons.local_shipping,
-                      // //                                                       color:
-                      // //                                                           '#0678cb'.toColor(),
-                      // //                                                     ),
-                      // //                                                     horizontalSpace(
-                      // //                                                         horizontalSpace: 3),
-                      // //                                                     AutoSizeText(
-                      // //                                                       state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].firstVendorPriceShipping == '--' || state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].firstVendorPriceShipping == '\$0.00'
-                      // //                                                           ? ' Free Shipping'
-                      // //                                                           : 'Shipping(${state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].firstVendorPriceShipping})',
-                      // //                                                       maxLines:
-                      // //                                                           3,
-                      // //                                                       overflow:
-                      // //                                                           TextOverflow.ellipsis,
-                      // //                                                       style: TextStyle(
-                      // //                                                           color: state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].firstVendorPriceShipping == '--' || state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].firstVendorPriceShipping == '\$0.00' ? '#3b8039'.toColor() : '#0678cb'.toColor(),
-                      // //                                                           fontFamily: 'Segoe UI Bold',
-                      // //                                                           fontSize: w * .042,
-                      // //                                                           wordSpacing: 2,
-                      // //                                                           letterSpacing: .4,
-                      // //                                                           fontWeight: FontWeight.normal
-                      // //
-                      // //                                                           // fontWeight: FontWeight.w900
-                      // //                                                           ),
-                      // //                                                     )
-                      // //                                                   ],
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   11),
-                      // //                                           /*                  Center(
-                      // //                                             child:
-                      // //                                                 CachedNetworkImage(
-                      // //                                               imageUrl:
-                      // //                                                   '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/${finalList[index].firstVendorName}.jpg',
-                      // //                                               height:
-                      // //                                                   h * 0.045,
-                      // //                                               fit: BoxFit
-                      // //                                                   .fill,
-                      // //                                               errorWidget: (_,
-                      // //                                                       c,
-                      // //                                                       e) =>
-                      // //                                                   SizedBox(
-                      // //                                                 child:
-                      // //                                                     Container(
-                      // //                                                   width: w *
-                      // //                                                       .42,
-                      // //                                                   padding:
-                      // //                                                       const EdgeInsets
-                      // //                                                           .all(
-                      // //                                                           2),
-                      // //                                                   color: Colors
-                      // //                                                       .black,
-                      // //                                                   child:
-                      // //                                                       Center(
-                      // //                                                     child:
-                      // //                                                         AutoSizeText(
-                      // //                                                       finalList[index]
-                      // //                                                           .firstVendorName,
-                      // //                                                       maxLines:
-                      // //                                                           1,
-                      // //                                                       textAlign:
-                      // //                                                           TextAlign.center,
-                      // //                                                       style:
-                      // //                                                           GoogleFonts.albertSans(
-                      // //                                                         color:
-                      // //                                                             Colors.white,
-                      // //                                                         fontSize:
-                      // //                                                             w * .055,
-                      // //                                                         letterSpacing:
-                      // //                                                             0,
-                      // //                                                         fontWeight:
-                      // //                                                             FontWeight.bold,
-                      // //                                                         // fontFamily: 'JT Marnie Light',
-                      // //                                                       ),
-                      // //                                                     ),
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   5),*/
-                      // //                                           Center(
-                      // //                                             child:
-                      // //                                                 InkWell(
-                      // //                                               onTap: () async =>
-                      // //                                                   await MyInAppBrowser()
-                      // //                                                       .openUrlRequest(
-                      // //                                                 urlRequest:
-                      // //                                                     URLRequest(
-                      // //                                                   url: Uri
-                      // //                                                       .parse(
-                      // //                                                     state
-                      // //                                                         .productList
-                      // //                                                         .where((element) => !element.firstVendorPrice.contains('--'))
-                      // //                                                         .toList()[index]
-                      // //                                                         .firstVendorUrl,
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                                 options:
-                      // //                                                     InAppBrowserClassOptions(
-                      // //                                                   crossPlatform:
-                      // //                                                       InAppBrowserOptions(
-                      // //                                                     toolbarTopBackgroundColor:
-                      // //                                                         Colors.blue,
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                               child: BuyAtButton(
-                      // //                                                   imageUrl: state
-                      // //                                                       .productList
-                      // //                                                       .where((element) =>
-                      // //                                                           !element.firstVendorPrice.contains('--'))
-                      // //                                                       .toList()[index]
-                      // //                                                       .firstVendorName)
-                      // //                                               /*Container(
-                      // //                                                 width:
-                      // //                                                     w * .42,
-                      // //                                                 decoration:
-                      // //                                                     BoxDecoration(
-                      // //                                                   border:
-                      // //                                                       Border
-                      // //                                                           .all(
-                      // //                                                     color: Colors
-                      // //                                                         .blue,
-                      // //                                                     width:
-                      // //                                                         3,
-                      // //                                                   ),
-                      // //                                                   borderRadius:
-                      // //                                                       BorderRadius
-                      // //                                                           .circular(
-                      // //                                                     3,
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                                 child:
-                      // //                                                     Padding(
-                      // //                                                   padding: const EdgeInsets
-                      // //                                                       .symmetric(
-                      // //                                                       vertical:
-                      // //                                                           10.0),
-                      // //                                                   child:
-                      // //                                                       Row(
-                      // //                                                     mainAxisAlignment:
-                      // //                                                         MainAxisAlignment.center,
-                      // //                                                     crossAxisAlignment:
-                      // //                                                         CrossAxisAlignment.center,
-                      // //                                                     children: [
-                      // //                                                       Image
-                      // //                                                           .asset(
-                      // //                                                         'assets/images/world-wide-web.png',
-                      // //                                                         color:
-                      // //                                                             '#0678cb'.toColor(),
-                      // //                                                         height:
-                      // //                                                             20,
-                      // //                                                         width:
-                      // //                                                             20,
-                      // //                                                         // weight: 10,
-                      // //                                                       ),
-                      // //                                                       horizontalSpace(
-                      // //                                                           horizontalSpace: 15),
-                      // //                                                       AutoSizeText(
-                      // //                                                         'Visit'.toUpperCase(),
-                      // //                                                         style:
-                      // //                                                             TextStyle(
-                      // //                                                           color: '#0678cb'.toColor(),
-                      // //                                                           fontFamily: 'MyriadPro-BoldCond',
-                      // //                                                           fontSize: w * .043,
-                      // //                                                           wordSpacing: .1,
-                      // //                                                           letterSpacing: 0,
-                      // //                                                           fontWeight: FontWeight.bold,
-                      // //                                                         ),
-                      // //                                                       )
-                      // //                                                     ],
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                               )*/
-                      // //                                               ,
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   15)
-                      // //                                         ],
-                      // //                                       ),
-                      // //                                     ),
-                      // //                                   ),
-                      // //                                 ),
-                      // //                               )
-                      // //                         /*Padding(
-                      // //                                 padding: const EdgeInsets
-                      // //                                     .symmetric(
-                      // //                                     horizontal: 4.0),
-                      // //                                 child: GestureDetector(
-                      // //                                   onTap: () {
-                      // //                                     Navigator.push(
-                      // //                                       context,
-                      // //                                       MaterialPageRoute(
-                      // //                                         builder:
-                      // //                                             (context) =>
-                      // //                                                 SafeArea(
-                      // //                                           child: Scaffold(
-                      // //                                             body:
-                      // //                                                 CurrentProductScreen(
-                      // //                                               data: state
-                      // //                                                   .productList
-                      // //                                                   .where((element) => !element
-                      // //                                                       .firstVendorPrice
-                      // //                                                       .contains(
-                      // //                                                           '--'))
-                      // //                                                   .toList()[index],
-                      // //                                               vendorId:
-                      // //                                                   AppInfo.kVendorId,
-                      // //                                               database: widget
-                      // //                                                   .database,
-                      // //                                               likedValue: 0,
-                      // //                                               notifiedValue:
-                      // //                                                   0,
-                      // //                                               databaseData:
-                      // //                                                   databaseData,
-                      // //                                               vendorShortname:
-                      // //                                                   _vendorShortName,
-                      // //                                               sisterVendorShortName:
-                      // //                                                   _sisterVendorShortName,
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                         ),
-                      // //                                       ),
-                      // //                                     );
-                      // //                                   },
-                      // //                                   child: Card(
-                      // //                                     shape:
-                      // //                                         const RoundedRectangleBorder(
-                      // //                                       side: BorderSide(
-                      // //                                         color: Colors.grey,
-                      // //                                       ),
-                      // //                                     ),
-                      // //                                     child: Container(
-                      // //                                       width: w * .44,
-                      // //                                       // height: h * .56,
-                      // //                                       color: Colors.white,
-                      // //                                       child: Column(
-                      // //                                         crossAxisAlignment:
-                      // //                                             CrossAxisAlignment
-                      // //                                                 .start,
-                      // //                                         children: [
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   5),
-                      // //                                           Center(
-                      // //                                             child:
-                      // //                                                 CachedNetworkImage(
-                      // //                                               imageUrl: state
-                      // //                                                   .productList
-                      // //                                                   .where((element) => !element
-                      // //                                                       .firstVendorPrice
-                      // //                                                       .contains(
-                      // //                                                           '--'))
-                      // //                                                   .toList()[
-                      // //                                                       index]
-                      // //                                                   .productImage,
-                      // //                                               height:
-                      // //                                                   w * .3,
-                      // //                                               errorWidget:
-                      // //                                                   (context,
-                      // //                                                       _,
-                      // //                                                       c) {
-                      // //                                                 return CachedNetworkImage(
-                      // //                                                     imageUrl:
-                      // //                                                         'https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg');
-                      // //                                               },
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   2),
-                      // //                                           Container(
-                      // //                                             constraints: BoxConstraints(
-                      // //                                                 minHeight:
-                      // //                                                     w * .2,
-                      // //                                                 maxHeight:
-                      // //                                                     w * .21),
-                      // //                                             child: Padding(
-                      // //                                               padding:
-                      // //                                                   const EdgeInsets
-                      // //                                                       .only(
-                      // //                                                       left:
-                      // //                                                           8,
-                      // //                                                       right:
-                      // //                                                           10.0,
-                      // //                                                       top:
-                      // //                                                           8),
-                      // //                                               child: Text(
-                      // //                                                 state
-                      // //                                                     .productList
-                      // //                                                     .where((element) => !element
-                      // //                                                         .firstVendorPrice
-                      // //                                                         .contains(
-                      // //                                                             '--'))
-                      // //                                                     .toList()[
-                      // //                                                         index]
-                      // //                                                     .productName,
-                      // //                                                 maxLines: 3,
-                      // //                                                 overflow:
-                      // //                                                     TextOverflow
-                      // //                                                         .ellipsis,
-                      // //                                                 style: TextStyle(
-                      // //                                                     color: '#222223'
-                      // //                                                         .toColor(),
-                      // //                                                     fontFamily:
-                      // //                                                         'Myriad Arabic',
-                      // //                                                     fontSize: w *
-                      // //                                                         .06,
-                      // //                                                     height:
-                      // //                                                         1,
-                      // //                                                     wordSpacing:
-                      // //                                                         0,
-                      // //                                                     letterSpacing:
-                      // //                                                         0,
-                      // //                                                     fontWeight:
-                      // //                                                         FontWeight.w900),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           Padding(
-                      // //                                             padding: const EdgeInsets
-                      // //                                                 .symmetric(
-                      // //                                                 horizontal:
-                      // //                                                     8.0,
-                      // //                                                 vertical:
-                      // //                                                     3),
-                      // //                                             child: Text(
-                      // //                                               'SKU# ${state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].secondarySku.contains('--') ? state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].productMpn : state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].secondarySku}',
-                      // //                                               maxLines: 3,
-                      // //                                               overflow:
-                      // //                                                   TextOverflow
-                      // //                                                       .ellipsis,
-                      // //                                               style: TextStyle(
-                      // //                                                   color: Colors
-                      // //                                                       .black,
-                      // //                                                   fontFamily:
-                      // //                                                       'Segoe UI',
-                      // //                                                   fontSize:
-                      // //                                                       w *
-                      // //                                                           .04,
-                      // //                                                   wordSpacing:
-                      // //                                                       0,
-                      // //                                                   letterSpacing:
-                      // //                                                       0,
-                      // //                                                   fontWeight:
-                      // //                                                       FontWeight
-                      // //                                                           .w500
-                      // //
-                      // //                                                   // fontWeight: FontWeight.w900
-                      // //                                                   ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           Padding(
-                      // //                                             padding: const EdgeInsets
-                      // //                                                 .symmetric(
-                      // //                                                 horizontal:
-                      // //                                                     8.0,
-                      // //                                                 vertical:
-                      // //                                                     5),
-                      // //                                             child: Row(
-                      // //                                               children: [
-                      // //                                                 Icon(
-                      // //                                                   Icons
-                      // //                                                       .check,
-                      // //                                                   color: '#3b8039'
-                      // //                                                       .toColor(),
-                      // //                                                   size: 23,
-                      // //                                                 ),
-                      // //                                                 horizontalSpace(
-                      // //                                                     horizontalSpace:
-                      // //                                                         8),
-                      // //                                                 Text(
-                      // //                                                   'In Stock',
-                      // //                                                   maxLines:
-                      // //                                                       3,
-                      // //                                                   overflow:
-                      // //                                                       TextOverflow
-                      // //                                                           .ellipsis,
-                      // //                                                   style: TextStyle(
-                      // //                                                       color: '#3b8039'
-                      // //                                                           .toColor(),
-                      // //                                                       fontFamily:
-                      // //                                                           'Segoe UI Bold',
-                      // //                                                       fontSize: w *
-                      // //                                                           .043,
-                      // //                                                       wordSpacing:
-                      // //                                                           2,
-                      // //                                                       letterSpacing:
-                      // //                                                           0,
-                      // //                                                       fontWeight:
-                      // //                                                           FontWeight.normal
-                      // //
-                      // //                                                       // fontWeight: FontWeight.w900
-                      // //                                                       ),
-                      // //                                                 ),
-                      // //                                               ],
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           Padding(
-                      // //                                             padding: const EdgeInsets
-                      // //                                                 .symmetric(
-                      // //                                                 horizontal:
-                      // //                                                     8.0,
-                      // //                                                 vertical:
-                      // //                                                     5),
-                      // //                                             child: RichText(
-                      // //                                               text:
-                      // //                                                   TextSpan(
-                      // //                                                 text: state
-                      // //                                                     .productList
-                      // //                                                     .where((element) => !element
-                      // //                                                         .firstVendorPrice
-                      // //                                                         .contains(
-                      // //                                                             '--'))
-                      // //                                                     .toList()[
-                      // //                                                         index]
-                      // //                                                     .vendorpriceFinalprice,
-                      // //                                                 style:
-                      // //                                                     TextStyle(
-                      // //                                                   color: '#e3121b'
-                      // //                                                       .toColor(),
-                      // //                                                   fontFamily:
-                      // //                                                       'MyriadPro-BoldCond',
-                      // //                                                   fontSize:
-                      // //                                                       w * .08,
-                      // //                                                   wordSpacing:
-                      // //                                                       .1,
-                      // //                                                   letterSpacing:
-                      // //                                                       0,
-                      // //                                                   fontWeight:
-                      // //                                                       FontWeight
-                      // //                                                           .bold,
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           Padding(
-                      // //                                             padding:
-                      // //                                                 const EdgeInsets
-                      // //                                                     .symmetric(
-                      // //                                               horizontal:
-                      // //                                                   8.0,
-                      // //                                             ),
-                      // //                                             child: SizedBox(
-                      // //                                               width:
-                      // //                                                   w * .46,
-                      // //                                               child:
-                      // //                                                   FittedBox(
-                      // //                                                 child: Row(
-                      // //                                                   children: [
-                      // //                                                     Icon(
-                      // //                                                       Icons
-                      // //                                                           .local_shipping,
-                      // //                                                       color:
-                      // //                                                           '#0678cb'.toColor(),
-                      // //                                                     ),
-                      // //                                                     horizontalSpace(
-                      // //                                                         horizontalSpace:
-                      // //                                                             3),
-                      // //                                                     AutoSizeText(
-                      // //                                                       state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].vendorpriceShipping == '--' || state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].vendorpriceShipping == '\$0.00'
-                      // //                                                           ? ' Free Shipping'
-                      // //                                                           : 'Shipping(${state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].vendorpriceShipping})',
-                      // //                                                       maxLines:
-                      // //                                                           3,
-                      // //                                                       overflow:
-                      // //                                                           TextOverflow.ellipsis,
-                      // //                                                       style: TextStyle(
-                      // //                                                           color: '#0678cb'.toColor(),
-                      // //                                                           fontFamily: 'Segoe UI Bold',
-                      // //                                                           fontSize: w * .042,
-                      // //                                                           wordSpacing: 2,
-                      // //                                                           letterSpacing: .4,
-                      // //                                                           fontWeight: FontWeight.normal
-                      // //
-                      // //                                                           // fontWeight: FontWeight.w900
-                      // //                                                           ),
-                      // //                                                     )
-                      // //                                                   ],
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   11),
-                      // //                                           Center(
-                      // //                                             child:
-                      // //                                                 CachedNetworkImage(
-                      // //                                               imageUrl:
-                      // //                                                   '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/${state.productList.where((element) => !element.firstVendorPrice.contains('--')).toList()[index].firstVendorName}.jpg',
-                      // //                                               height:
-                      // //                                                   h * 0.045,
-                      // //                                               fit: BoxFit
-                      // //                                                   .fill,
-                      // //                                               errorWidget: (_,
-                      // //                                                       c,
-                      // //                                                       e) =>
-                      // //                                                   SizedBox(
-                      // //                                                 child:
-                      // //                                                     Container(
-                      // //                                                   width: w *
-                      // //                                                       .42,
-                      // //                                                   padding:
-                      // //                                                       const EdgeInsets
-                      // //                                                           .all(
-                      // //                                                           2),
-                      // //                                                   color: Colors
-                      // //                                                       .black,
-                      // //                                                   child:
-                      // //                                                       Center(
-                      // //                                                     child:
-                      // //                                                         AutoSizeText(
-                      // //                                                       state
-                      // //                                                           .productList[index]
-                      // //                                                           .firstVendorName,
-                      // //                                                       maxLines:
-                      // //                                                           1,
-                      // //                                                       textAlign:
-                      // //                                                           TextAlign.center,
-                      // //                                                       style:
-                      // //                                                           GoogleFonts.albertSans(
-                      // //                                                         color:
-                      // //                                                             Colors.white,
-                      // //                                                         fontSize:
-                      // //                                                             w * .055,
-                      // //                                                         letterSpacing:
-                      // //                                                             0,
-                      // //                                                         fontWeight:
-                      // //                                                             FontWeight.bold,
-                      // //                                                         // fontFamily: 'JT Marnie Light',
-                      // //                                                       ),
-                      // //                                                     ),
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   5),
-                      // //                                           Center(
-                      // //                                             child: InkWell(
-                      // //                                               onTap: () async =>
-                      // //                                                   await MyInAppBrowser()
-                      // //                                                       .openUrlRequest(
-                      // //                                                 urlRequest:
-                      // //                                                     URLRequest(
-                      // //                                                   url: Uri
-                      // //                                                       .parse(
-                      // //                                                     state
-                      // //                                                         .productList[index]
-                      // //                                                         .firstVendorUrl,
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                                 options:
-                      // //                                                     InAppBrowserClassOptions(
-                      // //                                                   crossPlatform:
-                      // //                                                       InAppBrowserOptions(
-                      // //                                                     toolbarTopBackgroundColor:
-                      // //                                                         Colors.blue,
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                               child:
-                      // //                                                   Container(
-                      // //                                                 width:
-                      // //                                                     w * .42,
-                      // //                                                 decoration:
-                      // //                                                     BoxDecoration(
-                      // //                                                   border:
-                      // //                                                       Border
-                      // //                                                           .all(
-                      // //                                                     color: Colors
-                      // //                                                         .blue,
-                      // //                                                     width:
-                      // //                                                         3,
-                      // //                                                   ),
-                      // //                                                   borderRadius:
-                      // //                                                       BorderRadius
-                      // //                                                           .circular(
-                      // //                                                     3,
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                                 child:
-                      // //                                                     Padding(
-                      // //                                                   padding: const EdgeInsets
-                      // //                                                       .symmetric(
-                      // //                                                       vertical:
-                      // //                                                           10.0),
-                      // //                                                   child:
-                      // //                                                       Row(
-                      // //                                                     mainAxisAlignment:
-                      // //                                                         MainAxisAlignment.center,
-                      // //                                                     crossAxisAlignment:
-                      // //                                                         CrossAxisAlignment.center,
-                      // //                                                     children: [
-                      // //                                                       Image
-                      // //                                                           .asset(
-                      // //                                                         'assets/images/world-wide-web.png',
-                      // //                                                         color:
-                      // //                                                             '#0678cb'.toColor(),
-                      // //                                                         height:
-                      // //                                                             20,
-                      // //                                                         width:
-                      // //                                                             20,
-                      // //                                                         // weight: 10,
-                      // //                                                       ),
-                      // //                                                       horizontalSpace(
-                      // //                                                           horizontalSpace: 15),
-                      // //                                                       AutoSizeText(
-                      // //                                                         'Visit'.toUpperCase(),
-                      // //                                                         style:
-                      // //                                                             TextStyle(
-                      // //                                                           color: '#0678cb'.toColor(),
-                      // //                                                           fontFamily: 'MyriadPro-BoldCond',
-                      // //                                                           fontSize: w * .043,
-                      // //                                                           wordSpacing: .1,
-                      // //                                                           letterSpacing: 0,
-                      // //                                                           fontWeight: FontWeight.bold,
-                      // //                                                         ),
-                      // //                                                       )
-                      // //                                                     ],
-                      // //                                                   ),
-                      // //                                                 ),
-                      // //                                               ),
-                      // //                                             ),
-                      // //                                           ),
-                      // //                                           verticalSpace(
-                      // //                                               verticalSpace:
-                      // //                                                   15)
-                      // //                                         ],
-                      // //                                       ),
-                      // //                                     ),
-                      // //                                   ),
-                      // //                                 ),
-                      // //                               )*/
-                      // //                         ,
-                      // //                       ),
-                      // //                     ),
-                      // //                   ),
-                      // //                   verticalSpace(verticalSpace: 15),
-                      // //                   ElevatedButton(
-                      // //                     style: ButtonStyle(
-                      // //                       backgroundColor:
-                      // //                           MaterialStateProperty
-                      // //                               .resolveWith<Color>(
-                      // //                         (Set<MaterialState> states) {
-                      // //                           return '#d90310'.toColor();
-                      // //                         },
-                      // //                       ),
-                      // //                       shape: MaterialStateProperty
-                      // //                           .resolveWith<OutlinedBorder>(
-                      // //                         (states) =>
-                      // //                             RoundedRectangleBorder(
-                      // //                           borderRadius:
-                      // //                               BorderRadius.circular(
-                      // //                             10,
-                      // //                           ),
-                      // //                         ),
-                      // //                       ),
-                      // //                     ),
-                      // //                     onPressed: () {
-                      // //                       setState(() {
-                      // //                         _showMoreProduct =
-                      // //                             !_showMoreProduct;
-                      // //                       });
-                      // //                     },
-                      // //                     child: Padding(
-                      // //                       padding: const EdgeInsets.symmetric(
-                      // //                           horizontal: 8.0),
-                      // //                       child: Text(
-                      // //                         (_showMoreProduct == true
-                      // //                                 ? 'Show Less'
-                      // //                                 : 'Show More')
-                      // //                             .toUpperCase(),
-                      // //                         style: TextStyle(
-                      // //                             color: Colors.white,
-                      // //                             fontFamily:
-                      // //                                 'Futura BdCn BT Bold',
-                      // //                             wordSpacing: 1,
-                      // //                             letterSpacing: 1,
-                      // //                             fontSize: w * .045),
-                      // //                       ),
-                      // //                     ),
-                      // //                   )
-                      // //                 ],
-                      // //               )
-                      // //             : const SizedBox();
-                      // //   },
-                      // // ),
-                      // // verticalSpace(verticalSpace: 10),
-                      // // Container(
-                      // //   color: '#fb8f95'.toColor(),
-                      // //   // padding: const EdgeInsets.all(10),
-                      // //   child: BlocBuilder<FeatureCategoryBloc,
-                      // //       FeatureCategoryState>(
-                      // //     builder: (context, state) {
-                      // //       return state is FeatureCategoryLoaded
-                      // //           ? Center(
-                      // //               child: Column(
-                      // //                 crossAxisAlignment:
-                      // //                     CrossAxisAlignment.start,
-                      // //                 children: [
-                      // //                   Padding(
-                      // //                     padding: const EdgeInsets.symmetric(
-                      // //                         horizontal: 16.0, vertical: 5),
-                      // //                     child: AutoSizeText(
-                      // //                       'Feature Categories',
-                      // //                       textAlign: TextAlign.start,
-                      // //                       style: TextStyle(
-                      // //                         fontSize: .06 * w,
-                      // //                         fontFamily: 'Futura BdCn BT Bold',
-                      // //                         fontWeight: FontWeight.w300,
-                      // //                       ),
-                      // //                     ),
-                      // //                   ),
-                      // //                   verticalSpace(verticalSpace: 10),
-                      // //                   Padding(
-                      // //                     padding: const EdgeInsets.symmetric(
-                      // //                         horizontal: 8.0),
-                      // //                     child: Align(
-                      // //                       alignment: Alignment.topCenter,
-                      // //                       child: Wrap(
-                      // //                         spacing: 15,
-                      // //                         runSpacing: 10,
-                      // //                         children: List.generate(
-                      // //                           state.data.length <= 6
-                      // //                               ? state.data.length
-                      // //                               : _showMoreCategory == true
-                      // //                                   ? state.data.length
-                      // //                                   : 6,
-                      // //                           (index) => InkWell(
-                      // //                             onTap: () {
-                      // //                               Navigator.push(
-                      // //                                 context,
-                      // //                                 MaterialPageRoute(
-                      // //                                   builder: (context) =>
-                      // //                                       ProductListScreen(
-                      // //                                     titleValue: state
-                      // //                                         .data[index]
-                      // //                                         .categoryName,
-                      // //                                     categoryId: state
-                      // //                                         .data[index]
-                      // //                                         .categoryId
-                      // //                                         .toString(),
-                      // //                                     database:
-                      // //                                         widget.database,
-                      // //                                     dataList: const [],
-                      // //                                     isBrands: false,
-                      // //                                     isCategory: false,
-                      // //                                     title: state
-                      // //                                         .data[index]
-                      // //                                         .categoryName,
-                      // //                                   ),
-                      // //                                 ),
-                      // //                               ).whenComplete(() => context
-                      // //                                   .read<
-                      // //                                       ProductListByIdBloc>()
-                      // //                                   .add(const ProductListByIdLoadingEvent(
-                      // //                                       vendorId: '${AppInfo.kVendorId}',
-                      // //                                       date: '2024-03-05',
-                      // //                                       dataId: '14371',
-                      // //                                       featuredProducts:
-                      // //                                           false,
-                      // //                                       fromSearchScreen:
-                      // //                                           false,
-                      // //                                       brandProductsEnabled:
-                      // //                                           false,
-                      // //                                       isCategory:
-                      // //                                           false)));
-                      // //                             },
-                      // //                             child: Card(
-                      // //                               child: Padding(
-                      // //                                 padding:
-                      // //                                     const EdgeInsets.all(
-                      // //                                         4.0),
-                      // //                                 child: Column(
-                      // //                                   children: [
-                      // //                                     Container(
-                      // //                                       width: w * .41,
-                      // //                                       height: w * .4,
-                      // //                                       decoration:
-                      // //                                           const BoxDecoration(
-                      // //                                         image:
-                      // //                                             DecorationImage(
-                      // //                                           image:
-                      // //                                               AssetImage(
-                      // //                                             'assets/home_screen_assets/feature_category/image-1.jpg',
-                      // //                                           ),
-                      // //                                           fit:
-                      // //                                               BoxFit.fill,
-                      // //                                         ),
-                      // //                                       ),
-                      // //                                     ),
-                      // //                                     verticalSpace(
-                      // //                                         verticalSpace: 5),
-                      // //                                     SizedBox(
-                      // //                                       width: w * .41,
-                      // //                                       child: RichText(
-                      // //                                         maxLines: 1,
-                      // //                                         overflow:
-                      // //                                             TextOverflow
-                      // //                                                 .ellipsis,
-                      // //                                         textAlign:
-                      // //                                             TextAlign
-                      // //                                                 .center,
-                      // //                                         text: TextSpan(
-                      // //                                           text: state
-                      // //                                               .data[index]
-                      // //                                               .categoryName,
-                      // //                                           style:
-                      // //                                               TextStyle(
-                      // //                                             fontSize:
-                      // //                                                 .045 * w,
-                      // //                                             fontFamily:
-                      // //                                                 'Futura BdCn BT Bold',
-                      // //                                             fontWeight:
-                      // //                                                 FontWeight
-                      // //                                                     .w300,
-                      // //                                             color: Colors
-                      // //                                                 .black,
-                      // //                                           ),
-                      // //                                           /*        children: [
-                      // //                                         // TextSpan(
-                      // //                                         //   text: '75% OFF',
-                      // //                                         //   style: TextStyle(
-                      // //                                         //     fontSize: .05 * w,
-                      // //                                         //     fontFamily:
-                      // //                                         //         'Futura BdCn BT Bold',
-                      // //                                         //     fontWeight: FontWeight.w300,
-                      // //                                         //     color: Colors.green,
-                      // //                                         //   ),
-                      // //                                         // ),
-                      // //                                       ],*/
-                      // //                                         ),
-                      // //                                       ),
-                      // //                                     ),
-                      // //                                     verticalSpace(
-                      // //                                         verticalSpace: 15)
-                      // //                                   ],
-                      // //                                 ),
-                      // //                               ),
-                      // //                             ),
-                      // //                           ),
-                      // //                         ),
-                      // //                       ),
-                      // //                     ),
-                      // //                   ),
-                      // //                   verticalSpace(verticalSpace: 20),
-                      // //                   state.data.length > 4
-                      // //                       ? Center(
-                      // //                           child: ElevatedButton(
-                      // //                             style: ButtonStyle(
-                      // //                               backgroundColor:
-                      // //                                   MaterialStateProperty
-                      // //                                       .resolveWith<Color>(
-                      // //                                 (Set<MaterialState>
-                      // //                                     states) {
-                      // //                                   return '#d90310'
-                      // //                                       .toColor();
-                      // //                                 },
-                      // //                               ),
-                      // //                               shape: MaterialStateProperty
-                      // //                                   .resolveWith<
-                      // //                                       OutlinedBorder>(
-                      // //                                 (states) =>
-                      // //                                     RoundedRectangleBorder(
-                      // //                                   borderRadius:
-                      // //                                       BorderRadius
-                      // //                                           .circular(
-                      // //                                     10,
-                      // //                                   ),
-                      // //                                 ),
-                      // //                               ),
-                      // //                             ),
-                      // //                             onPressed: () {
-                      // //                               setState(() {
-                      // //                                 _showMoreCategory =
-                      // //                                     !_showMoreCategory;
-                      // //                               });
-                      // //                             },
-                      // //                             child: Padding(
-                      // //                               padding: const EdgeInsets
-                      // //                                   .symmetric(
-                      // //                                   horizontal: 8.0),
-                      // //                               child: Text(
-                      // //                                 (_showMoreCategory ==
-                      // //                                             false
-                      // //                                         ? 'Show More'
-                      // //                                         : 'Show Less')
-                      // //                                     .toUpperCase(),
-                      // //                                 style: TextStyle(
-                      // //                                     color: Colors.white,
-                      // //                                     fontFamily:
-                      // //                                         'Futura BdCn BT Bold',
-                      // //                                     wordSpacing: 1,
-                      // //                                     letterSpacing: 1,
-                      // //                                     fontSize: w * .045),
-                      // //                               ),
-                      // //                             ),
-                      // //                           ),
-                      // //                         )
-                      // //                       : const SizedBox.shrink(),
-                      // //                   state.data.length > 4
-                      // //                       ? verticalSpace(verticalSpace: 20)
-                      // //                       : const SizedBox.shrink()
-                      // //                 ],
-                      // //               ),
-                      // //             )
-                      // //           : const Center(
-                      // //               child: Padding(
-                      // //                 padding: EdgeInsets.all(50.0),
-                      // //                 child: CustomLoader(),
-                      // //               ),
-                      // //             );
-                      // //     },
-                      // //   ),
-                      // // ),
-                      // // SizedBox(
-                      // //   height: .08 * h,
-                      // // )
                     ],
                   ),
                 ),
@@ -6521,52 +4992,201 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-// try {
-//   final response = await http.get(
-//     Uri.parse(
-//         'https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data'),
-//   );
-//   if (response.statusCode == 200) {
-//     final List<dynamic> jsonData = json.decode(response.body);
-//     final brandsResponse = BrandsResponse.fromJson(jsonData);
-//     return brandsResponse.toJson();
-//   } else {
-//     throw Exception('Failed to load brands: ${response.statusCode}');
-//   }
-// } catch (e) {
-//   throw Exception('Error fetching brands: $e');
-// }
+Future<Map<String, List<dynamic>>> fetchBrands() async {
+  try {
+    log('method running');
+    final response = await http
+        .get(
+          Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
+        )
+        .timeout(const Duration(seconds: 30));
+    log('Brand API: https://www.minsellprice.com/api/minsell-brand');
 
-  Future<List<Map<String, dynamic>>> fetchBrands() async {
-    try {
-      log('method running');
-      final response = await http
-          .get(
-            Uri.parse(
-                'https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data'),
-          )
-          .timeout(const Duration(seconds: 30));
-      log('Brand API: https://growth.matridtech.net/api/shopping-mega-mart-brand-api-data');
+    if (response.statusCode == 200) {
+      log('status code ${response.statusCode}');
+      final Map<String, dynamic> jsonData = json.decode(response.body);
 
-      if (response.statusCode == 200) {
-        log('status code \\${response.statusCode}');
-        final List<dynamic> jsonData = json.decode(response.body);
-        return jsonData.cast<Map<String, dynamic>>();
-      } else {
-        log('Error Brand API: \\${response.statusCode}');
-        throw Exception('Failed to load brands: \\${response.statusCode}');
-      }
-    } catch (e) {
-      log("Exception In Brand API: \\${e.toString()}");
-      throw Exception('Error fetching brands: $e');
+      final homeGardenBrands = jsonData["Home & Garden Brands"] as List<dynamic>;
+      final shoesApparels = jsonData["Shoes & Apparels"] as List<dynamic>;
+
+      return {
+        "Home & Garden Brands": homeGardenBrands,
+        "Shoes & Apparels": shoesApparels,
+      };
+    } else {
+      log('Error Brand API: ${response.statusCode}');
+      throw Exception('Failed to load brands: ${response.statusCode}');
     }
+  } catch (e) {
+    log("Exception In Brand API: ${e.toString()}");
+    throw Exception('Error fetching brands: $e');
   }
+}
+  //
+  // Widget _allBrandsScreen() {
+  //   return SingleChildScrollView(
+  //     child: Padding(
+  //       padding: const EdgeInsets.symmetric(horizontal: 8.0),
+  //       child: FutureBuilder<List<Map<String, dynamic>>>(
+  //         future: _brandsFuture,
+  //         builder: (context, snapshot) {
+  //           if (snapshot.connectionState == ConnectionState.waiting) {
+  //             return const Center(child: CircularProgressIndicator());
+  //           } else if (snapshot.hasError) {
+  //             return Center(
+  //                 child: Text('Failed to load brands: ${snapshot.error}'));
+  //           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+  //             return const Center(child: Text('No brands available.'));
+  //           }
+  //           final allBrands = snapshot.data!;
+  //           final initialBrands = allBrands.take(10).toList();
+  //           final hasMoreBrands = allBrands.length > 10;
+  //
+  //           return Column(
+  //             // mainAxisSize: MainAxisSize.min,
+  //             // crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               GridView.builder(
+  //                 shrinkWrap: true,
+  //                 physics: const NeverScrollableScrollPhysics(),
+  //                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+  //                   crossAxisCount: 2,
+  //                   mainAxisSpacing: 5,
+  //                   crossAxisSpacing: 5,
+  //                   childAspectRatio: 1,
+  //                 ),
+  //                 itemCount: initialBrands.length,
+  //                 itemBuilder: (context, index) {
+  //                   final brand = initialBrands[index];
+  //                   return GestureDetector(
+  //                     onTap: () {
+  //                       log('Brand object: $brand');
+  //                       log('brandID ${brand['brand_id']}');
+  //                       Navigator.push(
+  //                         context,
+  //                         MaterialPageRoute(
+  //                           builder: (context) => BrandProductListScreen(
+  //                             brandId: brand['brand_id'],
+  //                             brandName: brand['brand_name'],
+  //                             database: widget.database,
+  //                             dataList: const [],
+  //                           ),
+  //                         ),
+  //                       );
+  //                     },
+  //                     child: Card(
+  //                       elevation: 0.5,
+  //                       shape: RoundedRectangleBorder(
+  //                         borderRadius: BorderRadius.circular(10),
+  //                         side: const BorderSide(color: Colors.black),
+  //                       ),
+  //                       clipBehavior: Clip.antiAlias,
+  //                       child: Column(
+  //                         crossAxisAlignment: CrossAxisAlignment.stretch,
+  //                         children: [
+  //                           Flexible(
+  //                             flex: 1,
+  //                             child: Padding(
+  //                               padding:
+  //                                   const EdgeInsets.symmetric(horizontal: 5.0),
+  //                               child: SizedBox(
+  //                                 width: double.infinity,
+  //                                 height: 115,
+  //                                 child: CachedNetworkImage(
+  //                                   imageUrl: brand['brand_logo'],
+  //                                   fit: BoxFit.contain,
+  //                                   placeholder: (context, url) => const Center(
+  //                                       child: CircularProgressIndicator()),
+  //                                   errorWidget: (context, url, error) =>
+  //                                       Image.asset(
+  //                                     'assets/images/no_image.png',
+  //                                     fit: BoxFit.contain,
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           ),
+  //                           Padding(
+  //                             padding: const EdgeInsets.only(
+  //                                 top: 10.0, left: 8.0, right: 8.0),
+  //                             child: Text(
+  //                               brand['brand_name'].toString().trim(),
+  //                               textAlign: TextAlign.center,
+  //                               style: const TextStyle(
+  //                                 color: Colors.black,
+  //                                 fontWeight: FontWeight.bold,
+  //                                 fontSize: 20,
+  //                                 fontFamily: 'Segoe UI',
+  //                               ),
+  //                               maxLines: 1,
+  //                               overflow: TextOverflow.ellipsis,
+  //                             ),
+  //                           ),
+  //                           Padding(
+  //                             padding: const EdgeInsets.only(
+  //                                 bottom: 4.0, left: 8.0, right: 8.0, top: 4.0),
+  //                             child: Text(
+  //                               'Products: ${brand['product_count']}',
+  //                               textAlign: TextAlign.center,
+  //                               style: TextStyle(
+  //                                 color: Colors.grey[700],
+  //                                 fontSize: 18,
+  //                                 fontFamily: 'Segoe UI',
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                   );
+  //                 },
+  //               ),
+  //               if (hasMoreBrands)
+  //                 Padding(
+  //                   padding: const EdgeInsets.only(bottom: 20.0, top: 0),
+  //                   child: ElevatedButton(
+  //                     onPressed: () {
+  //                       Navigator.push(
+  //                         context,
+  //                         MaterialPageRoute(
+  //                           builder: (context) => AllBrandsScreen(
+  //                             brands: allBrands,
+  //                             database: widget.database,
+  //                           ),
+  //                         ),
+  //                       );
+  //                     },
+  //                     style: ElevatedButton.styleFrom(
+  //                       backgroundColor: const Color.fromARGB(255, 237, 63, 69),
+  //                       padding: const EdgeInsets.symmetric(
+  //                           horizontal: 32, vertical: 12),
+  //                       shape: RoundedRectangleBorder(
+  //                         borderRadius: BorderRadius.circular(8),
+  //                       ),
+  //                     ),
+  //                     child: const Text(
+  //                       'See More Brands',
+  //                       style: TextStyle(
+  //                         fontSize: 18,
+  //                         color: Colors.white,
+  //                         fontWeight: FontWeight.bold,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //             ],
+  //           );
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Widget _allBrandsScreen() {
+  Widget _homeGardenBrandsDesign() {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: FutureBuilder<List<Map<String, dynamic>>>(
+        child: FutureBuilder<Map<String, List<dynamic>>>(
           future: _brandsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -6577,9 +5197,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(child: Text('No brands available.'));
             }
-            final allBrands = snapshot.data!;
+            final allBrands = snapshot.data!['Home & Garden Brands'] ?? [];
             final initialBrands = allBrands.take(10).toList();
             final hasMoreBrands = allBrands.length > 10;
+            log('Home & Garden Brands count: ${allBrands.length}');
 
             return Column(
               // mainAxisSize: MainAxisSize.min,
@@ -6599,8 +5220,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     final brand = initialBrands[index];
                     return GestureDetector(
                       onTap: () {
-                        log('Brand object: $brand');
-                        log('brandID ${brand['brand_id']}');
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -6632,16 +5251,13 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                   width: double.infinity,
                                   height: 115,
                                   child: CachedNetworkImage(
-                                    imageUrl: brand['brand_logo'],
-                                    fit: BoxFit.contain,
-                                    placeholder: (context, url) => const Center(
-                                        child: CircularProgressIndicator()),
-                                    errorWidget: (context, url, error) =>
-                                        Image.asset(
-                                      'assets/images/no_image.png',
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
+                                 imageUrl: 'https://www.minsellprice.com/Brand-logo-images/${brand['brand_name'].toString().replaceAll(' ', '-').toLowerCase()}.png',
+                                 fit: BoxFit.contain, placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                                 errorWidget: (context, url, error) => Image.asset(
+                                  'assets/images/no_image.png',
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
                                 ),
                               ),
                             ),
@@ -6661,17 +5277,175 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            // Padding(
+                            //   padding: const EdgeInsets.only(
+                            //       bottom: 4.0, left: 8.0, right: 8.0, top: 4.0),
+                            //   child: Text(
+                            //     'Products: {brand['product_count']}',
+                            //     textAlign: TextAlign.center,
+                            //     style: TextStyle(
+                            //       color: Colors.grey[700],
+                            //       fontSize: 18,
+                            //       fontFamily: 'Segoe UI',
+                            //     ),
+                            //   ),
+                            // ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                if (hasMoreBrands)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20.0, top: 0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.0),
+                        gradient: LinearGradient(
+                          colors: [Colors.blue.shade700, Colors.blue.shade900], // Darker blue gradient
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: MaterialButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AllBrandsScreen(
+                                brands: List<Map<String, dynamic>>.from(allBrands),
+                                database: widget.database,
+                              ),
+                            ),
+                          );
+                        },
+                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 0,
+                        color: Colors.transparent,
+                        child: const Text(
+                          'See More Brands',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _shoesApparelsDesign() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: FutureBuilder<Map<String, List<dynamic>>>(
+          future: _brandsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(
+                  child: Text('Failed to load brands: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No brands available.'));
+            }
+            final allBrands = snapshot.data!['Shoes & Apparels'] ?? [];
+            final initialBrands = allBrands.take(10).toList();
+            final hasMoreBrands = allBrands.length > 10;
+            log('Shoes & Apparels count: ${allBrands.length}');
+
+            return Column(
+              // mainAxisSize: MainAxisSize.min,
+              // crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 5,
+                    crossAxisSpacing: 5,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: initialBrands.length,
+                  itemBuilder: (context, index) {
+                    final brand = initialBrands[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BrandProductListScreen(
+                              brandId: brand['brand_id'],
+                              brandName: brand['brand_name'],
+                              database: widget.database,
+                              dataList: const [],
+                            ),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 0.5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: const BorderSide(color: Colors.black),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Flexible(
+                              flex: 1,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 5.0),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 115,
+                                  child: CachedNetworkImage(
+                                 imageUrl: 'https://www.minsellprice.com/Brand-logo-images/${brand['brand_name'].toString().replaceAll(' ', '-').toLowerCase()}.png',
+                                 fit: BoxFit.contain, placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                                 errorWidget: (context, url, error) => Image.asset(
+                                  'assets/images/no_image.png',
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                                ),
+                              ),
+                            ),
                             Padding(
                               padding: const EdgeInsets.only(
-                                  bottom: 4.0, left: 8.0, right: 8.0, top: 4.0),
+                                  top: 10.0, left: 8.0, right: 8.0),
                               child: Text(
-                                'Products: ${brand['product_count']}',
+                                brand['brand_name'].toString().trim(),
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontSize: 18,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
                                   fontFamily: 'Segoe UI',
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -6683,35 +5457,51 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 if (hasMoreBrands)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20.0, top: 0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AllBrandsScreen(
-                              brands: allBrands,
-                              database: widget.database,
-                            ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.0),
+                        gradient: LinearGradient(
+                          colors: [Colors.blue.shade700, Colors.blue.shade900], // Darker blue gradient
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 237, 63, 69),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 12),
+                        ],
+                      ),
+                      child: MaterialButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AllBrandsScreen(
+                                brands: List<Map<String, dynamic>>.from(allBrands),
+                                database: widget.database,
+                              ),
+                            ),
+                          );
+                        },
+                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 0,
+                        color: Colors.transparent,
+                        child: const Text(
+                          'See More Brands',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      child: const Text(
-                        'See More Brands',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    )
                   ),
               ],
             );

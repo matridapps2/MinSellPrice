@@ -715,7 +715,8 @@ class _CustomProductCard2State extends State<CustomProductCard2>
                                                     .firstVendorExtraDiscount ==
                                                 '0.00'
                                             ? ''
-                                            : '\n - ${widget.data.firstVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.firstVendorExtraDiscount, mainPrice: widget.data.firstVendorBasePrice.isEmpty ? widget.data.firstVendorPrice.isEmpty ? '0.0' : widget.data.firstVendorPrice : widget.data.firstVendorBasePrice)})',
+                                            : '',
+                                      //  '\n - ${widget.data.firstVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.firstVendorExtraDiscount, mainPrice: widget.data.firstVendorBasePrice.isEmpty ? widget.data.firstVendorPrice.isEmpty ? '0.0' : widget.data.firstVendorPrice : widget.data.firstVendorBasePrice)})',
                                         style: GoogleFonts.montserrat(
                                           fontSize: 0.035 * w,
                                           color: Colors.black,
@@ -899,7 +900,8 @@ class _CustomProductCard2State extends State<CustomProductCard2>
                                                     .firstVendorExtraDiscount ==
                                                 '0.00'
                                             ? ''
-                                            : '\n - ${widget.data.firstVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.firstVendorExtraDiscount, mainPrice: widget.data.firstVendorBasePrice.isEmpty ? widget.data.firstVendorPrice.isEmpty ? '0.0' : widget.data.firstVendorPrice : widget.data.firstVendorBasePrice)})',
+                                        : '',
+                                           // : '\n - ${widget.data.firstVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.firstVendorExtraDiscount, mainPrice: widget.data.firstVendorBasePrice.isEmpty ? widget.data.firstVendorPrice.isEmpty ? '0.0' : widget.data.firstVendorPrice : widget.data.firstVendorBasePrice)})',
                                         style: GoogleFonts.montserrat(
                                           fontSize: 0.035 * w,
                                           color: Colors.black,
@@ -1127,7 +1129,8 @@ class _CustomProductCard2State extends State<CustomProductCard2>
                                                       .thirdVendorExtraDiscount ==
                                                   '0.00'
                                               ? ''
-                                              : '\n - ${widget.data.thirdVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.thirdVendorExtraDiscount, mainPrice: widget.data.thirdVendorBasePrice.isEmpty ? '0.0' : widget.data.firstVendorBasePrice)})',
+                                              : '',
+                                          //'\n - ${widget.data.thirdVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.thirdVendorExtraDiscount, mainPrice: widget.data.thirdVendorBasePrice.isEmpty ? '0.0' : widget.data.firstVendorBasePrice)})',
                                           style: GoogleFonts.montserrat(
                                             fontSize: 0.035 * w,
                                             color: Colors.black,
@@ -1320,7 +1323,8 @@ class _CustomProductCard2State extends State<CustomProductCard2>
                                                         .fourthVendorExtraDiscount ==
                                                     '0.00'
                                                 ? ''
-                                                : '\n - ${widget.data.fourthVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.fourthVendorExtraDiscount, mainPrice: widget.data.fourthVendorBasePrice.isEmpty ? '0.0' : widget.data.fourthVendorBasePrice)})',
+                                                : '',
+                                            //'\n - ${widget.data.fourthVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.fourthVendorExtraDiscount, mainPrice: widget.data.fourthVendorBasePrice.isEmpty ? '0.0' : widget.data.fourthVendorBasePrice)})',
                                             style: GoogleFonts.montserrat(
                                               fontSize: 0.035 * w,
                                               color: Colors.black,
@@ -1512,7 +1516,8 @@ class _CustomProductCard2State extends State<CustomProductCard2>
                                                         .fifthVendorExtraDiscount ==
                                                     '0.00'
                                                 ? ''
-                                                : '\n - ${widget.data.fifthVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.fifthVendorExtraDiscount, mainPrice: widget.data.fifthVendorBasePrice.isEmpty ? '0.0' : widget.data.fifthVendorBasePrice)})',
+                                                : '',
+                                            //'\n - ${widget.data.fifthVendorExtraDiscount}% (\$${returnDiscountPrice(discountPercentage: widget.data.fifthVendorExtraDiscount, mainPrice: widget.data.fifthVendorBasePrice.isEmpty ? '0.0' : widget.data.fifthVendorBasePrice)})',
                                             style: GoogleFonts.montserrat(
                                               fontSize: 0.035 * w,
                                               color: Colors.black,
