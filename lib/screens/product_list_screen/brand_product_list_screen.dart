@@ -1,10 +1,13 @@
 import 'dart:developer';
 import 'dart:convert';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:minsellprice/app.dart';
 import 'package:minsellprice/colors.dart' show AppColors;
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/reposotory_services/network_reposotory.dart';
@@ -13,6 +16,7 @@ import 'package:minsellprice/screens/tushar_screen/product_details_screen.dart';
 import 'package:minsellprice/screens/widgets/custom_loader.dart';
 import 'package:minsellprice/screens/widgets/custom_view_button.dart';
 import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/services/filter_preferences_db.dart';
 import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -61,6 +65,11 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   List<VendorProduct> finalList = [];
   List<ProductListModelNew> brandDetails = [];
 
+  RangeValues currentPriceRange = const RangeValues(0, 1000);
+  bool currentInStockOnly = false;
+  bool currentOnSaleOnly = false;
+  double maxPriceFromAPI = 1000.0;
+
   @override
   void initState() {
     super.initState();
@@ -69,7 +78,34 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
 
   void _initState() async {
     log('Brand Name: ${widget.brandName}');
+    await _loadFilterPreferences();
     await _fetchBrandProducts();
+  }
+
+  // Load saved filter preferences from SQLite
+  Future<void> _loadFilterPreferences() async {
+    try {
+      final prefs = await FilterPreferencesDB.getFilterPreferences(
+          widget.brandName ?? 'Unknown');
+
+      if (prefs != null) {
+        setState(() {
+          filterVendor = prefs['selectedVendors'] ?? [];
+          priceSorting = prefs['priceSorting'];
+          // Use saved max price but ensure it doesn't exceed API max
+          double savedMaxPrice = prefs['maxPrice'] ?? maxPriceFromAPI;
+          currentPriceRange = RangeValues(
+            prefs['minPrice'] ?? 0,
+            savedMaxPrice,
+          );
+          currentInStockOnly = prefs['inStockOnly'] ?? false;
+          currentOnSaleOnly = prefs['onSaleOnly'] ?? false;
+        });
+        log('Loaded filter preferences for ${widget.brandName}');
+      }
+    } catch (e) {
+      log('Error loading filter preferences: $e');
+    }
   }
 
   Future<void> _fetchBrandProducts() async {
@@ -99,10 +135,31 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
           ? fetchedProducts.length
           : start + itemsPerPage;
 
+      double calculatedMaxPrice = 1000.0;
+      if (fetchedProducts.isNotEmpty) {
+        final validPrices = fetchedProducts
+            .map((product) => double.tryParse(product.vendorpricePrice ?? '0'))
+            .where((price) => price != null && price > 0)
+            .cast<double>()
+            .toList();
+
+        if (validPrices.isNotEmpty) {
+          calculatedMaxPrice = validPrices.reduce((a, b) => a > b ? a : b);
+          calculatedMaxPrice =
+              ((calculatedMaxPrice / 50).ceil() * 50).toDouble();
+        }
+      }
+
       setState(() {
         brandProducts = fetchedProducts;
         uniqueVendors = tempList;
         tempProductList = fetchedProducts;
+        maxPriceFromAPI = calculatedMaxPrice;
+
+        if (currentPriceRange.end == 1000.0) {
+          currentPriceRange = RangeValues(0, maxPriceFromAPI);
+        }
+
         startIndex = start;
         endIndex = end;
         finalList = tempProductList.sublist(startIndex, endIndex);
@@ -217,31 +274,21 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                   )
                 : Scaffold(
                     key: _scaffoldKey,
-                    // endDrawer: FilterMenu(
-                    //   uniqueVendors: uniqueVendors,
-                    //   priceSorting: priceSorting,
-                    //   priceSelection: (int? value) {
-                    //     setState(() {
-                    //       priceSorting = value;
-                    //     });
-                    //   },
-                    //   vendorSelection: (List<String> value) {
-                    //     setState(() {
-                    //       filterVendor = value;
-                    //     });
-                    //   },
-                    //   filterVendors: filterVendor,
-                    //   // submitAction: () {
-                    //   //   sortingOfList(mainList: brandProducts);
-                    //   //
-                    //   //   Fluttertoast.showToast(msg: 'Filter Submitted');
-                    //   // },
-                    //   // clearAction: () {
-                    //   //   setState(() {
-                    //   //     sortingOfList(mainList: brandProducts);
-                    //   //   });
-                    //   // },
-                    // ),
+                    endDrawer: FilterMenu(
+                      filterProductDetails: brandProducts,
+                      brandName: widget.brandName ?? 'Unknown',
+                      maxPriceFromAPI: maxPriceFromAPI,
+                      currentVendorFilters: filterVendor,
+                      currentPriceSorting: priceSorting,
+                      currentPriceRange: currentPriceRange,
+                      currentInStockOnly: currentInStockOnly,
+                      currentOnSaleOnly: currentOnSaleOnly,
+                      onFiltersApplied: (vendors, priceSorting, priceRange,
+                          inStockOnly, onSaleOnly) {
+                        _applyFilters(vendors, priceSorting, priceRange,
+                            inStockOnly, onSaleOnly);
+                      },
+                    ),
                     appBar: AppBar(
                       surfaceTintColor: Colors.white,
                       toolbarHeight: .18 * w,
@@ -341,7 +388,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                         ]),
                                   ),
                                 ),
-                            )
+                              )
                             : Flexible(
                                 child: Align(
                                   alignment: Alignment.topCenter,
@@ -369,25 +416,22 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                   Navigator.push(
                                                     context,
                                                     MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ProductDetailsScreen(
-                                                              productId:
-                                                                  finalList[
-                                                                          index]
-                                                                      .productId,
-                                                              brandName: widget
-                                                                      .brandName ??
-                                                                  'Unknown Brand',
-                                                              productMPN:
-                                                                  finalList[
-                                                                          index]
-                                                                      .productMpn,
-                                                              productImage:
-                                                                  finalList[
-                                                                          index]
-                                                                      .productImage,
-                                                              productPrice: finalList[index].vendorpricePrice
-                                                            )),
+                                                        builder: (context) => ProductDetailsScreen(
+                                                            productId:
+                                                                finalList[index]
+                                                                    .productId,
+                                                            brandName: widget
+                                                                    .brandName ??
+                                                                'Unknown Brand',
+                                                            productMPN:
+                                                                finalList[index]
+                                                                    .productMpn,
+                                                            productImage:
+                                                                finalList[index]
+                                                                    .productImage,
+                                                            productPrice:
+                                                                finalList[index]
+                                                                    .vendorpricePrice)),
                                                   );
                                                 },
                                                 child: Card(
@@ -423,20 +467,30 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                             );
                                                           },
                                                         )),
-                                                        const SizedBox(height: 2),
+                                                        const SizedBox(
+                                                            height: 2),
                                                         Container(
-                                                          constraints: BoxConstraints(
-                                                                  minHeight: w * .15,
-                                                                  maxHeight: w * .15),
+                                                          constraints:
+                                                              BoxConstraints(
+                                                                  minHeight:
+                                                                      w * .15,
+                                                                  maxHeight:
+                                                                      w * .15),
                                                           child: Padding(
-                                                            padding: const EdgeInsets
+                                                            padding:
+                                                                const EdgeInsets
                                                                     .only(
                                                                     left: 8,
                                                                     right: 10.0,
                                                                     top: 8),
                                                             child: Text(
                                                               finalList[index]
-                                                                  .productName,
+                                                                      .productName
+                                                                      .isEmpty
+                                                                  ? '--'
+                                                                  : finalList[
+                                                                          index]
+                                                                      .productName,
                                                               maxLines: 3,
                                                               overflow:
                                                                   TextOverflow
@@ -460,7 +514,12 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           ),
                                                         ),
                                                         Padding(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      8.0,
+                                                                  vertical: 8),
                                                           child: AutoSizeText(
                                                             'MPN# ${finalList[index].productMpn}',
                                                             maxLines: 1,
@@ -514,13 +573,21 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           ),
                                                         ),
                                                         Padding(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      8.0,
+                                                                  vertical: 8),
                                                           child: Text(
                                                             'Show Prices (${finalList[index].vendorIdCount})',
                                                             style: TextStyle(
                                                               fontSize: 22,
-                                                              color: Colors.blue,
-                                                              fontWeight: FontWeight.bold,
+                                                              color:
+                                                                  Colors.blue,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
                                                             ),
                                                           ),
                                                         ),
@@ -544,7 +611,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         //         imageUrl: finalList[index].vendorName),
                                                         //   ),
                                                         // ),
-                                                        const SizedBox(height: 15)
+                                                        const SizedBox(
+                                                            height: 15)
                                                       ],
                                                     ),
                                                   ),
@@ -742,446 +810,434 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                 child: Column(
                     mainAxisSize: MainAxisSize.max, children: children))));
   }
+
+  void _applyFilters(List<String> vendors, int? priceSorting,
+      RangeValues priceRange, bool inStockOnly, bool onSaleOnly) {
+    setState(() {
+      filterVendor = vendors;
+      this.priceSorting = priceSorting;
+      currentPriceRange = priceRange;
+      currentInStockOnly = inStockOnly;
+      currentOnSaleOnly = onSaleOnly;
+
+      if (filterVendor.isNotEmpty) {
+        tempProductList = brandProducts.where((product) {
+          return filterVendor.contains(product.vendorName);
+        }).toList();
+      } else {
+        tempProductList = List.from(brandProducts);
+      }
+
+      tempProductList = tempProductList.where((product) {
+        double? price = double.tryParse(product.vendorpricePrice ?? '0');
+        return price != null &&
+            price >= priceRange.start &&
+            price <= priceRange.end;
+      }).toList();
+
+      if (priceSorting != null) {
+        if (priceSorting == 1) {
+          tempProductList.sort((a, b) {
+            double priceA = double.tryParse(a.vendorpricePrice ?? '0') ?? 0;
+            double priceB = double.tryParse(b.vendorpricePrice ?? '0') ?? 0;
+            return priceA.compareTo(priceB);
+          });
+        } else if (priceSorting == 2) {
+          tempProductList.sort((a, b) {
+            double priceA = double.tryParse(a.vendorpricePrice ?? '0') ?? 0;
+            double priceB = double.tryParse(b.vendorpricePrice ?? '0') ?? 0;
+            return priceB.compareTo(priceA);
+          });
+        } else if (priceSorting == 3) {
+          tempProductList.sort(
+              (a, b) => (a.productName ?? '').compareTo(b.productName ?? ''));
+        } else if (priceSorting == 4) {
+          tempProductList.sort(
+              (a, b) => (b.productName ?? '').compareTo(a.productName ?? ''));
+        }
+      }
+
+      currentPage = 0;
+      startIndex = currentPage * itemsPerPage;
+      endIndex = (startIndex + itemsPerPage > tempProductList.length)
+          ? tempProductList.length
+          : startIndex + itemsPerPage;
+      finalList = tempProductList.sublist(startIndex, endIndex);
+    });
+    _saveFilterPreferences();
+  }
+
+  Future<void> _saveFilterPreferences() async {
+    try {
+      await FilterPreferencesDB.saveFilterPreferences(
+        brandName: widget.brandName ?? 'Unknown',
+        selectedVendors: filterVendor,
+        priceSorting: priceSorting,
+        minPrice: currentPriceRange.start,
+        maxPrice: currentPriceRange.end,
+        inStockOnly: currentInStockOnly,
+        onSaleOnly: currentOnSaleOnly,
+      );
+      log('Saved filter preferences for ${widget.brandName}');
+    } catch (e) {
+      log('Error saving filter preferences: $e');
+    }
+  }
 }
 
-// class FilterMenu extends StatefulWidget {
-//   const FilterMenu({
-//     super.key,
-//     required this.uniqueVendors,
-//     this.priceSorting,
-//     required this.priceSelection,
-//     required this.vendorSelection,
-//     required this.filterVendors,
-//     required this.submitAction,
-//     required this.clearAction,
-//   });
-//
-//   final List<String> uniqueVendors, filterVendors;
-//   final ValueChanged<List<String>> vendorSelection;
-//   final VoidCallback submitAction, clearAction;
-//   final ValueChanged<int?> priceSelection;
-//   final int? priceSorting;
-//
-//   @override
-//   State<FilterMenu> createState() => _FilterMenuState();
-// }
-//
-// class _FilterMenuState extends State<FilterMenu> {
-//   int? tempPriceSorting;
-//   List<String> filterVendor = [];
-//
-//   @override
-//   void initState() {
-//     // TODO: implement initState
-//
-//     setState(() {
-//       filterVendor = widget.filterVendors;
-//       tempPriceSorting = widget.priceSorting;
-//     });
-//     super.initState();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Drawer(
-//       width: w * .9,
-//       backgroundColor: Colors.white,
-//       surfaceTintColor: Colors.white,
-//
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           AppBar(
-//             elevation: 10,
-//             leading: InkWell(
-//               onTap: () => Navigator.pop(context),
-//               child: Icon(
-//                 Icons.arrow_back_ios,
-//                 color: AppColors.primary,
-//               ),
-//             ),
-//             surfaceTintColor: Colors.white,
-//             toolbarHeight: .14 * w,
-//             backgroundColor: Colors.white,
-//             centerTitle: false,
-//             title: Padding(
-//               padding: const EdgeInsets.symmetric(horizontal: 2.0),
-//               child: SizedBox(
-//                 width: w * .5,
-//                 child: AutoSizeText(
-//                   'Filters',
-//                   maxLines: 1,
-//                   overflow: TextOverflow.ellipsis,
-//                   style: TextStyle(fontSize: w * .04),
-//                 ),
-//               ),
-//             ),
-//             automaticallyImplyLeading: false,
-//             actions: const [SizedBox()],
-//           ),
-//           Padding(
-//             padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-//             child: Text(
-//               'First Lowest Vendors',
-//               style: TextStyle(
-//                 fontSize: .06 * w,
-//                 fontFamily: 'Futura BdCn BT Bold',
-//                 fontWeight: FontWeight.w300,
-//               ),
-//             ),
-//           ),
-//           Container(
-//             padding: const EdgeInsets.only(left: 8),
-//             constraints: BoxConstraints(maxHeight: h * .48),
-//             child: Scrollbar(
-//               trackVisibility: true,
-//               thumbVisibility: true,
-//               thickness: 4,
-//               interactive: true,
-//               controller: _scrollController,
-//               child: SingleChildScrollView(
-//                 controller: _scrollController,
-//                 child: Column(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   crossAxisAlignment: CrossAxisAlignment.center,
-//                   children: List.generate(
-//                     widget.uniqueVendors.length,
-//                     (index) => Padding(
-//                       padding: const EdgeInsets.all(8.0),
-//                       child: OutlinedButton(
-//                         style: ButtonStyle(
-//                           padding: MaterialStateProperty.resolveWith((states) {
-//                             return const EdgeInsets.all(4);
-//                           }),
-//                           shape: MaterialStateProperty.resolveWith(
-//                             (states) {
-//                               return const RoundedRectangleBorder(
-//                                 borderRadius: BorderRadius.all(
-//                                   Radius.circular(5),
-//                                 ),
-//                               );
-//                             },
-//                           ),
-//                         ),
-//                         onPressed: () {
-//                           setState(() {
-//                             filterVendor.contains(widget.uniqueVendors[index]
-//                                     .split('Total')[0]
-//                                     .trimRight())
-//                                 ? filterVendor.remove(widget
-//                                     .uniqueVendors[index]
-//                                     .split('Total')[0]
-//                                     .trimRight())
-//                                 : filterVendor.add(widget.uniqueVendors[index]
-//                                     .split('Total')[0]
-//                                     .trimRight());
-//                           });
-//                         },
-//                         child: SizedBox(
-//                           width: w * .8,
-//                           child: Row(
-//                             children: [
-//                               Checkbox(
-//                                   value: filterVendor.contains(widget
-//                                       .uniqueVendors[index]
-//                                       .split('Total')[0]
-//                                       .trimRight()),
-//                                   onChanged: (values) {
-//                                     setState(() {
-//                                       filterVendor.contains(widget
-//                                               .uniqueVendors[index]
-//                                               .split('Total')[0]
-//                                               .trimRight())
-//                                           ? filterVendor.remove(widget
-//                                               .uniqueVendors[index]
-//                                               .split('Total')[0]
-//                                               .trimRight())
-//                                           : filterVendor.add(widget
-//                                               .uniqueVendors[index]
-//                                               .split('Total')[0]
-//                                               .trimRight());
-//                                       // _discountEnabled =
-//                                       // !_discountEnabled;
-//                                     });
-//                                   }),
-//                               RichText(
-//                                 text: TextSpan(
-//                                     text: widget.uniqueVendors[index]
-//                                         .split('Total')[0],
-//                                     style: const TextStyle(
-//                                         color: Colors.black,
-//                                         fontWeight: FontWeight.bold),
-//                                     children: [
-//                                       TextSpan(
-//                                         text: widget.uniqueVendors[index]
-//                                                     .split('Total')
-//                                                     .length >
-//                                                 1
-//                                             ? '\n${widget.uniqueVendors[index].split('Total')[1].trimLeft().split(':')[0]}: '
-//                                             : '',
-//                                         style: const TextStyle(
-//                                           color: Colors.blue,
-//                                           fontWeight: FontWeight.normal,
-//                                         ),
-//                                       ),
-//                                       TextSpan(
-//                                         text: widget.uniqueVendors[index]
-//                                                     .split(':')
-//                                                     .length >
-//                                                 1
-//                                             ? widget.uniqueVendors[index]
-//                                                 .split(':')[1]
-//                                                 .trimLeft()
-//                                             : '',
-//                                         style: const TextStyle(
-//                                           color: Colors.blue,
-//                                           fontWeight: FontWeight.bold,
-//                                         ),
-//                                       ),
-//                                     ]),
-//                                 // t: const TextStyle(color: Colors.black),
-//                               ),
-//                               const Spacer(),
-//                               CachedNetworkImage(
-//                                 imageUrl:
-//                                     '${AppInfo.kBaseUrl(stagingSelector: 0)}vendor-logo/${widget.uniqueVendors[index].split('Total')[0].trimRight()}.jpg',
-//                                 width: w * .2,
-//                                 height: w * .05,
-//                                 errorWidget: (_, c, e) => SizedBox(
-//                                   child: Container(
-//                                     width: w * .3,
-//                                     height: w * .1,
-//                                     padding: const EdgeInsets.all(2),
-//                                     decoration: BoxDecoration(
-//                                         color: Colors.black,
-//                                         borderRadius: BorderRadius.circular(6)),
-//                                     child: Center(
-//                                       child: AutoSizeText(
-//                                         widget.uniqueVendors[index]
-//                                             .split('Total')[0],
-//                                         maxLines: 1,
-//                                         overflow: TextOverflow.ellipsis,
-//                                         textAlign: TextAlign.center,
-//                                         style: TextStyle(
-//                                           color: Colors.white,
-//                                           fontSize: w * .03,
-//                                           letterSpacing: 0,
-//                                           // fontFamily: 'JT Marnie Light',
-//                                         ),
-//                                       ),
-//                                     ),
-//                                   ),
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ),
-//           verticalSpace(verticalSpace: 10),
-//           Padding(
-//             padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-//             child: Text(
-//               'Price',
-//               style: TextStyle(
-//                 fontSize: .06 * w,
-//                 fontFamily: 'Futura BdCn BT Bold',
-//                 fontWeight: FontWeight.w300,
-//               ),
-//             ),
-//           ),
-//           Padding(
-//             padding: const EdgeInsets.all(8.0),
-//             child: OutlinedButton(
-//               style: ButtonStyle(
-//                 padding: MaterialStateProperty.resolveWith((states) {
-//                   return const EdgeInsets.all(4);
-//                 }),
-//                 shape: MaterialStateProperty.resolveWith(
-//                   (states) {
-//                     return const RoundedRectangleBorder(
-//                       borderRadius: BorderRadius.all(
-//                         Radius.circular(5),
-//                       ),
-//                     );
-//                   },
-//                 ),
-//               ),
-//               onPressed: () {
-//                 setState(() {
-//                   tempPriceSorting != null
-//                       ? tempPriceSorting != 1
-//                           ? tempPriceSorting = 1
-//                           : tempPriceSorting = null
-//                       : tempPriceSorting = 1;
-//                   // _discountEnabled =
-//                   // !_discountEnabled;
-//                 });
-//               },
-//               child: SizedBox(
-//                 width: w * .8,
-//                 child: Row(
-//                   children: [
-//                     Checkbox(
-//                         value: tempPriceSorting == 1,
-//                         onChanged: (values) {
-//                           setState(() {
-//                             tempPriceSorting != null
-//                                 ? tempPriceSorting != 1
-//                                     ? tempPriceSorting = 1
-//                                     : tempPriceSorting = null
-//                                 : tempPriceSorting = 1;
-//                             // _discountEnabled =
-//                             // !_discountEnabled;
-//                           });
-//                         }),
-//                     const Text(
-//                       'Price: Low To High',
-//                       style: TextStyle(color: Colors.black),
-//                     ),
-//                     const Spacer(),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//           verticalSpace(verticalSpace: 10),
-//           Padding(
-//             padding: const EdgeInsets.all(8.0),
-//             child: OutlinedButton(
-//               style: ButtonStyle(
-//                 padding: MaterialStateProperty.resolveWith((states) {
-//                   return const EdgeInsets.all(4);
-//                 }),
-//                 shape: MaterialStateProperty.resolveWith(
-//                   (states) {
-//                     return const RoundedRectangleBorder(
-//                       borderRadius: BorderRadius.all(
-//                         Radius.circular(5),
-//                       ),
-//                     );
-//                   },
-//                 ),
-//               ),
-//               onPressed: () {
-//                 setState(() {
-//                   tempPriceSorting != null
-//                       ? tempPriceSorting != 2
-//                           ? tempPriceSorting = 2
-//                           : tempPriceSorting = null
-//                       : tempPriceSorting = 2;
-//                   // _discountEnabled =
-//                   // !_discountEnabled;
-//                 });
-//               },
-//               child: SizedBox(
-//                 width: w * .8,
-//                 child: Row(
-//                   children: [
-//                     Checkbox(
-//                         value: tempPriceSorting == 2,
-//                         onChanged: (values) {
-//                           setState(() {
-//                             tempPriceSorting != null
-//                                 ? tempPriceSorting != 2
-//                                     ? tempPriceSorting = 2
-//                                     : tempPriceSorting = null
-//                                 : tempPriceSorting = 2;
-//                             // _discountEnabled =
-//                             // !_discountEnabled;
-//                           });
-//                         }),
-//                     const Text(
-//                       'Price: High To Low',
-//                       style: TextStyle(color: Colors.black),
-//                     ),
-//                     const Spacer(),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//           const Spacer(),
-//           Row(
-//             children: [
-//               horizontalSpace(horizontalSpace: 6),
-//               SizedBox(
-//                 width: MediaQuery.of(context).size.width * .28,
-//                 height: 40,
-//                 child: ElevatedButton(
-//                   onPressed: () {
-//                     setState(() {
-//                       widget.vendorSelection(filterVendor);
-//                       widget.priceSelection(tempPriceSorting);
-//                       widget.submitAction();
-//                     });
-//                     Navigator.pop(context);
-//                   },
-//                   style: ButtonStyle(
-//                     backgroundColor: MaterialStateProperty.all(Colors.blue),
-//                     shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-//                       RoundedRectangleBorder(
-//                         borderRadius: BorderRadius.circular(25.0),
-//                       ),
-//                     ),
-//                   ),
-//                   child: const Text(
-//                     'Submit',
-//                     style: TextStyle(
-//                       fontWeight: FontWeight.bold,
-//                       color: Colors.white,
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//               const Spacer(),
-//               Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 6.0),
-//                 child: SizedBox(
-//                   width: MediaQuery.of(context).size.width * .28,
-//                   height: 40,
-//                   child: ElevatedButton(
-//                     onPressed: () {
-//                       filterVendor = [];
-//                       tempPriceSorting = null;
-//                       widget.priceSelection(null);
-//                       widget.vendorSelection([]);
-//                       widget.clearAction();
-//                       setState(() {});
-//                       Navigator.pop(context);
-//                     },
-//                     style: ButtonStyle(
-//                       backgroundColor: MaterialStateProperty.all(AppColors.primary),
-//                       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-//                         RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(25.0),
-//                         ),
-//                       ),
-//                     ),
-//                     child: const Text(
-//                       'Clear',
-//                       style: TextStyle(
-//                         fontWeight: FontWeight.bold,
-//                         color: Colors.white,
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           verticalSpace(verticalSpace: 10),
-//         ],
-//       ),
-//       //elevation: 20.0,
-//       //semanticLabel: 'endDrawer',
-//     );
-//   }
-//
-//   final _scrollController = ScrollController();
-// }
+class FilterMenu extends StatefulWidget {
+  final List<VendorProduct> filterProductDetails;
+  final String brandName;
+  final double maxPriceFromAPI;
+  final Function(
+      List<String> vendors,
+      int? priceSorting,
+      RangeValues priceRange,
+      bool inStockOnly,
+      bool onSaleOnly)? onFiltersApplied;
+
+  final List<String> currentVendorFilters;
+  final int? currentPriceSorting;
+  final RangeValues currentPriceRange;
+  final bool currentInStockOnly;
+  final bool currentOnSaleOnly;
+
+  const FilterMenu({
+    super.key,
+    required this.filterProductDetails,
+    required this.brandName,
+    required this.maxPriceFromAPI,
+    this.onFiltersApplied,
+    this.currentVendorFilters = const [],
+    this.currentPriceSorting,
+    this.currentPriceRange =
+        const RangeValues(0, 1000), // Will be updated dynamically
+    this.currentInStockOnly = false,
+    this.currentOnSaleOnly = false,
+  });
+
+  @override
+  State<FilterMenu> createState() => _FilterMenuState();
+}
+
+class _FilterMenuState extends State<FilterMenu> {
+  int? tempPriceSorting;
+  List<String> tempFilterVendor = [];
+  RangeValues priceRange = const RangeValues(0, 1000);
+  bool showInStockOnly = false;
+  bool showOnSaleOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    tempPriceSorting = widget.currentPriceSorting;
+    tempFilterVendor = List.from(widget.currentVendorFilters);
+    priceRange = widget.currentPriceRange;
+    showInStockOnly = widget.currentInStockOnly;
+    showOnSaleOnly = widget.currentOnSaleOnly;
+
+    if (priceRange.end > widget.maxPriceFromAPI) {
+      priceRange = RangeValues(priceRange.start, widget.maxPriceFromAPI);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      width: w * .9,
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          AppBar(
+            elevation: 2,
+            leading: InkWell(
+              onTap: () => Navigator.pop(context),
+              child: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+            ),
+            surfaceTintColor: Colors.white,
+            toolbarHeight: .14 * w,
+            backgroundColor: Colors.white,
+            centerTitle: false,
+            title: Text(
+              'Filters',
+              style: TextStyle(
+                fontSize: w * .05,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            automaticallyImplyLeading: false,
+            actionsPadding: EdgeInsets.only(right: 15),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  setState(() {
+                    tempPriceSorting = null;
+                    tempFilterVendor.clear();
+                    priceRange = RangeValues(0, widget.maxPriceFromAPI);
+                    showInStockOnly = false;
+                    showOnSaleOnly = false;
+                  });
+
+                  try {
+                    await FilterPreferencesDB.clearFilterPreferences(
+                        widget.brandName);
+                  } catch (e) {
+                    log('Error clearing filter preferences: $e');
+                  }
+                },
+                child: Text(
+                  'Reset',
+                  style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: w * .05),
+                ),
+              ),
+            ],
+          ),
+
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle('Price Range'),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          RangeSlider(
+                            values: priceRange,
+                            min: 0,
+                            max: widget.maxPriceFromAPI,
+                            divisions: (widget.maxPriceFromAPI / 50)
+                                .round()
+                                .clamp(10, 40),
+                            activeColor: AppColors.primary,
+                            labels: RangeLabels(
+                              '\$${priceRange.start.round()}',
+                              '\$${priceRange.end.round()}',
+                            ),
+                            onChanged: (values) {
+                              setState(() {
+                                priceRange = values;
+                              });
+                            },
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('\$${priceRange.start.round()}',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                              Text('\$${priceRange.end.round()}',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Sort By Section
+                  _buildSectionTitle('Sort By'),
+                  Card(
+                    child: Column(
+                      children: [
+                        _buildSortOption('Price: Low to High', 1),
+                        const Divider(height: 1),
+                        _buildSortOption('Price: High to Low', 2),
+                        const Divider(height: 1),
+                        _buildSortOption('Name: A to Z', 3),
+                        const Divider(height: 1),
+                        _buildSortOption('Name: Z to A', 4),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Vendor Section
+                  _buildSectionTitle('Vendors'),
+                  Card(
+                    child: Container(
+                      constraints: BoxConstraints(maxHeight: h * .25),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _getUniqueVendorsFromProducts().length,
+                        itemBuilder: (context, index) {
+                          final vendor = _getUniqueVendorsFromProducts()[index];
+                          final productCount =
+                              _getProductCountForVendor(vendor);
+                          return CheckboxListTile(
+                            dense: true,
+                            activeColor: AppColors.primary,
+                            title: Text(
+                              vendor,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            subtitle: Text(
+                              '$productCount products',
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.grey),
+                            ),
+                            value: tempFilterVendor.contains(vendor),
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  tempFilterVendor.add(vendor);
+                                } else {
+                                  tempFilterVendor.remove(vendor);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _applyFilters();
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text(
+                      'Apply Filters',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: w * .045,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortOption(String title, int value) {
+    return RadioListTile<int>(
+      dense: true,
+      activeColor: AppColors.primary,
+      title: Text(title, style: const TextStyle(fontSize: 14)),
+      value: value,
+      groupValue: tempPriceSorting,
+      onChanged: (int? newValue) {
+        setState(() {
+          tempPriceSorting = newValue;
+        });
+      },
+    );
+  }
+
+  List<String> _getUniqueVendorsFromProducts() {
+    if (widget.filterProductDetails.isEmpty) return [];
+
+    Set<String> uniqueVendors = {};
+    for (var product in widget.filterProductDetails) {
+      if (product.vendorName.isNotEmpty) {
+        uniqueVendors.add(product.vendorName);
+      }
+    }
+
+    List<String> vendorList = uniqueVendors.toList();
+    vendorList.sort();
+    return vendorList;
+  }
+
+  int _getProductCountForVendor(String vendorName) {
+    return widget.filterProductDetails
+        .where((product) => product.vendorName == vendorName)
+        .length;
+  }
+
+  void _applyFilters() {
+    if (widget.onFiltersApplied != null) {
+      widget.onFiltersApplied!(
+        tempFilterVendor,
+        tempPriceSorting,
+        priceRange,
+        showInStockOnly,
+        showOnSaleOnly,
+      );
+    }
+
+    Fluttertoast.showToast(
+      msg: "Filters applied successfully!",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+    );
+  }
+}

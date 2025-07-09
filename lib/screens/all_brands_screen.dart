@@ -290,8 +290,10 @@ class _DebugBrandImageWidget extends StatelessWidget {
     log('DEBUG: brand_name = $brandName');
     log('DEBUG: brand_key = $brandKey');
 
-    String urlBrandName = brandName?.replaceAll(' ', '-').toLowerCase() ?? 'unknown';
-    String urlBrandKey = brandKey?.replaceAll(' ', '-').toLowerCase() ?? 'unknown';
+    String urlBrandName =
+        brandName?.replaceAll(' ', '-').toLowerCase() ?? 'unknown';
+    String urlBrandKey =
+        brandKey?.replaceAll(' ', '-').toLowerCase() ?? 'unknown';
 
     String imageUrl1 =
         'https://growth.matridtech.net/brand-logo/brands/$urlBrandKey.png';

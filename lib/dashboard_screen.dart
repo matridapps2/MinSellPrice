@@ -2963,8 +2963,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
 class BrandImageWidget extends StatefulWidget {
   final Map<String, dynamic> brand;
+  final double? width;
 
-  const BrandImageWidget({super.key, required this.brand});
+  const BrandImageWidget({super.key, required this.brand, this.width});
 
   @override
   State<BrandImageWidget> createState() => _BrandImageWidgetState();
@@ -3019,7 +3020,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5.0),
       child: SizedBox(
-        width: double.infinity,
+        width: widget.width ?? double.infinity,
         height: 115,
         child: _currentUrl.isEmpty
             ? Image.asset(

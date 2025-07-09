@@ -427,7 +427,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BrandImageWidget(brand: brandData)
+        BrandImageWidget(brand: brandData, width: w * 0.5)
         // CachedNetworkImage(
         //   imageUrl:
         //       'https://www.minsellprice.com/Brand-logo-images/${data.brandName.toString().replaceAll(' ', '-').toLowerCase()}.png',
@@ -620,7 +620,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
@@ -635,46 +635,49 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             color: Colors.grey,
                           ),
                           const SizedBox(height: 4),
-                          Row(mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '\$${product.vendorpricePrice ?? '--'}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                '+',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.local_shipping,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  '\$${product.vendorpriceShipping ?? '--'}',
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 10.0),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '\$${product.vendorpricePrice ?? '--'}',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14),
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                const Text(
+                                  '+',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.local_shipping,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    '\$${product.vendorpriceShipping ?? '--'}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 4),
-                          Center(
-                            child: Text(
-                              '${product.vendorpriceDate ?? '--'}',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          Text(
+                            '${product.vendorpriceDate ?? '--'}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -732,7 +735,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       logoPath,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) {
-        // If logo asset doesn't exist, show vendor name as text
         return Container(
           padding: const EdgeInsets.all(8),
           alignment: Alignment.center,
