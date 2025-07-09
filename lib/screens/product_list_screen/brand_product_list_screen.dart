@@ -386,6 +386,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   finalList[
                                                                           index]
                                                                       .productImage,
+                                                              productPrice: finalList[index].vendorpricePrice
                                                             )),
                                                   );
                                                 },
@@ -422,18 +423,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                             );
                                                           },
                                                         )),
-                                                        const SizedBox(
-                                                            height: 2),
+                                                        const SizedBox(height: 2),
                                                         Container(
-                                                          constraints:
-                                                              BoxConstraints(
-                                                                  minHeight:
-                                                                      w * .15,
-                                                                  maxHeight:
-                                                                      w * .15),
+                                                          constraints: BoxConstraints(
+                                                                  minHeight: w * .15,
+                                                                  maxHeight: w * .15),
                                                           child: Padding(
-                                                            padding:
-                                                                const EdgeInsets
+                                                            padding: const EdgeInsets
                                                                     .only(
                                                                     left: 8,
                                                                     right: 10.0,
@@ -464,12 +460,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           ),
                                                         ),
                                                         Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal:
-                                                                      8.0,
-                                                                  vertical: 3),
+                                                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
                                                           child: AutoSizeText(
                                                             'MPN# ${finalList[index].productMpn}',
                                                             maxLines: 1,
@@ -501,50 +492,6 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   horizontal:
                                                                       8.0,
                                                                   vertical: 5),
-                                                          child: Row(
-                                                            children: [
-                                                              Icon(
-                                                                Icons.check,
-                                                                color: '#3b8039'
-                                                                    .toColor(),
-                                                                size: 23,
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 8),
-                                                              Text(
-                                                                'In Stock',
-                                                                maxLines: 3,
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
-                                                                style: TextStyle(
-                                                                    color: '#3b8039'
-                                                                        .toColor(),
-                                                                    fontFamily:
-                                                                        'Segoe UI Bold',
-                                                                    fontSize: w *
-                                                                        .043,
-                                                                    wordSpacing:
-                                                                        2,
-                                                                    letterSpacing:
-                                                                        0,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .normal
-
-                                                                    // fontWeight: FontWeight.w900
-                                                                    ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal:
-                                                                      8.0,
-                                                                  vertical: 5),
                                                           child: RichText(
                                                             text: TextSpan(
                                                               text:
@@ -567,93 +514,37 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           ),
                                                         ),
                                                         Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                            horizontal: 8.0,
-                                                          ),
-                                                          child: SizedBox(
-                                                            width: w * .46,
-                                                            child: FittedBox(
-                                                              child: Row(
-                                                                children: [
-                                                                  Icon(
-                                                                    Icons
-                                                                        .local_shipping,
-                                                                    color: '#0678cb'
-                                                                        .toColor(),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                      width: 3),
-                                                                  AutoSizeText(
-                                                                    finalList[index].vendorpricePrice ==
-                                                                                '--' ||
-                                                                            finalList[index].vendorpricePrice ==
-                                                                                '\$0.00'
-                                                                        ? ' Free Shipping'
-                                                                        : 'Shipping(${finalList[index].vendorpricePrice})',
-                                                                    maxLines: 3,
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                    style: TextStyle(
-                                                                        color: finalList[index].vendorpricePrice == '--' || finalList[index].vendorpricePrice == '\$0.00'
-                                                                            ? '#3b8039'
-                                                                                .toColor()
-                                                                            : '#0678cb'
-                                                                                .toColor(),
-                                                                        fontFamily:
-                                                                            'Segoe UI Bold',
-                                                                        fontSize: w *
-                                                                            .042,
-                                                                        wordSpacing:
-                                                                            2,
-                                                                        letterSpacing:
-                                                                            .4,
-                                                                        fontWeight:
-                                                                            FontWeight.normal
-
-                                                                        // fontWeight: FontWeight.w900
-                                                                        ),
-                                                                  )
-                                                                ],
-                                                              ),
+                                                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
+                                                          child: Text(
+                                                            'Show Prices (${finalList[index].vendorIdCount})',
+                                                            style: TextStyle(
+                                                              fontSize: 22,
+                                                              color: Colors.blue,
+                                                              fontWeight: FontWeight.bold,
                                                             ),
                                                           ),
                                                         ),
-                                                        const SizedBox(
-                                                            height: 11),
-                                                        Center(
-                                                          child: InkWell(
-                                                            onTap: () async =>
-                                                                await MyInAppBrowser()
-                                                                    .openUrlRequest(
-                                                              urlRequest:
-                                                                  URLRequest(
-                                                                url: WebUri(
-                                                                  // finalList[index].firstVendorUrl == '--' ? getOtherSeller.containsKey('${finalList[index].productId}') ? getOtherSeller['${finalList[index].productId}']!.firstVendorUrl : '--' :
-                                                                  finalList[index]
-                                                                          .vendorUrl +
-                                                                      '?utm_source=shoppingmegamart.com&utm_medium=mobile-app',
-                                                                ),
-                                                              ),
-                                                              options:
-                                                                  InAppBrowserClassOptions(
-                                                                crossPlatform:
-                                                                    InAppBrowserOptions(
-                                                                  toolbarTopBackgroundColor:
-                                                                       AppColors.primary,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            child: BuyAtButton(
-                                                                imageUrl: finalList[
-                                                                        index]
-                                                                    .vendorName),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                            height: 15)
+                                                        // Center(
+                                                        //   child: InkWell(
+                                                        //     onTap: () async =>
+                                                        //         await MyInAppBrowser().openUrlRequest(
+                                                        //       urlRequest: URLRequest(
+                                                        //         url: WebUri(finalList[index].vendorUrl + '?utm_source=minsellprice..com&utm_medium=mobile-app',),
+                                                        //       ),
+                                                        //       options:
+                                                        //           InAppBrowserClassOptions(
+                                                        //         crossPlatform:
+                                                        //             InAppBrowserOptions(
+                                                        //           toolbarTopBackgroundColor:
+                                                        //                AppColors.primary,
+                                                        //         ),
+                                                        //       ),
+                                                        //     ),
+                                                        //     child: BuyAtButton(
+                                                        //         imageUrl: finalList[index].vendorName),
+                                                        //   ),
+                                                        // ),
+                                                        const SizedBox(height: 15)
                                                       ],
                                                     ),
                                                   ),
@@ -690,7 +581,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                           (Set<MaterialState> states) {
                                             return currentPage == 0
                                                 ? Colors.grey
-                                                : '#d90310'.toColor();
+                                                : AppColors.primary;
                                           },
                                         ),
                                         shape: MaterialStateProperty
@@ -744,7 +635,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                             return endIndex ==
                                                     tempProductList.length
                                                 ? Colors.grey
-                                                : '#d90310'.toColor();
+                                                : AppColors.primary;
                                           },
                                         ),
                                         shape: MaterialStateProperty

@@ -3,7 +3,9 @@ import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:minsellprice/colors.dart' show AppColors;
+import 'package:minsellprice/dashboard_screen.dart';
 import 'package:minsellprice/model/product_list_model_new.dart'
     show ProductListModelNew, VendorProduct;
 import 'package:minsellprice/reposotory_services/network_reposotory.dart'
@@ -13,11 +15,14 @@ import 'package:minsellprice/services/extra_functions.dart'
     show ColorExtension, getUniqueBrands;
 import 'package:minsellprice/size.dart';
 
+import 'model/brand_product_api_model.dart';
+
 class ProductDetailsScreen extends StatefulWidget {
   final int productId;
   final String brandName;
   final String productMPN;
   final productImage;
+  final productPrice;
 
   const ProductDetailsScreen({
     super.key,
@@ -25,6 +30,7 @@ class ProductDetailsScreen extends StatefulWidget {
     required this.brandName,
     required this.productMPN,
     required this.productImage,
+    required this.productPrice,
   });
 
   @override
@@ -43,6 +49,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   List<ProductListModelNew> brandDetails = [];
   final ScrollController _scrollController = ScrollController();
   String loadingMessage = '';
+  List<VendorProductData> vendorProductData = [];
 
   @override
   void initState() {
@@ -53,6 +60,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   void _initCall() async {
     await _fetchProductDetails();
     await _fetchBrandProducts();
+    await _fetchVendorProductData();
   }
 
   Future<void> _fetchProductDetails() async {
@@ -171,6 +179,29 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+  Future<void> _fetchVendorProductData() async {
+    try {
+      final url =
+          'https://www.minsellprice.com/api/brands/${widget.brandName}/${widget.productMPN}?product_id=${widget.productId}';
+      final response = await http.get(Uri.parse(url));
+
+      log('status code: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decoded = jsonDecode(response.body);
+        final apiResponse = BrandProductApiResponse.fromJson(decoded);
+
+        if (mounted) {
+          setState(() {
+            vendorProductData = apiResponse.vendorProductData ?? [];
+          });
+        }
+        log('vendorProductData: $vendorProductData');
+      }
+    } catch (e) {
+      log('Error fetching vendor product data: $e');
+    }
+  }
+
   Future<void> _refreshProductDetails() async {
     await _fetchProductDetails();
   }
@@ -266,6 +297,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           _buildProductDetails(),
           const SizedBox(height: 16),
           _buildPriceAndRating(),
+          const SizedBox(height: 16),
+          _buyAtName(),
+          const SizedBox(height: 16),
+          _buyAtDesign(),
           const SizedBox(height: 16),
           _buildMoreName(),
           const SizedBox(height: 16),
@@ -381,31 +416,40 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Widget _buildProductDetails() {
     final data = productDetails!.data!;
+    final brandData = {
+      'brand_name': data.brandName ?? widget.brandName,
+      'brand_key': (data.brandName ?? widget.brandName)
+          .toString()
+          .replaceAll(' ', '-')
+          .toLowerCase(),
+    };
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CachedNetworkImage(
-          imageUrl:
-              'https://www.minsellprice.com/Brand-logo-images/${data.brandName.toString().replaceAll(' ', '-').toLowerCase()}.png',
-          width: 150,
-          placeholder: (context, url) =>
-              const Center(child: CircularProgressIndicator()),
-          errorWidget: (context, url, error) => Image.asset(
-            'assets/images/no_image.png',
-            width: 150,
-          ),
-        ),
+        BrandImageWidget(brand: brandData)
+        // CachedNetworkImage(
+        //   imageUrl:
+        //       'https://www.minsellprice.com/Brand-logo-images/${data.brandName.toString().replaceAll(' ', '-').toLowerCase()}.png',
+        //   width: 150,
+        //   placeholder: (context, url) =>
+        //       const Center(child: CircularProgressIndicator()),
+        //   errorWidget: (context, url, error) => Image.asset(
+        //     'assets/images/no_image.png',
+        //     width: 150,
+        //   ),
+        // ),
       ],
     );
   }
 
   Widget _buildPriceAndRating() {
-    final data = productDetails!.data!;
+    final data = widget.productPrice;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '\$${data.price?.toStringAsFixed(2) ?? '--'}',
+          '\$${data ?? '--'}',
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -478,6 +522,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             brandName: widget.brandName ?? 'Unknown Brand',
                             productMPN: product.productMpn,
                             productImage: product.productImage,
+                            productPrice: product.vendorpricePrice,
                           ),
                         ),
                       );
@@ -543,6 +588,171 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buyAtName() {
+    return Text(
+      'Buy At:',
+      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _buyAtDesign() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          controller: _scrollController,
+          child: Row(
+            children: vendorProductData.map((product) {
+              return Container(
+                width: 160,
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: InkWell(
+                    onTap: () {},
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              height: 80,
+                              width: double.infinity,
+                              color: Colors.white,
+                              child: _buildVendorLogo(product.vendorName ?? ''),
+                            ),
+                          ),
+                          Divider(
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '\$${product.vendorpricePrice ?? '--'}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                '+',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.local_shipping,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '\$${product.vendorpriceShipping ?? '--'}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Center(
+                            child: Text(
+                              '${product.vendorpriceDate ?? '--'}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVendorLogo(String vendorName) {
+    String logoPath;
+
+    switch (vendorName.toLowerCase()) {
+      case 'home depot':
+        logoPath = 'assets/vendor_logos/home_depot.png';
+        break;
+      case 'amazon.com':
+      case 'amazon':
+        logoPath = 'assets/vendor_logos/amazon.png';
+        break;
+      case 'lowe\'s':
+      case 'lowes':
+        logoPath = 'assets/vendor_logos/lowes.png';
+        break;
+      case 'wayfair':
+        logoPath = 'assets/vendor_logos/wayfair.png';
+        break;
+      case 'houzz':
+        logoPath = 'assets/vendor_logos/houzz.png';
+        break;
+      case 'home essentials direct':
+        logoPath = 'assets/vendor_logos/home_essentials_direct.png';
+        break;
+      case 'gosupps.com':
+        logoPath = 'assets/vendor_logos/gosupps.png';
+        break;
+      case 'supply online':
+        logoPath = 'assets/vendor_logos/supply_online.png';
+        break;
+      case 'wwcsupply.com':
+        logoPath = 'assets/vendor_logos/wwcsupply.png';
+        break;
+      default:
+        // For unknown vendors, try to create a logo URL or use a default
+        logoPath = 'assets/vendor_logos/default_vendor.png';
+        break;
+    }
+
+    return Image.asset(
+      logoPath,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        // If logo asset doesn't exist, show vendor name as text
+        return Container(
+          padding: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            vendorName,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        );
+      },
     );
   }
 }
