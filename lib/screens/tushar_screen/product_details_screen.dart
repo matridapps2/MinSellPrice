@@ -4,18 +4,22 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:minsellprice/app.dart';
 import 'package:minsellprice/colors.dart' show AppColors;
 import 'package:minsellprice/dashboard_screen.dart';
 import 'package:minsellprice/model/product_list_model_new.dart'
     show ProductListModelNew, VendorProduct;
 import 'package:minsellprice/reposotory_services/network_reposotory.dart'
     show NetworkCalls;
+import 'package:minsellprice/screens/tushar_screen/comparison_screen.dart';
 import 'package:minsellprice/screens/tushar_screen/model/product_details_model.dart';
+import 'package:minsellprice/services/comparison_db.dart';
 import 'package:minsellprice/services/extra_functions.dart'
     show ColorExtension, getUniqueBrands;
+import 'package:minsellprice/services/liked_preference_db.dart';
 import 'package:minsellprice/size.dart';
 
-import 'model/brand_product_api_model.dart';
+import 'model/brand_product_details_api_model.dart' as brand_api;
 
 class ProductDetailsScreen extends StatefulWidget {
   final int productId;
@@ -49,7 +53,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   List<ProductListModelNew> brandDetails = [];
   final ScrollController _scrollController = ScrollController();
   String loadingMessage = '';
-  List<VendorProductData> vendorProductData = [];
+  List<brand_api.VendorProductData> vendorProductData = [];
+
+  // Liked state variable
+  bool isLiked = false;
+  bool isInComparison = false;
+  int comparisonCount = 0;
+  int vendorId = AppInfo.kVendorId;
 
   @override
   void initState() {
@@ -60,7 +70,223 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   void _initCall() async {
     await _fetchProductDetails();
     await _fetchBrandProducts();
-    await _fetchVendorProductData();
+    await _checkIfLiked(); // Check liked status after vendor data is fetched
+    await _checkIfInComparison(); // Check comparison status
+  }
+
+  Future<void> _checkIfLiked() async {
+    try {
+      // Get vendor_product_id from API response
+      int? actualVendorProductId;
+      if (vendorProductData.isNotEmpty) {
+        final currentProduct = vendorProductData.firstWhere(
+          (product) => product.productId == widget.productId,
+          orElse: () => vendorProductData.first,
+        );
+        actualVendorProductId = currentProduct.vendorProductId;
+      }
+
+      // If we don't have the vendor_product_id from API, create a fallback
+      actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
+
+      // Check if product is liked using the new database
+      final isProductLiked = await LikedPreferencesDB.isProductLiked(
+        vendorProductId: actualVendorProductId,
+      );
+
+      if (mounted) {
+        setState(() {
+          isLiked = isProductLiked;
+        });
+      }
+
+      log('Product liked status: $isLiked for vendor_product_id: $actualVendorProductId');
+    } catch (e) {
+      log('Error checking if product is liked: $e');
+    }
+  }
+
+  Future<void> _checkIfInComparison() async {
+    try {
+      // Get vendor_product_id from API response
+      int? actualVendorProductId;
+      if (vendorProductData.isNotEmpty) {
+        final currentProduct = vendorProductData.firstWhere(
+          (product) => product.productId == widget.productId,
+          orElse: () => vendorProductData.first,
+        );
+        actualVendorProductId = currentProduct.vendorProductId;
+      }
+
+      // If we don't have the vendor_product_id from API, create a fallback
+      actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
+
+      // Check if product is in comparison using the new database
+      final isProductInComparison = await ComparisonDB.isInComparison(
+        vendorProductId: actualVendorProductId,
+      );
+
+      // Get current comparison count
+      final currentComparisonCount = await ComparisonDB.getComparisonCount();
+
+      if (mounted) {
+        setState(() {
+          isInComparison = isProductInComparison;
+          comparisonCount = currentComparisonCount;
+        });
+      }
+
+      log('Product comparison status: $isInComparison for vendor_product_id: $actualVendorProductId');
+      log('Total products in comparison: $comparisonCount');
+    } catch (e) {
+      log('Error checking if product is in comparison: $e');
+    }
+  }
+
+  Future<void> _toggleComparison() async {
+    try {
+      // Get vendor_product_id from API response
+      int? actualVendorProductId;
+      if (vendorProductData.isNotEmpty) {
+        final currentProduct = vendorProductData.firstWhere(
+          (product) => product.productId == widget.productId,
+          orElse: () => vendorProductData.first,
+        );
+        actualVendorProductId = currentProduct.vendorProductId;
+      }
+
+      // If we don't have the vendor_product_id from API, create a fallback
+      actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
+
+      // Toggle comparison status using the new database
+      final nowInComparison = await ComparisonDB.toggleComparison(
+        productId: widget.productId,
+        vendorProductId: actualVendorProductId,
+        productName: productDetails?.data?.productName ?? 'Unknown Product',
+        productImage: widget.productImage?.toString() ?? '',
+        brandName: widget.brandName,
+        productMpn: widget.productMPN,
+        productPrice: widget.productPrice?.toString() ?? '0',
+      );
+
+      // Update UI state
+      if (mounted) {
+        setState(() {
+          isInComparison = nowInComparison;
+        });
+      }
+
+      // Refresh comparison count after toggle
+      await _checkIfInComparison();
+
+      // Show feedback to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                isInComparison
+                    ? Icons.compare_arrows
+                    : Icons.compare_arrows_outlined,
+                color: Colors.white,
+              ),
+              SizedBox(width: 8),
+              Text(isInComparison
+                  ? 'Added to comparison!'
+                  : 'Removed from comparison!'),
+            ],
+          ),
+          backgroundColor: isInComparison ? Colors.orange : Colors.grey,
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      log('Product ${isInComparison ? 'added to' : 'removed from'} comparison with vendor_product_id: $actualVendorProductId');
+    } catch (e) {
+      log('Error toggling comparison state: $e');
+
+      // Show appropriate error message
+      String errorMessage = 'Error updating comparison status';
+      if (e.toString().contains('Maximum')) {
+        errorMessage = 'Maximum 4 products can be compared at once';
+      } else if (e.toString().contains('already in comparison')) {
+        errorMessage = 'Product is already in comparison';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _toggleLiked() async {
+    try {
+      // Get vendor_product_id from API response
+      int? actualVendorProductId;
+      if (vendorProductData.isNotEmpty) {
+        final currentProduct = vendorProductData.firstWhere(
+          (product) => product.productId == widget.productId,
+          orElse: () => vendorProductData.first,
+        );
+        actualVendorProductId = currentProduct.vendorProductId;
+      }
+
+      // If we don't have the vendor_product_id from API, create a fallback
+      actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
+
+      // Toggle like status using the new database
+      final nowLiked = await LikedPreferencesDB.toggleLikeProduct(
+        productId: widget.productId,
+        vendorProductId: actualVendorProductId,
+        productName: productDetails?.data?.productName ?? 'Unknown Product',
+        productImage: widget.productImage?.toString() ?? '',
+        brandName: widget.brandName,
+        productMpn: widget.productMPN,
+        productPrice: widget.productPrice?.toString() ?? '0',
+      );
+
+      // Update UI state
+      if (mounted) {
+        setState(() {
+          isLiked = nowLiked;
+        });
+      }
+
+      // Show feedback to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                isLiked ? Icons.favorite : Icons.favorite_border,
+                color: Colors.white,
+              ),
+              SizedBox(width: 8),
+              Text(isLiked ? 'Added to favorites!' : 'Removed from favorites!'),
+            ],
+          ),
+          backgroundColor: isLiked ? Colors.red : Colors.grey,
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      log('Product ${isLiked ? 'added to' : 'removed from'} favorites with vendor_product_id: $actualVendorProductId');
+    } catch (e) {
+      log('Error toggling liked state: $e');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating favorite status'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _fetchProductDetails() async {
@@ -179,29 +405,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  Future<void> _fetchVendorProductData() async {
-    try {
-      final url =
-          'https://www.minsellprice.com/api/brands/${widget.brandName}/${widget.productMPN}?product_id=${widget.productId}';
-      final response = await http.get(Uri.parse(url));
-
-      log('status code: ${response.statusCode}');
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> decoded = jsonDecode(response.body);
-        final apiResponse = BrandProductApiResponse.fromJson(decoded);
-
-        if (mounted) {
-          setState(() {
-            vendorProductData = apiResponse.vendorProductData ?? [];
-          });
-        }
-        log('vendorProductData: $vendorProductData');
-      }
-    } catch (e) {
-      log('Error fetching vendor product data: $e');
-    }
-  }
-
   Future<void> _refreshProductDetails() async {
     await _fetchProductDetails();
   }
@@ -223,9 +426,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           )
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshProductDetails,
-        child: _buildBody(),
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: _refreshProductDetails,
+            child: _buildBody(),
+          ),
+          // Floating Comparison Bar
+          if (comparisonCount > 0) _buildFloatingComparisonBar(),
+        ],
       ),
     );
   }
@@ -294,13 +503,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           const SizedBox(height: 16),
           _buildProductHeader(),
           const SizedBox(height: 16),
+          _buildProductActionsBar(),
+          const SizedBox(height: 16),
           _buildProductDetails(),
           const SizedBox(height: 16),
           _buildPriceAndRating(),
           const SizedBox(height: 16),
+          _buildSubscribeButton(),
+          const SizedBox(height: 24),
+          _buildSpecifications(),
+          const SizedBox(height: 16),
           _buyAtName(),
           const SizedBox(height: 16),
           _buyAtDesign(),
+          const SizedBox(height: 24),
+          _buildShippingInfo(),
           const SizedBox(height: 16),
           _buildMoreName(),
           const SizedBox(height: 16),
@@ -427,7 +644,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BrandImageWidget(brand: brandData, width: w * 0.5)
+        BrandImageWidget(brand: brandData, width: w * 0.3)
         // CachedNetworkImage(
         //   imageUrl:
         //       'https://www.minsellprice.com/Brand-logo-images/${data.brandName.toString().replaceAll(' ', '-').toLowerCase()}.png',
@@ -472,6 +689,596 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubscribeButton() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary,
+            AppColors.primary.withOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Subscribed to ${widget.brandName} notifications!'),
+                  ],
+                ),
+                backgroundColor: AppColors.primary,
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_active,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Get Price Alerts',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Subscribe for price drops',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpecifications() {
+    final List<Map<String, String>> specifications = [
+      {'label': 'Brand', 'value': widget.brandName},
+      {'label': 'Model', 'value': widget.productMPN},
+      {'label': 'Material', 'value': 'Stainless Steel'},
+      {'label': 'Dimensions', 'value': '24" W x 18" D x 36" H'},
+      {'label': 'Weight', 'value': '45 lbs'},
+      {'label': 'Color', 'value': 'Matte Black'},
+      {'label': 'Warranty', 'value': '2 Year Limited'},
+      {'label': 'Country of Origin', 'value': 'USA'},
+      {'label': 'Certifications', 'value': 'UL Listed, CSA Approved'},
+      {'label': 'Features', 'value': 'Smart Controls, LED Display'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.info_outline,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Product Specifications',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.05),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.list_alt,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Technical Details',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              /// Creates a fixed-length scrollable linear array of list "items" separated
+              /// by list item "separators".
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: specifications.length,
+                separatorBuilder: (context, index) => const Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: Colors.grey,
+                ),
+                itemBuilder: (context, index) {
+                  final spec = specifications[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            spec['label']!,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            spec['value']!,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                              height: 1.3,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProductActionsBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildActionButton(
+            icon: Icons.share,
+            label: 'Share',
+            color: Colors.blue,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(Icons.share, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Product shared successfully!'),
+                    ],
+                  ),
+                  backgroundColor: Colors.blue,
+                  duration: Duration(seconds: 1),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+          _buildActionButton(
+            icon: isLiked ? Icons.favorite : Icons.favorite_border,
+            label: 'Favorite',
+            color: Colors.red,
+            onTap: _toggleLiked,
+          ),
+          // Compare Button
+          _buildActionButton(
+            icon: isInComparison
+                ? Icons.compare_arrows
+                : Icons.compare_arrows_outlined,
+            label: 'Compare',
+            color: Colors.orange,
+            onTap: _toggleComparison,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShippingInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.local_shipping,
+                color: Colors.green,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Shipping & Returns',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.05),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_shipping,
+                          color: Colors.green,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Free Shipping',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'FREE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'On orders over \$75. Delivery in 3-5 business days.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Delivery Options
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildShippingOption(
+                      Icons.flash_on,
+                      'Express Delivery',
+                      '1-2 business days',
+                      '\$15.99',
+                      Colors.orange,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildShippingOption(
+                      Icons.schedule,
+                      'Standard Delivery',
+                      '3-5 business days',
+                      'FREE',
+                      Colors.blue,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildShippingOption(
+                      Icons.store,
+                      'Store Pickup',
+                      'Ready in 2 hours',
+                      'FREE',
+                      Colors.purple,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Returns Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.05),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.assignment_return,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Easy Returns',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '• 30-day return policy\n• Free return shipping\n• Full refund or exchange\n• No restocking fees',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShippingOption(
+      IconData icon, String title, String subtitle, String price, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: color,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          price,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: price == 'FREE' ? Colors.green : Colors.black87,
+          ),
         ),
       ],
     );
@@ -755,6 +1562,106 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFloatingComparisonBar() {
+    return Positioned(
+      bottom: 20,
+      left: 16,
+      right: 16,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.orange,
+              Colors.orange.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.orange.withOpacity(0.3),
+              spreadRadius: 2,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(25),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ComparisonScreen(),
+                ),
+              );
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.compare_arrows,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Compare Products',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '$comparisonCount product${comparisonCount > 1 ? 's' : ''} ready to compare',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(
+                    comparisonCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

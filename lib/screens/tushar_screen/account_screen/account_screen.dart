@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:minsellprice/screens/tushar_screen/loging_page/loging_page.dart';
 import 'package:minsellprice/screens/tushar_screen/register_page/register_page.dart';
+import 'package:minsellprice/screens/tushar_screen/privacy_policy_screen.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +13,6 @@ class AccountScreen extends StatefulWidget {
   const AccountScreen({
     super.key,
     required Database database,
-    required int vendorId,
   });
 
   @override
@@ -155,8 +155,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () {
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey[800],
                         foregroundColor: Colors.white,
@@ -251,8 +250,21 @@ class _AccountScreenState extends State<AccountScreen> {
                     fontSize: 16,
                     letterSpacing: 1.2),
               ),
+              const SizedBox(height: 16),
               _supportInfoOption(Icons.help_outline, 'Help'),
-              _supportInfoOption(Icons.privacy_tip_outlined, 'Privacy Policy'),
+              _supportInfoOption(
+                Icons.privacy_tip_outlined,
+                'Privacy Policy',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PrivacyPolicyScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 50), // Extra space to ensure it's visible
             ],
           ),
         ],
@@ -282,12 +294,12 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  Widget _supportInfoOption(IconData icon, String text) {
+  Widget _supportInfoOption(IconData icon, String text, {VoidCallback? onTap}) {
     return ListTile(
       leading: Icon(icon, color: Colors.blue),
       title: Text(text),
       trailing: Icon(Icons.chevron_right),
-      onTap: () {},
+      onTap: onTap ?? () {},
       contentPadding: EdgeInsets.zero,
       dense: true,
     );

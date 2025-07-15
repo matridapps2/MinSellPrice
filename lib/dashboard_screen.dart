@@ -139,7 +139,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
                 AccountScreen(
                   database: database,
-                  vendorId: vendorId,
                 )
               ];
               return GestureDetector(
@@ -200,11 +199,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 ),
 
                                 // /// Search
-                                // SalomonBottomBarItem(
-                                //   icon: const Icon(Icons.search),
-                                //   title: const Text("Search"),
-                                //   selectedColor: AppColors.primary,
-                                // ),
+                                SalomonBottomBarItem(
+                                  icon: const Icon(Icons.search),
+                                  title: const Text("Search"),
+                                  selectedColor: AppColors.primary,
+                                ),
 
                                 /// account
                                 SalomonBottomBarItem(
@@ -214,7 +213,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   selectedColor: AppColors.primary,
                                 ),
                               ],
-                            ),
+                          ),
                       body: _screens[_activeIndex],
                     ),
                   ),
@@ -2532,191 +2531,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             );
           },
         ),
-      ),
-    );
-  }
-
-  Widget _shopByGrills() {
-    final List<Map<String, String>> gridData = [
-      {
-        'title': 'Large Grills',
-        'image': 'assets/shop_by_grills/large_grills.jpg'
-      },
-      {
-        'title': 'Medium Grills',
-        'image': 'assets/shop_by_grills/medium_grills2.jpg'
-      },
-      {
-        'title': 'Small Grills',
-        'image': 'assets/shop_by_grills/small_grills.jpg'
-      },
-      {
-        'title': 'Large Size Grills',
-        'image': 'assets/shop_by_grills/large_size_grills.jpg'
-      },
-      {
-        'title': 'Medium Size Grills',
-        'image': 'assets/shop_by_grills/medium_size_grills.jpg'
-      },
-      {'title': '49+ inches', 'image': 'assets/shop_by_grills/49+ inches.jpg'},
-      {
-        'title': 'Small Size Grills',
-        'image': 'assets/shop_by_grills/small_size_grills.jpg'
-      },
-      {
-        'title': 'x-Large Size Grills',
-        'image': 'assets/shop_by_grills/x-large_size_grills.jpg'
-      },
-      {
-        'title': 'x-Large Grills',
-        'image': 'assets/shop_by_grills/x-large_grills.jpg',
-      },
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 5,
-          crossAxisSpacing: 5,
-          childAspectRatio: 1.0,
-        ),
-        itemCount: gridData.length,
-        itemBuilder: (context, index) {
-          final item = gridData[index];
-          return Column(
-            children: [
-              Expanded(
-                child: Card(
-                  elevation: 0.5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.asset(
-                    item['image']!,
-                    fit: BoxFit.contain,
-                    width: w * .5,
-                    height: w * .5,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-                child: Text(
-                  item['title']!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: w * .035,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget grillsOutdoor() {
-    final List<Map<String, String>> gridData = [
-      {
-        'title': 'Outdoor Pizza Ovens',
-        'image': 'assets/grills_outdoor_cooking/outdoor_pizza_ovens.jpg'
-      },
-      {
-        'title': 'Gas Grills',
-        'image': 'assets/grills_outdoor_cooking/gas_grills.jpg'
-      },
-      {
-        'title': 'Charcoal Grills',
-        'image': 'assets/grills_outdoor_cooking/charcoal_grills.jpg'
-      },
-      {
-        'title': 'Flat Top Griddles',
-        'image': 'assets/grills_outdoor_cooking/flat_top_graddles.jpg'
-      },
-      {
-        'title': 'Pellet Grills',
-        'image': 'assets/grills_outdoor_cooking/pellet_grills.jpg'
-      },
-      {
-        'title': 'Electric Grills',
-        'image': 'assets/grills_outdoor_cooking/electric_grills.jpg'
-      },
-      {
-        'title': 'Kamado Grills',
-        'image': 'assets/grills_outdoor_cooking/kamado_grills.jpg'
-      },
-      {
-        'title': 'Beyond the Backyard',
-        'image': 'assets/grills_outdoor_cooking/bayond.jpg'
-      },
-      {
-        'title': 'Santa Maria Gaucho Grills',
-        'image': 'assets/grills_outdoor_cooking/santa_maria.jpg',
-      },
-      {
-        'title': 'BBQ Smokers',
-        'image': 'assets/grills_outdoor_cooking/bbq_smoker.jpg'
-      },
-      {
-        'title': 'Outdoor Fryers & Stoves',
-        'image': 'assets/grills_outdoor_cooking/outdoor_Gas Fryer.jpg'
-      },
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 5,
-          crossAxisSpacing: 5,
-          childAspectRatio: 1.0,
-        ),
-        itemCount: gridData.length,
-        itemBuilder: (context, index) {
-          final item = gridData[index];
-          return Column(
-            children: [
-              Expanded(
-                child: Card(
-                  elevation: 0.5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.asset(
-                    item['image']!,
-                    fit: BoxFit.contain,
-                    width: w * .5,
-                    height: w * .5,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-                child: Text(
-                  item['title']!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: w * .035,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
       ),
     );
   }

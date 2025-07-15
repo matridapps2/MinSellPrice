@@ -1,10 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:minsellprice/model/product_list_model.dart';
-import 'package:minsellprice/reposotory_services/database/database_constants.dart';
-import 'package:minsellprice/reposotory_services/database/database_functions.dart';
-import 'package:minsellprice/services/extra_functions.dart';
+import 'package:minsellprice/screens/tushar_screen/product_details_screen.dart';
+import 'package:minsellprice/services/liked_preference_db.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'widgets/liked_product_list_item/liked_item.dart';
@@ -21,9 +19,23 @@ class LikedProduct extends StatefulWidget {
 }
 
 class _LikedProductState extends State<LikedProduct>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   String vendorShortName = '';
   String sisterVendorShortName = '';
+
+  @override
+  bool get wantKeepAlive => false; // Don't keep alive to ensure refresh
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Trigger a rebuild when returning to this screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -47,6 +59,7 @@ class _LikedProductState extends State<LikedProduct>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return PopScope(
       canPop: true,
       child: Scaffold(
@@ -91,9 +104,9 @@ class _LikedProductState extends State<LikedProduct>
 
             List<Map<String, dynamic>> onlyLikedProducts = [];
 
+            // With the new database, all returned products are already liked
             for (Map<String, dynamic> element in snapshot.data!) {
-              if (element[isLikedKey] == 1 &&
-                  element[uniqueId].toString().contains('${widget.vendorId}')) {
+              if (element['is_liked'] == 1) {
                 onlyLikedProducts.add(element);
               }
             }
@@ -136,45 +149,154 @@ class _LikedProductState extends State<LikedProduct>
                 ),
                 itemBuilder: (BuildContext context, int index) {
                   final item = onlyLikedProducts[index];
-                  final likedValue = item[isLikedKey];
-                  if (likedValue != 1) {
-                    return const SizedBox();
-                  }
 
-                  final notifiedValue = item[isNotifiedKey] ?? 0;
-                  final productData = item[productDataKey];
-                  if (productData == null) {
-                    return const SizedBox();
-                  }
-
-                  ProductListModel? model;
-                  try {
-                    model = productData is Map<String, dynamic>
-                        ? ProductListModel.fromJson(productData)
-                        : ProductListModel.fromJson(
-                            jsonDecode(productData as String)
-                                as Map<String, dynamic>);
-                  } catch (e) {
-                    print('Error parsing product data: $e');
-                    return const SizedBox();
-                  }
-
-                  if (model == null) {
-                    return const SizedBox();
-                  }
-
-                  return SizedBox();
-
-                  //   GridTilesProducts(
-                  //   model: model,
-                  //   vendorId: widget.vendorId,
-                  //   likedValue: likedValue,
-                  //   notifiedValue: notifiedValue,
-                  //   database: widget.database,
-                  //   futureBuilderTriggerMethod: () => setState(() {}),
-                  //   vendorShortName: vendorShortName,
-                  //   sisterVendorShortName: sisterVendorShortName,
-                  // );
+                  return Container(
+                    margin: const EdgeInsets.all(8.0),
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailsScreen(
+                                productId: item['product_id'],
+                                brandName: item['brand_name'],
+                                productMPN: item['product_mpn'],
+                                productImage: item['product_image'],
+                                productPrice: item['product_price'],
+                              ),
+                            ),
+                          );
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(12),
+                                    topRight: Radius.circular(12),
+                                  ),
+                                  color: Colors.grey[100],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(12),
+                                    topRight: Radius.circular(12),
+                                  ),
+                                  child: (item['product_image'] != null &&
+                                          item['product_image']
+                                              .toString()
+                                              .isNotEmpty)
+                                      ? Image.network(
+                                          item['product_image'],
+                                          fit: BoxFit.fill,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            return Container(
+                                              alignment: Alignment.center,
+                                              child: const Icon(
+                                                Icons.image_not_supported,
+                                                size: 50,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : Container(
+                                          alignment: Alignment.center,
+                                          child: const Icon(
+                                            Icons.image_not_supported,
+                                            size: 50,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item['product_name'] ?? 'Unknown Product',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['brand_name'] ?? 'Unknown Brand',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    SizedBox(height: 20),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            '\$${item['product_price'] ?? '0'}',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            await _toggleLikeProduct(item);
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(3),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Colors.red.withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: Icon(
+                                              item['is_liked'] == 1
+                                                  ? Icons.favorite
+                                                  : Icons.favorite_border,
+                                              color: Colors.red,
+                                              size: 20,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
                 },
               ),
             );
@@ -185,16 +307,51 @@ class _LikedProductState extends State<LikedProduct>
   }
 
   Future<List<Map<String, dynamic>>> returnLikedData() async {
-    final data = await DatabaseHelper().getData(db: widget.database) ?? [];
-    return data;
+    try {
+      final data = await LikedPreferencesDB.getAllLikedProducts();
+      return data;
+    } catch (e) {
+      return [];
+    }
   }
 
   Future<void> getLoginData() async {
-    final loginData =
-        await DatabaseHelper().getUserInformation(db: widget.database);
+    // Note: Login data functionality removed since we're focusing only on liked products
+    // If vendor information is needed, it can be added back with appropriate imports
+  }
 
-    vendorShortName = loginData[vendor_short_nameKey];
-    sisterVendorShortName = loginData[sister_vendor_short_nameKey];
-    setState(() {});
+  Future<void> _toggleLikeProduct(Map<String, dynamic> item) async {
+    try {
+      // Remove the product from liked products using the new database
+      await LikedPreferencesDB.removeLikedProduct(
+        vendorProductId: item['vendor_product_id'],
+      );
+
+      // Refresh the screen to show updated list
+      setState(() {});
+
+      // Show feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.favorite_border, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Removed from favorites!'),
+            ],
+          ),
+          backgroundColor: Colors.grey,
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating favorite status'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

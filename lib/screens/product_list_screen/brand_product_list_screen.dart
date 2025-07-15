@@ -46,7 +46,6 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   final FocusNode _focusNode = FocusNode();
 
   final TextEditingController iconController = TextEditingController();
-  final TextEditingController _searchController = TextEditingController();
 
   int? priceSorting;
   int currentPage = 0;
@@ -78,11 +77,11 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
 
   void _initState() async {
     log('Brand Name: ${widget.brandName}');
-    await _loadFilterPreferences();
-    await _fetchBrandProducts();
+    await _fetchBrandProducts().whenComplete(() async {
+      await _loadFilterPreferences();
+    });
   }
 
-  // Load saved filter preferences from SQLite
   Future<void> _loadFilterPreferences() async {
     try {
       final prefs = await FilterPreferencesDB.getFilterPreferences(
