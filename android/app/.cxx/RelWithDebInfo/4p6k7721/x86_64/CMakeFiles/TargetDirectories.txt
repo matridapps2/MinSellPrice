@@ -1,0 +1,2 @@
+D:/MinSellPriceNew/android/app/.cxx/RelWithDebInfo/4p6k7721/x86_64/CMakeFiles/edit_cache.dir
+D:/MinSellPriceNew/android/app/.cxx/RelWithDebInfo/4p6k7721/x86_64/CMakeFiles/rebuild_cache.dir

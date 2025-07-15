@@ -13,10 +13,10 @@ import 'package:minsellprice/reposotory_services/network_reposotory.dart'
     show NetworkCalls;
 import 'package:minsellprice/screens/tushar_screen/comparison_screen.dart';
 import 'package:minsellprice/screens/tushar_screen/model/product_details_model.dart';
-import 'package:minsellprice/services/comparison_db.dart';
+import 'package:minsellprice/screens/tushar_screen/service_new/comparison_db.dart';
 import 'package:minsellprice/services/extra_functions.dart'
     show ColorExtension, getUniqueBrands;
-import 'package:minsellprice/services/liked_preference_db.dart';
+import 'package:minsellprice/screens/tushar_screen/service_new/liked_preference_db.dart';
 import 'package:minsellprice/size.dart';
 
 import 'model/brand_product_details_api_model.dart' as brand_api;

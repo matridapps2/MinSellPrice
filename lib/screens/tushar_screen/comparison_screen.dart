@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:minsellprice/colors.dart';
-import 'package:minsellprice/services/comparison_db.dart';
+import 'package:minsellprice/screens/tushar_screen/service_new/comparison_db.dart';
 import 'package:minsellprice/screens/tushar_screen/product_details_screen.dart';
 
 /**

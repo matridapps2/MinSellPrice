@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:minsellprice/screens/tushar_screen/liked_product_screen.dart';
 import 'package:minsellprice/screens/tushar_screen/loging_page/loging_page.dart';
 import 'package:minsellprice/screens/tushar_screen/register_page/register_page.dart';
 import 'package:minsellprice/screens/tushar_screen/privacy_policy_screen.dart';
@@ -288,7 +289,16 @@ class _AccountScreenState extends State<AccountScreen> {
       leading: Icon(icon, color: Colors.blue),
       title: Text(text),
       trailing: Icon(Icons.chevron_right),
-      onTap: () {},
+      onTap: () {
+        if (text == 'My Wishlist' && _database != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LikedProduct(database: _database!),
+            ),
+          );
+        }
+      },
       contentPadding: EdgeInsets.zero,
       dense: true,
     );

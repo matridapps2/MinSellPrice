@@ -17,6 +17,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:minsellprice/screens/tushar_screen/account_screen/account_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/categories_screen.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:minsellprice/app.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
@@ -25,7 +26,7 @@ import 'package:sqflite/sqflite.dart';
 import 'colors.dart';
 import 'model/vendor_dashboard_model.dart';
 import 'reposotory_services/database/database_functions.dart';
-import 'screens/liked_product_screen.dart';
+import 'screens/tushar_screen/liked_product_screen.dart';
 import 'screens/search_screen/search_screen.dart';
 import 'screens/widgets/inheriated_widget.dart';
 import 'screens/widgets/price_proposition_chart.dart';
@@ -131,9 +132,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
                 LikedProduct(
                   database: database,
-                  vendorId: vendorId,
                 ),
-                SearchScreen(
+                CategoriesScreen(
                   database: database,
                   vendorId: vendorId,
                 ),
@@ -200,8 +200,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
                                 // /// Search
                                 SalomonBottomBarItem(
-                                  icon: const Icon(Icons.search),
-                                  title: const Text("Search"),
+                                  icon: const Icon(Icons.category),
+                                  title: const Text("Categories"),
                                   selectedColor: AppColors.primary,
                                 ),
 
@@ -213,7 +213,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   selectedColor: AppColors.primary,
                                 ),
                               ],
-                          ),
+                            ),
                       body: _screens[_activeIndex],
                     ),
                   ),
@@ -2795,6 +2795,8 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
   void initState() {
     super.initState();
 
+    log('BrandImageWidget class:');
+
     String brandKey =
         widget.brand['brand_key'].toString().replaceAll(' ', '-').toLowerCase();
     String brandName = widget.brand['brand_name']
@@ -2823,7 +2825,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
       } else if (_attempt == 1) {
         _currentUrl = _imageUrl1;
       } else {
-        _currentUrl = ''; // fallback to asset
+        _currentUrl = '';
       }
       _attempt++;
     });
@@ -2839,11 +2841,11 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
         child: _currentUrl.isEmpty
             ? Image.asset(
                 'assets/images/no_image.png',
-                fit: BoxFit.contain,
+                fit: BoxFit.fitWidth,
               )
             : CachedNetworkImage(
                 imageUrl: _currentUrl,
-                fit: BoxFit.contain,
+                fit: BoxFit.fitWidth,
                 placeholder: (context, url) =>
                     const Center(child: CircularProgressIndicator()),
                 errorWidget: (context, url, error) {
@@ -2852,7 +2854,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
                       _onImageError();
                     }
                   });
-                  return const SizedBox(); // avoid calling setState during build
+                  return const SizedBox();
                 },
               ),
       ),

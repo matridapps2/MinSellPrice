@@ -16,7 +16,7 @@ import 'package:minsellprice/screens/tushar_screen/product_details_screen.dart';
 import 'package:minsellprice/screens/widgets/custom_loader.dart';
 import 'package:minsellprice/screens/widgets/custom_view_button.dart';
 import 'package:minsellprice/services/extra_functions.dart';
-import 'package:minsellprice/services/filter_preferences_db.dart';
+import 'package:minsellprice/screens/tushar_screen/service_new/filter_preferences_db.dart';
 import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqflite.dart';
 

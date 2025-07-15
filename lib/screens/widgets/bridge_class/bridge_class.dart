@@ -1,7 +1,9 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/app.dart';
 import 'package:minsellprice/dashboard_screen.dart';
 import 'package:minsellprice/reposotory_services/database/database_functions.dart';
+import 'package:minsellprice/screens/tushar_screen/splash_screen.dart';
 
 import '../../../reposotory_services/database/database_constants.dart';
 
@@ -30,8 +32,7 @@ class _BridgeClassState extends State<BridgeClass> {
     setState(() => key = UniqueKey());
   }
 
-  bool isUserLoggedIn = false;
-  bool _showWhiteScreen = true;
+  // Removed _showWhiteScreen variable since we always show splash screen
 
   Future<void> _initializeDatabase() async {
     try {
@@ -40,43 +41,12 @@ class _BridgeClassState extends State<BridgeClass> {
         throw Exception('Database initialization failed');
       }
 
-      final boolean = await DatabaseHelper().isUserLoggedIn(db: database);
-
-      if (mounted) {
-        setState(() {
-          isUserLoggedIn = boolean;
-        });
-      }
-
-      if (isUserLoggedIn == false) {
-        await DatabaseHelper().insertLogin(database, {
-          'id': 1,
-          'email': 'afsupply@gmail.com',
-          'name': 'AF Supply',
-          'vendor_id': AppInfo.kVendorId,
-          'vendor_name': 'AF Supply',
-          'vendor_short_name': 'AF',
-          'sister_concern_vendor': 10024,
-          'sister_vendor_short_name': 'HP',
-          fcm_token_key:
-              'cmGoQkJZS4irsNs8sQ9HVb:APA91bH9h_3gs_S7cPPPhzSPFPaDyaxwTaNqIVOamRa8nPm-d_Kyrbs7hJeehGLuJhbSolGjCJEAqs-cDeSLxSOHac8Dvj1o_7WG-RufY3Bm-hEzH0aX4AHFijEK1VWqa1KOlzlTSHpZ'
-        });
-      }
-
-      if (mounted) {
-        Future.delayed(const Duration(seconds: 1)).then((value) => mounted
-            ? setState(() {
-                _showWhiteScreen = false;
-              })
-            : null);
-      }
+      log('Database initialized successfully in BridgeClass');
+      // No need to switch screens since we start with splash screen
     } catch (e) {
       // Handle database initialization error
-      if (mounted) {
-        setState(() {
-          _showWhiteScreen = false;
-        });
-      }
+      log('Database initialization error in BridgeClass: $e');
+      // Even if database fails, we still show splash screen
     }
   }
 
@@ -86,11 +56,7 @@ class _BridgeClassState extends State<BridgeClass> {
       key: key,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        body: _showWhiteScreen
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : const DashboardScreen(),
+        body: const SplashScreen(), // Always show splash screen immediately
       ),
     );
   }
