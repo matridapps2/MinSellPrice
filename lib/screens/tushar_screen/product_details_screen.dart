@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:minsellprice/app.dart';
 import 'package:minsellprice/colors.dart' show AppColors;
-import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/model/product_list_model_new.dart'
     show ProductListModelNew, VendorProduct;
 import 'package:minsellprice/reposotory_services/network_reposotory.dart'

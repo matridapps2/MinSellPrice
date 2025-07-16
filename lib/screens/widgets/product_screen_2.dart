@@ -10,7 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:minsellprice/app.dart';
 import 'package:minsellprice/colors.dart' show AppColors;
-import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/model/product_list_model.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/reposotory_services/database/database_constants.dart';

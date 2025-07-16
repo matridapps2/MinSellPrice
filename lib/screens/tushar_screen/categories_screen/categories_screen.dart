@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:minsellprice/colors.dart';
-import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/size.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
 import 'package:sqflite_common/sqlite_api.dart';

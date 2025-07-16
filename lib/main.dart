@@ -11,7 +11,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:minsellprice/services/extra_functions.dart';
-import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/permissions/permissions.dart';
 import 'package:minsellprice/screens/widgets/bridge_class/bridge_class.dart';
 import 'package:minsellprice/services/background_service.dart';

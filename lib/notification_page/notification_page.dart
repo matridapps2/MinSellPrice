@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:minsellprice/dashboard_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/dashboard_screen/dashboard_screen.dart';
 import '../colors.dart';
 import '../size.dart';
 import 'package:shared_preferences/shared_preferences.dart';

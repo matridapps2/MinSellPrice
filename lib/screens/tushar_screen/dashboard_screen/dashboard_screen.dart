@@ -17,22 +17,23 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:minsellprice/screens/tushar_screen/account_screen/account_screen.dart';
-import 'package:minsellprice/screens/tushar_screen/categories_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/categories_screen/categories_screen.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:minsellprice/app.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
 import 'package:minsellprice/utils/common_methods.dart';
 import 'package:sqflite/sqflite.dart';
-import 'colors.dart';
-import 'model/vendor_dashboard_model.dart';
-import 'reposotory_services/database/database_functions.dart';
-import 'screens/tushar_screen/liked_product_screen.dart';
-import 'screens/search_screen/search_screen.dart';
-import 'screens/widgets/inheriated_widget.dart';
-import 'screens/widgets/price_proposition_chart.dart';
-import 'services/extra_functions.dart';
-import 'size.dart';
+import '../../../colors.dart';
+import '../../../model/vendor_dashboard_model.dart';
+import '../../../reposotory_services/database/database_functions.dart';
+import '../liked_product_screen.dart';
+import '../search_screen/search_screen.dart';
+import '../../widgets/inheriated_widget.dart';
+import '../../widgets/price_proposition_chart.dart';
+import '../../../services/extra_functions.dart';
+import '../../../size.dart';
 import 'package:minsellprice/screens/all_brands_screen.dart';
+import '../service_new/dashboard_categoies_db.dart';
 
 GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -1849,13 +1850,14 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     with KeepAliveParentDataMixin {
   List<Map<String, dynamic>> databaseData = [];
   final _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   final _scrollController = ScrollController();
-  late Future<Map<String, List<dynamic>>> _brandsFuture;
+  Future<Map<String, List<dynamic>>>? _brandsFuture;
   late Future<List<Map<String, dynamic>>> _bannersFuture;
-  late List<Map<String, dynamic>> _homeGardenBrands = [];
-  late List<Map<String, dynamic>> _shoesApparels = [];
-  late List<Map<String, dynamic>> _allBrands = [];
+  List<Map<String, dynamic>> _homeGardenBrands = [];
+  List<Map<String, dynamic>> _shoesApparels = [];
+  List<Map<String, dynamic>> _allBrands = [];
 
   List<List<dynamic>> makeFourElementsRow({required List<dynamic> list}) {
     List<List<dynamic>> result = [];
@@ -1874,17 +1876,28 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     _mainContentBigImagesFuture = getMainContentBigImages();
     _mainContentSmallImagesFuture = getMainContentSmallImages();
     _initCall();
+
+    // Add listener to clear focus when widget becomes active
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _searchFocusNode.unfocus();
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _initCall() async {
+    final totalCount = await DashboardCategoriesDB.getTotalCount();
+    if (totalCount == 0) {
+      await _initializeDatabaseFromAPI();
+    }
+
     _brandsFuture = fetchBrands();
-    final brandsData = await _brandsFuture;
+    final brandsData = await _brandsFuture!;
 
     setState(() {
       _homeGardenBrands = (brandsData["Home & Garden Brands"] ?? [])
@@ -1899,34 +1912,34 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     });
   }
 
-  void _searchBrand(String value) async {
-    if (_allBrands.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No Brand',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
+  // Method to initialize database with API data (called only once)
+  Future<void> _initializeDatabaseFromAPI() async {
+    try {
+      log('Initializing database with API data');
+      final response = await http
+          .get(
+            Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
+          )
+          .timeout(const Duration(seconds: 30));
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BrandSearchScreen(
-          brands: _allBrands,
-          database: widget.database,
-          initialSearchQuery: value.trim(),
-        ),
-      ),
-    );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+
+        // Convert to the expected format for database
+        Map<String, List<dynamic>> categoriesData = {
+          "Home & Garden Brands": jsonData["Home & Garden Brands"] ?? [],
+          "Shoes & Apparels": jsonData["Shoes & Apparels"] ?? [],
+        };
+
+        // Store data in SQLite database
+        await DashboardCategoriesDB.refreshCategoriesData(categoriesData);
+        log('Database initialized successfully with API data');
+      } else {
+        log('Error initializing database: ${response.statusCode}');
+      }
+    } catch (e) {
+      log("Exception initializing database: ${e.toString()}");
+    }
   }
 
   IconData? selectedIcon;
@@ -1957,61 +1970,72 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     height: 45,
                     width: w * .9,
                     child: TextFormField(
-                      enabled: true,
+                      //enabled: true,
                       controller: _searchController,
+                      focusNode: _searchFocusNode,
                       textInputAction: TextInputAction.search,
                       onFieldSubmitted: (value) {
                         if (value.trim().isNotEmpty) {
-                          _searchBrand(value);
+                          //  _searchBrand(value);
                         }
                       },
                       cursorColor: AppColors.primary,
+                      onTap: () {
+                        // Clear focus before navigating to prevent keyboard from showing when returning
+                        _searchFocusNode.unfocus();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    SearchScreen(database: widget.database)));
+                      },
                       decoration: InputDecoration(
                         hintText: 'Search brands by name...',
-                        suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _searchController,
-                          builder: (context, value, child) {
-                            return InkWell(
-                              splashColor: AppColors.primary.withOpacity(.3),
-                              onTap: () {
-                                if (_searchController.text.isNotEmpty) {
-                                  if (value.text.trim().isNotEmpty) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => BrandSearchScreen(
-                                          brands: _allBrands,
-                                          database: widget.database,
-                                          initialSearchQuery: value.text.trim(),
-                                        ),
-                                      ),
-                                    );
-                                  } else {
-                                    _searchController.clear();
-                                  }
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => BrandSearchScreen(
-                                        brands: _allBrands,
-                                        database: widget.database,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Icon(
-                                Icons.search,
-                                color: AppColors.primary,
-                                size: 30,
-                              ),
-                            );
-                          },
-                        ),
+                        // suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                        //   valueListenable: _searchController,
+                        // builder: (context, value, child) {
+                        //   return InkWell(
+                        //     splashColor: AppColors.primary.withOpacity(.3),
+                        //     onTap: () {
+                        //       if (_searchController.text.isNotEmpty) {
+                        //         if (value.text.trim().isNotEmpty) {
+                        //           Navigator.push(
+                        //             context,
+                        //             MaterialPageRoute(
+                        //               builder: (context) => BrandSearchScreen(
+                        //                 brands: _allBrands,
+                        //                 database: widget.database,
+                        //                 initialSearchQuery: value.text.trim(),
+                        //               ),
+                        //             ),
+                        //           );
+                        //         } else {
+                        //           _searchController.clear();
+                        //         }
+                        //       } else {
+                        //         Navigator.push(
+                        //           context,
+                        //           MaterialPageRoute(
+                        //             builder: (context) => BrandSearchScreen(
+                        //               brands: _allBrands,
+                        //               database: widget.database,
+                        //             ),
+                        //           ),
+                        //         );
+                        //       }
+                        //     },
+                        //     child: Icon(
+                        //       Icons.search,
+                        //       color: AppColors.primary,
+                        //       size: 30,
+                        //     ),
+                        //   );
+                        // },
+                        // ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 10.0,
                         ),
+
                         suffixIconColor: AppColors.primary,
                         border: OutlineInputBorder(
                           borderSide: BorderSide(color: AppColors.primary),
@@ -2173,35 +2197,60 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
+  // Commented out original API call - now using SQLite database
+  // Future<Map<String, List<dynamic>>> fetchBrands() async {
+  //   try {
+  //     log('method running');
+  //     final response = await http
+  //         .get(
+  //           Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
+  //         )
+  //         .timeout(const Duration(seconds: 30));
+  //     log('Brand API: https://www.minsellprice.com/api/minsell-brand');
+
+  //     if (response.statusCode == 200) {
+  //       log('status code ${response.statusCode}');
+  //       final Map<String, dynamic> jsonData = json.decode(response.body);
+
+  //       final homeGardenBrands =
+  //           jsonData["Home & Garden Brands"] as List<dynamic>;
+  //       final shoesApparels = jsonData["Shoes & Apparels"] as List<dynamic>;
+
+  //       return {
+  //         "Home & Garden Brands": homeGardenBrands,
+  //         "Shoes & Apparels": shoesApparels,
+  //       };
+  //     } else {
+  //       log('Error Brand API: ${response.statusCode}');
+  //       throw Exception('Failed to load brands: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     log("Exception In Brand API: ${e.toString()}");
+  //     throw Exception('Error fetching brands: $e');
+  //   }
+  // }
+
+  // New method to fetch brands from SQLite database
   Future<Map<String, List<dynamic>>> fetchBrands() async {
     try {
-      log('method running');
-      final response = await http
-          .get(
-            Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
-          )
-          .timeout(const Duration(seconds: 30));
-      log('Brand API: https://www.minsellprice.com/api/minsell-brand');
+      log('Fetching brands from SQLite database');
 
-      if (response.statusCode == 200) {
-        log('status code ${response.statusCode}');
-        final Map<String, dynamic> jsonData = json.decode(response.body);
+      // Get categories from database
+      final homeGardenBrands = await DashboardCategoriesDB.getCategoriesByType(
+          "Home & Garden Brands");
+      final shoesApparels =
+          await DashboardCategoriesDB.getCategoriesByType("Shoes & Apparels");
 
-        final homeGardenBrands =
-            jsonData["Home & Garden Brands"] as List<dynamic>;
-        final shoesApparels = jsonData["Shoes & Apparels"] as List<dynamic>;
+      log('Home & Garden Brands count from DB: ${homeGardenBrands.length}');
+      log('Shoes & Apparels count from DB: ${shoesApparels.length}');
 
-        return {
-          "Home & Garden Brands": homeGardenBrands,
-          "Shoes & Apparels": shoesApparels,
-        };
-      } else {
-        log('Error Brand API: ${response.statusCode}');
-        throw Exception('Failed to load brands: ${response.statusCode}');
-      }
+      return {
+        "Home & Garden Brands": homeGardenBrands,
+        "Shoes & Apparels": shoesApparels,
+      };
     } catch (e) {
-      log("Exception In Brand API: ${e.toString()}");
-      throw Exception('Error fetching brands: $e');
+      log("Exception fetching brands from database: ${e.toString()}");
+      throw Exception('Error fetching brands from database: $e');
     }
   }
 
@@ -2210,7 +2259,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: FutureBuilder<Map<String, List<dynamic>>>(
-          future: _brandsFuture,
+          future: _brandsFuture ?? Future.value({}),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -2375,7 +2424,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: FutureBuilder<Map<String, List<dynamic>>>(
-          future: _brandsFuture,
+          future: _brandsFuture ?? Future.value({}),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
