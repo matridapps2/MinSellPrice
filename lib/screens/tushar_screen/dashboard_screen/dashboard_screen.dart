@@ -33,7 +33,6 @@ import '../../widgets/price_proposition_chart.dart';
 import '../../../services/extra_functions.dart';
 import '../../../size.dart';
 import 'package:minsellprice/screens/all_brands_screen.dart';
-import '../service_new/dashboard_categoies_db.dart';
 
 GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -1891,11 +1890,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   }
 
   Future<void> _initCall() async {
-    final totalCount = await DashboardCategoriesDB.getTotalCount();
-    if (totalCount == 0) {
-      await _initializeDatabaseFromAPI();
-    }
-
     _brandsFuture = fetchBrands();
     final brandsData = await _brandsFuture!;
 
@@ -1910,36 +1904,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
       _allBrands = [..._homeGardenBrands, ..._shoesApparels];
     });
-  }
-
-  // Method to initialize database with API data (called only once)
-  Future<void> _initializeDatabaseFromAPI() async {
-    try {
-      log('Initializing database with API data');
-      final response = await http
-          .get(
-            Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
-          )
-          .timeout(const Duration(seconds: 30));
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = json.decode(response.body);
-
-        // Convert to the expected format for database
-        Map<String, List<dynamic>> categoriesData = {
-          "Home & Garden Brands": jsonData["Home & Garden Brands"] ?? [],
-          "Shoes & Apparels": jsonData["Shoes & Apparels"] ?? [],
-        };
-
-        // Store data in SQLite database
-        await DashboardCategoriesDB.refreshCategoriesData(categoriesData);
-        log('Database initialized successfully with API data');
-      } else {
-        log('Error initializing database: ${response.statusCode}');
-      }
-    } catch (e) {
-      log("Exception initializing database: ${e.toString()}");
-    }
   }
 
   IconData? selectedIcon;
@@ -1986,8 +1950,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    SearchScreen(database: widget.database)));
+                                builder: (context) => SearchScreen()));
                       },
                       decoration: InputDecoration(
                         hintText: 'Search brands by name...',
@@ -2230,27 +2193,38 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   //   }
   // }
 
-  // New method to fetch brands from SQLite database
+  // Method to fetch brands from API
   Future<Map<String, List<dynamic>>> fetchBrands() async {
     try {
-      log('Fetching brands from SQLite database');
+      log('Fetching brands from API');
+      final response = await http
+          .get(
+            Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
+          )
+          .timeout(const Duration(seconds: 30));
 
-      // Get categories from database
-      final homeGardenBrands = await DashboardCategoriesDB.getCategoriesByType(
-          "Home & Garden Brands");
-      final shoesApparels =
-          await DashboardCategoriesDB.getCategoriesByType("Shoes & Apparels");
+      if (response.statusCode == 200) {
+        log('Brand API status code: ${response.statusCode}');
+        final Map<String, dynamic> jsonData = json.decode(response.body);
 
-      log('Home & Garden Brands count from DB: ${homeGardenBrands.length}');
-      log('Shoes & Apparels count from DB: ${shoesApparels.length}');
+        final homeGardenBrands =
+            jsonData["Home & Garden Brands"] as List<dynamic>;
+        final shoesApparels = jsonData["Shoes & Apparels"] as List<dynamic>;
 
-      return {
-        "Home & Garden Brands": homeGardenBrands,
-        "Shoes & Apparels": shoesApparels,
-      };
+        log('Home & Garden Brands count: ${homeGardenBrands.length}');
+        log('Shoes & Apparels count: ${shoesApparels.length}');
+
+        return {
+          "Home & Garden Brands": homeGardenBrands,
+          "Shoes & Apparels": shoesApparels,
+        };
+      } else {
+        log('Error Brand API: ${response.statusCode}');
+        throw Exception('Failed to load brands: ${response.statusCode}');
+      }
     } catch (e) {
-      log("Exception fetching brands from database: ${e.toString()}");
-      throw Exception('Error fetching brands from database: $e');
+      log("Exception In Brand API: ${e.toString()}");
+      throw Exception('Error fetching brands: $e');
     }
   }
 
@@ -2295,7 +2269,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                             builder: (context) => BrandProductListScreen(
                               brandId: brand['brand_id'],
                               brandName: brand['brand_name'],
-                              database: widget.database,
                               dataList: const [],
                             ),
                           ),
@@ -2462,7 +2435,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                             builder: (context) => BrandProductListScreen(
                               brandId: brand['brand_id'],
                               brandName: brand['brand_name'],
-                              database: widget.database,
                               dataList: const [],
                             ),
                           ),
@@ -2827,8 +2799,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 class BrandImageWidget extends StatefulWidget {
   final Map<String, dynamic> brand;
   final double? width;
+  final double? height;
 
-  const BrandImageWidget({super.key, required this.brand, this.width});
+  const BrandImageWidget(
+      {super.key, required this.brand, this.width, this.height});
 
   @override
   State<BrandImageWidget> createState() => _BrandImageWidgetState();
@@ -2843,38 +2817,55 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
   @override
   void initState() {
     super.initState();
+    _initializeImageUrls();
+  }
 
-    log('BrandImageWidget class:');
+  void _initializeImageUrls() {
+    try {
+      String brandName = widget.brand['brand_name']?.toString() ?? '';
+      String brandKey = widget.brand['brand_key']?.toString() ?? brandName;
+      int brandId = widget.brand['brand_id'] ?? 0;
 
-    String brandKey =
-        widget.brand['brand_key'].toString().replaceAll(' ', '-').toLowerCase();
-    String brandName = widget.brand['brand_name']
-        .toString()
-        .replaceAll(' ', '-')
-        .toLowerCase();
+      String cleanBrandName = brandName
+          .replaceAll(RegExp(r'[^\w\s-]'), '')
+          .replaceAll(' ', '-')
+          .toLowerCase();
 
-    _imageUrl1 =
-        'https://growth.matridtech.net/brand-logo/brands/$brandKey.png';
-    _imageUrl2 =
-        'https://www.minsellprice.com/Brand-logo-images/$brandName.png';
+      String cleanBrandKey = brandKey
+          .replaceAll(RegExp(r'[^\w\s-]'), '')
+          .replaceAll(' ', '-')
+          .toLowerCase();
 
-    _currentUrl = _imageUrl1;
+      _imageUrl1 =
+          'https://growth.matridtech.net/brand-logo/brands/$cleanBrandKey.png';
+      _imageUrl2 =
+          'https://www.minsellprice.com/Brand-logo-images/$cleanBrandName.png';
 
-    log('Brand name: ${widget.brand['brand_name']}');
-    log('Brand key: ${widget.brand['brand_key']}');
-    log('Using brand name for image URL: $brandName');
-    log('Image URL 1: $_imageUrl1');
-    log('Image URL 2: $_imageUrl2');
+      _currentUrl = _imageUrl1;
+
+      log('BrandImageWidget [ID:$brandId] - Brand: "$brandName", Key: "$brandKey"');
+      log('BrandImageWidget [ID:$brandId] - Clean Brand Name: "$cleanBrandName"');
+      log('BrandImageWidget [ID:$brandId] - Clean Brand Key: "$cleanBrandKey"');
+      log('BrandImageWidget [ID:$brandId] - URL 1: $_imageUrl1');
+      log('BrandImageWidget [ID:$brandId] - URL 2: $_imageUrl2');
+      log('BrandImageWidget [ID:$brandId] - Full brand data: ${widget.brand}');
+    } catch (e) {
+      log('Error initializing image URLs: $e');
+      _currentUrl = '';
+    }
   }
 
   void _onImageError() {
     setState(() {
       if (_attempt == 0) {
         _currentUrl = _imageUrl2;
+        log('Trying alternative URL: $_imageUrl2');
       } else if (_attempt == 1) {
         _currentUrl = _imageUrl1;
+        log('Trying original URL again: $_imageUrl1');
       } else {
         _currentUrl = '';
+        log('All image URLs failed, showing placeholder');
       }
       _attempt++;
     });
@@ -2886,24 +2877,59 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 5.0),
       child: SizedBox(
         width: widget.width ?? double.infinity,
-        height: 115,
+        height: widget.height ?? 115,
         child: _currentUrl.isEmpty
-            ? Image.asset(
-                'assets/images/no_image.png',
-                fit: BoxFit.fitWidth,
+            ? Container(
+                width: widget.width ?? 50,
+                height: widget.height ?? 60,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.image_not_supported,
+                  color: Colors.grey,
+                  size: 24,
+                ),
               )
             : CachedNetworkImage(
                 imageUrl: _currentUrl,
-                fit: BoxFit.fitWidth,
-                placeholder: (context, url) =>
-                    const Center(child: CircularProgressIndicator()),
+                fit: BoxFit.contain,
+                placeholder: (context, url) => Container(
+                  width: widget.width ?? 50,
+                  height: widget.height ?? 60,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
                 errorWidget: (context, url, error) {
+                  log('Image load error for URL: $url, Error: $error');
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (mounted) {
                       _onImageError();
                     }
                   });
-                  return const SizedBox();
+                  return Container(
+                    width: widget.width ?? 50,
+                    height: widget.height ?? 60,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.broken_image,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
+                  );
                 },
               ),
       ),

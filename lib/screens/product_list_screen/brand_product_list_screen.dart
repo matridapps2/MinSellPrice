@@ -25,13 +25,13 @@ class BrandProductListScreen extends StatefulWidget {
     super.key,
     required this.brandId,
     required this.brandName,
-    required this.database,
+    this.database,
     required this.dataList,
   });
 
   final int brandId;
   final String? brandName;
-  final Database database;
+  final Database? database;
   final List<Map<String, dynamic>> dataList;
 
   @override
