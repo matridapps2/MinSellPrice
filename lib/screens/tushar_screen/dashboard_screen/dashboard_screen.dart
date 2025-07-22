@@ -11,28 +11,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_carousel_slider/carousel_slider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:minsellprice/screens/tushar_screen/account_screen/account_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/categories_provider/categories_provider_file.dart';
+
 import 'package:minsellprice/screens/tushar_screen/categories_screen/categories_screen.dart';
+import 'package:minsellprice/screens/widgets/category_shimmer.dart';
+import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:minsellprice/app.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
-import 'package:minsellprice/utils/common_methods.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../colors.dart';
-import '../../../model/vendor_dashboard_model.dart';
 import '../../../reposotory_services/database/database_functions.dart';
-import '../liked_product_screen.dart';
+import '../liked_product_screen/liked_product_screen.dart';
 import '../search_screen/search_screen.dart';
-import '../../widgets/inheriated_widget.dart';
-import '../../widgets/price_proposition_chart.dart';
-import '../../../services/extra_functions.dart';
 import '../../../size.dart';
-import 'package:minsellprice/screens/all_brands_screen.dart';
 
 GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -74,7 +70,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: CircularProgressIndicator(),
       )
     ];
-    // subscribeToFCMTopic();
     super.initState();
   }
 
@@ -86,9 +81,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   final List<Widget> bottomBarPages = [const DashboardScreen()];
-
-  List<PricePropositionModel> chartData = [];
-  List<PricePropositionModel> donutData = [];
 
   Map<String, dynamic> userData = {};
   String vendorName = '';
@@ -126,9 +118,16 @@ class _DashboardScreenState extends State<DashboardScreen>
             } else if (snapshot.hasData) {
               database = snapshot.data!;
               _screens = [
-                DashboardScreenWidget(
-                  database: database,
-                  vendorId: '${AppInfo.kVendorId}',
+                ChangeNotifierProvider(
+                  create: (context) {
+                    final provider = BrandsProvider();
+                    provider.fetchBrands();
+                    return provider;
+                  },
+                  child: DashboardScreenWidget(
+                    database: database,
+                    vendorId: '${AppInfo.kVendorId}',
+                  ),
                 ),
                 LikedProduct(
                   database: database,
@@ -146,76 +145,70 @@ class _DashboardScreenState extends State<DashboardScreen>
                   FocusScopeNode currentFocus = FocusScope.of(context);
                   currentFocus.unfocus();
                 },
-                child: MyInheritedWidget(
-                  // null,
-                  vendorName: '',
-                  vendorId: '',
-                  childWidget: SafeArea(
-                    child: Scaffold(
-                      key: scaffoldKey,
-                      extendBody: true,
-                      resizeToAvoidBottomInset: false,
-                      appBar: AppBar(
-                        surfaceTintColor: Colors.white,
-                        toolbarHeight: .18 * w,
-                        centerTitle: true,
-                        title: Image.asset(
-                          // 'assets/logo.png',
-                          'assets/minsellprice_logo.png',
-                          height: .2 * w,
-                        ),
-                        actionsPadding: EdgeInsets.only(right: 15),
-                        actions: const [
-                          Icon(
-                            Icons.shopping_cart,
-                            size: 35,
-                            color: AppColors.primary,
-                          )
-                        ],
-                        shape: Border.all(color: AppColors.primary, width: 0),
+                child: SafeArea(
+                  child: Scaffold(
+                    key: scaffoldKey,
+                    extendBody: true,
+                    resizeToAvoidBottomInset: false,
+                    appBar: AppBar(
+                      surfaceTintColor: Colors.white,
+                      toolbarHeight: .18 * w,
+                      centerTitle: true,
+                      title: Image.asset(
+                        // 'assets/logo.png',
+                        'assets/minsellprice_logo.png',
+                        height: .2 * w,
                       ),
-                      bottomNavigationBar: MediaQuery.of(context)
-                                  .viewInsets
-                                  .bottom !=
-                              0.0
-                          ? const SizedBox()
-                          : SalomonBottomBar(
-                              backgroundColor: Colors.white,
-                              currentIndex: _activeIndex,
-                              onTap: (i) => setState(() => _activeIndex = i),
-                              items: [
-                                /// Home
-                                SalomonBottomBarItem(
-                                  icon: const Icon(Icons.home),
-                                  title: const Text("Home"),
-                                  selectedColor: AppColors.primary,
-                                ),
-
-                                /// Likes
-                                SalomonBottomBarItem(
-                                  icon: const Icon(Icons.favorite_border),
-                                  title: const Text("Likes"),
-                                  selectedColor: AppColors.primary,
-                                ),
-
-                                // /// Search
-                                SalomonBottomBarItem(
-                                  icon: const Icon(Icons.category),
-                                  title: const Text("Categories"),
-                                  selectedColor: AppColors.primary,
-                                ),
-
-                                /// account
-                                SalomonBottomBarItem(
-                                  icon:
-                                      const Icon(Icons.account_circle_rounded),
-                                  title: const Text("Account"),
-                                  selectedColor: AppColors.primary,
-                                ),
-                              ],
-                            ),
-                      body: _screens[_activeIndex],
+                      actionsPadding: EdgeInsets.only(right: 15),
+                      actions: const [
+                        Icon(
+                          Icons.shopping_cart,
+                          size: 35,
+                          color: AppColors.primary,
+                        )
+                      ],
+                      shape: Border.all(color: AppColors.primary, width: 0),
                     ),
+                    bottomNavigationBar: MediaQuery.of(context)
+                                .viewInsets
+                                .bottom !=
+                            0.0
+                        ? const SizedBox()
+                        : SalomonBottomBar(
+                            backgroundColor: Colors.white,
+                            currentIndex: _activeIndex,
+                            onTap: (i) => setState(() => _activeIndex = i),
+                            items: [
+                              /// Home
+                              SalomonBottomBarItem(
+                                icon: const Icon(Icons.home),
+                                title: const Text("Home"),
+                                selectedColor: AppColors.primary,
+                              ),
+
+                              /// Likes
+                              SalomonBottomBarItem(
+                                icon: const Icon(Icons.favorite_border),
+                                title: const Text("Likes"),
+                                selectedColor: AppColors.primary,
+                              ),
+
+                              // /// Search
+                              SalomonBottomBarItem(
+                                icon: const Icon(Icons.category),
+                                title: const Text("Categories"),
+                                selectedColor: AppColors.primary,
+                              ),
+
+                              /// account
+                              SalomonBottomBarItem(
+                                icon: const Icon(Icons.account_circle_rounded),
+                                title: const Text("Account"),
+                                selectedColor: AppColors.primary,
+                              ),
+                            ],
+                          ),
+                    body: _screens[_activeIndex],
                   ),
                 ),
               );
@@ -396,254 +389,9 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   }
 }
 
-class CompetitorClass extends StatefulWidget {
-  const CompetitorClass({super.key, required this.model});
-
-  final TopBrand model;
-
-  @override
-  State<CompetitorClass> createState() => _CompetitorClassState();
-}
-
-class _CompetitorClassState extends State<CompetitorClass>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return _competitorWidget(widget.model);
-  }
-
-  Widget _competitorWidget(TopBrand model) {
-    List<Map<String, dynamic>> brandList = [];
-
-    model.topBrands.forEach((key, value) {
-      Map<String, dynamic> brand = {
-        "name": key,
-        "image": value.image,
-        "count": value.count
-      };
-      brandList.add(brand);
-    });
-
-    return GestureDetector(
-      onTap: () {},
-      child: Card(
-        color: Colors.white,
-        elevation: 5,
-        child: Container(
-          width: w * .9,
-          decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(8)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: w,
-                child: FittedBox(
-                  child: Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5.0, vertical: 10),
-                        child: Center(
-                          child: CachedNetworkImage(
-                            imageUrl:
-                                '${AppInfo.kBaseUrl(stagingSelector: 1)}vendor-logo/${model.vendorName}.jpg',
-                            width: w * .5,
-                            height: w * .2,
-                            fit: BoxFit.fill,
-                            placeholder: (context, url) => Center(
-                              child: Lottie.asset(
-                                'assets/lottie_animations/loading_bar.json',
-                                repeat: true,
-                                animate: true,
-                                width: 50,
-                                height: 50,
-                                frameRate: FrameRate(
-                                  60,
-                                ),
-                              ),
-                            ),
-                            // fit: BoxFit.fill,
-                            errorWidget: (_, c, e) => SizedBox(
-                              width: w * .2,
-                              child: Center(
-                                child: Text(
-                                  model.vendorName,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          const SizedBox(height: 10),
-                          Padding(
-                            padding: const EdgeInsets.all(2.0),
-                            child: RichText(
-                              textAlign: TextAlign.center,
-                              text: TextSpan(
-                                  text: '${model.totalProducts}',
-                                  style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: w * 0.04,
-                                    color: Colors.blue,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                        text: '\n Common Products',
-                                        style: GoogleFonts.montserrat(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: w * 0.03,
-                                          color: Colors.black,
-                                        )),
-                                  ]),
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 2.0),
-                            child: SizedBox(
-                                width: w * .3,
-                                child: const Divider(
-                                  thickness: 1,
-                                  color: Colors.black,
-                                )),
-                          ),
-                          // AutoSizeText(
-                          //   'No. of Common Products: ${model.totalProducts}',
-                          //   style: GoogleFonts.montserrat(
-                          //     fontSize: w * 0.032,
-                          //     fontWeight: FontWeight.bold,
-                          //   ),
-                          // ),
-                          // const SizedBox(
-                          //   height: 10,
-                          // ),
-                          // Container(
-                          //   height: 2,
-                          //   width: w * .5,
-                          //   color: Colors.black,
-                          // ),
-                          // const SizedBox(
-                          //   height: 10,
-                          // ),
-                          Padding(
-                            padding: const EdgeInsets.all(2.0),
-                            child: RichText(
-                              textAlign: TextAlign.center,
-                              text: TextSpan(
-                                  text: '${model.totalBrands}',
-                                  style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: w * 0.04,
-                                    color: Colors.blue,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                        text: '\n Common Brands',
-                                        style: GoogleFonts.montserrat(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: w * 0.033,
-                                          color: Colors.black,
-                                        )),
-                                  ]),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 20)
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              SizedBox(
-                width: w * .9,
-                child: Wrap(
-                  // mainAxisSize: MainAxisSize.min,
-                  // crossAxisAlignment: WrapCrossAlignment.center,
-                  alignment: WrapAlignment.center,
-                  children: List.generate(
-                    brandList.length,
-                    (index) => Card(
-                      color: Colors.white,
-                      child: Container(
-                          width: w * .17,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(2.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CachedNetworkImage(
-                                  imageUrl: CommonMethods.removeLastSlash(
-                                          AppInfo.kBaseUrl(
-                                              stagingSelector: 1)) +
-                                      brandList[index]['image'].toString(),
-                                  width: w * .2,
-                                  height: w * .2 - 20,
-                                  placeholder: (context, url) => Center(
-                                    child: Lottie.asset(
-                                      'assets/lottie_animations/loading_bar.json',
-                                      repeat: true,
-                                      animate: true,
-                                      width: 50,
-                                      height: 50,
-                                      frameRate: FrameRate(
-                                        60,
-                                      ),
-                                    ),
-                                  ),
-                                  // fit: BoxFit.fill,
-                                  errorWidget: (_, c, e) => SizedBox(
-                                    width: w * .2,
-                                    child: Center(
-                                      child: Text(
-                                        brandList[index]['name'],
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: 5,
-                                ),
-                                Text(
-                                  brandList[index]['count'].toString(),
-                                  style: GoogleFonts.montserrat(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          )),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  // TODO: implement wantKeepAlive
-  bool get wantKeepAlive => true;
-}
+@override
+// TODO: implement wantKeepAlive
+bool get wantKeepAlive => true;
 
 class BrandSlider extends StatelessWidget {
   BrandSlider(
@@ -1556,250 +1304,6 @@ class ProductColor {
   ProductColor({required this.title, required this.color});
 }
 
-/*Price Change Widget*/
-
-class PriceChangeWidget extends StatelessWidget {
-  final PriceChanges priceChanges;
-  final String date;
-
-  const PriceChangeWidget(
-      {super.key, required this.priceChanges, required this.date});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Visibility(
-          visible: checkUpdateDate(priceChanges.today),
-          child: AutoSizeText(
-            'Today',
-            maxLines: 1,
-            style: GoogleFonts.montserrat(
-              fontSize: w * 0.055,
-              color: Colors.blue,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        Center(
-          child: Wrap(
-            children: List.generate(
-              priceChanges.today.length,
-              (index) => Visibility(
-                visible: returnFrequency(
-                        history: priceChanges.today[index].history) !=
-                    '0',
-                child: Card(
-                  color: Colors.white,
-                  child: Container(
-                    width: w * .3,
-                    height: w * .33,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8)),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 8.0, horizontal: 4),
-                          child: CachedNetworkImage(
-                            imageUrl:
-                                'http://growth.matridtech.net/brand-logo/brands/${priceChanges.today[index].brandName.replaceAll(' ', '-').toLowerCase()}.png',
-                            width: w * .22,
-                            height: w * .102,
-                            placeholder: (context, url) => Center(
-                              child: Lottie.asset(
-                                'assets/lottie_animations/loading_bar.json',
-                                repeat: true,
-                                animate: true,
-                                width: 50,
-                                height: 50,
-                                frameRate: FrameRate(
-                                  60,
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, error, stack) => Center(
-                              child: AutoSizeText(
-                                priceChanges.today[index].brandName,
-                                style: GoogleFonts.montserrat(
-                                  fontSize: w * 0.032,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 4.0, horizontal: 4),
-                          child: AutoSizeText(
-                            '${returnFrequency(history: priceChanges.today[index].history)} Product${returnFrequency(history: priceChanges.today[index].history) != '1' ? 's' : ''}',
-                            maxLines: 2,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              fontSize: w * 0.04,
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(
-          height: 20,
-        ),
-        Visibility(
-          visible: priceChanges.last7Days.isNotEmpty,
-          child: AutoSizeText(
-            'Last 7 Days',
-            maxLines: 1,
-            style: GoogleFonts.montserrat(
-              fontSize: w * 0.055,
-              color: Colors.blue,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Visibility(
-          visible: priceChanges.last7Days.isNotEmpty,
-          child: const SizedBox(
-            height: 10,
-          ),
-        ),
-        Center(
-          child: Wrap(
-            children: List.generate(
-              priceChanges.last7Days.length,
-              (index) => SizedBox(
-                child: SizedBox(
-                  width: w * .3,
-                  child: Card(
-                    color: Colors.white,
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 8.0, horizontal: 4),
-                            child: CachedNetworkImage(
-                              imageUrl:
-                                  'http://growth.matridtech.net/brand-logo/brands/${priceChanges.last7Days[index].brandName.replaceAll(' ', '-').toLowerCase()}.png',
-                              width: w * .22,
-                              height: w * .105,
-                              placeholder: (context, url) => Center(
-                                child: Lottie.asset(
-                                  'assets/lottie_animations/loading_bar.json',
-                                  repeat: true,
-                                  animate: true,
-                                  width: 50,
-                                  height: 50,
-                                  frameRate: FrameRate(
-                                    60,
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (context, error, stack) => Center(
-                                child: AutoSizeText(
-                                  priceChanges.last7Days[index].brandName,
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: w * 0.032,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 8.0, horizontal: 4),
-                            child: AutoSizeText(
-                              '${priceChanges.last7Days[index].last7DaysCount}\nProduct${priceChanges.last7Days[index].last7DaysCount != 1 ? 's' : ''}',
-                              maxLines: 2,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.montserrat(
-                                fontSize: w * 0.04,
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(
-          height: 20,
-        ),
-      ],
-    );
-  }
-
-  String returnFrequency({required List<PriceHistory> history}) {
-    String returnCurrentDateFrequency = '';
-
-    DateFormat format = DateFormat('MM/dd/yyyy');
-    DateTime dateTime = DateTime.parse(date);
-
-    String date1 = format.format(dateTime).split(' ')[0].replaceAll('/', '-');
-
-    for (PriceHistory element in history) {
-      if (element.updateDate == date1) {
-        returnCurrentDateFrequency = element.frequency.toString();
-      }
-    }
-    if (returnCurrentDateFrequency.isEmpty) {
-      returnCurrentDateFrequency = '0';
-    }
-
-    return returnCurrentDateFrequency;
-  }
-
-  String shiftFirstToLastAndLastToFirst(List<String> myList) {
-    String firstElement = myList[0];
-    String lastElement = myList[myList.length - 1];
-
-    // Remove the first element
-    myList.removeAt(0);
-
-    // Add the first element to the end of the list
-    myList.add(firstElement);
-
-    // Remove the last element
-    myList.removeLast();
-
-    // Insert the last element at the beginning of the list
-    myList.insert(0, lastElement);
-
-    return myList.join('-');
-  }
-}
-
 class NavBarClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -1853,30 +1357,14 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   final _scrollController = ScrollController();
   Future<Map<String, List<dynamic>>>? _brandsFuture;
-  late Future<List<Map<String, dynamic>>> _bannersFuture;
   List<Map<String, dynamic>> _homeGardenBrands = [];
   List<Map<String, dynamic>> _shoesApparels = [];
   List<Map<String, dynamic>> _allBrands = [];
 
-  List<List<dynamic>> makeFourElementsRow({required List<dynamic> list}) {
-    List<List<dynamic>> result = [];
-    for (int i = 0; i < list.length; i += 4) {
-      int end = (i + 4 < list.length) ? i + 4 : list.length;
-      result.add(list.sublist(i, end));
-    }
-    return result;
-  }
-
   @override
   void initState() {
     super.initState();
-    setupRemoteConfig();
-    _bannersFuture = getBanners();
-    _mainContentBigImagesFuture = getMainContentBigImages();
-    _mainContentSmallImagesFuture = getMainContentSmallImages();
     _initCall();
-
-    // Add listener to clear focus when widget becomes active
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.unfocus();
     });
@@ -1914,9 +1402,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     Icons.shopping_bag_outlined
   ];
 
-  late Future<List<Map<String, dynamic>>> _mainContentBigImagesFuture;
-  late Future<List<Map<String, dynamic>>> _mainContentSmallImagesFuture;
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -1945,7 +1430,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       },
                       cursorColor: AppColors.primary,
                       onTap: () {
-                        // Clear focus before navigating to prevent keyboard from showing when returning
                         _searchFocusNode.unfocus();
                         Navigator.push(
                             context,
@@ -1954,47 +1438,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       },
                       decoration: InputDecoration(
                         hintText: 'Search brands by name...',
-                        // suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                        //   valueListenable: _searchController,
-                        // builder: (context, value, child) {
-                        //   return InkWell(
-                        //     splashColor: AppColors.primary.withOpacity(.3),
-                        //     onTap: () {
-                        //       if (_searchController.text.isNotEmpty) {
-                        //         if (value.text.trim().isNotEmpty) {
-                        //           Navigator.push(
-                        //             context,
-                        //             MaterialPageRoute(
-                        //               builder: (context) => BrandSearchScreen(
-                        //                 brands: _allBrands,
-                        //                 database: widget.database,
-                        //                 initialSearchQuery: value.text.trim(),
-                        //               ),
-                        //             ),
-                        //           );
-                        //         } else {
-                        //           _searchController.clear();
-                        //         }
-                        //       } else {
-                        //         Navigator.push(
-                        //           context,
-                        //           MaterialPageRoute(
-                        //             builder: (context) => BrandSearchScreen(
-                        //               brands: _allBrands,
-                        //               database: widget.database,
-                        //             ),
-                        //           ),
-                        //         );
-                        //       }
-                        //     },
-                        //     child: Icon(
-                        //       Icons.search,
-                        //       color: AppColors.primary,
-                        //       size: 30,
-                        //     ),
-                        //   );
-                        // },
-                        // ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 10.0,
                         ),
@@ -2051,103 +1494,13 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.max,
-                    // shrinkWrap: true,
                     children: [
-                      SizedBox(
-                        height: h * .22,
-                        child: FutureBuilder<List<Map<String, dynamic>>>(
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(child: CircularProgressIndicator());
-                            } else if (snapshot.hasError) {
-                              return Center(
-                                child: RichText(
-                                  textAlign: TextAlign.center,
-                                  text: TextSpan(
-                                      text: 'Unable to load banners.\n',
-                                      style: TextStyle(
-                                          fontSize: .06 * w,
-                                          fontFamily: 'Futura BdCn BT Bold',
-                                          fontWeight: FontWeight.w300,
-                                          color: Colors.black),
-                                      children: [
-                                        TextSpan(
-                                          text: 'Try Again',
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = () => setState(() {}),
-                                          style: TextStyle(
-                                              fontSize: .06 * w,
-                                              fontFamily: 'Futura BdCn BT Bold',
-                                              fontWeight: FontWeight.w300,
-                                              color: Colors.red),
-                                        )
-                                      ]),
-                                ),
-                              );
-                            } else {
-                              // This is your dominant color
-                              // Color dominantColor = snapshot.data!.dominantColor!.color;
-                              return CarouselSlider(
-                                enableAutoSlider: true,
-                                unlimitedMode: true,
-                                autoSliderTransitionTime:
-                                    const Duration(seconds: 1),
-                                autoSliderDelay: const Duration(seconds: 3),
-                                slideIndicator: CircularSlideIndicator(
-                                    padding: const EdgeInsets.only(top: 30),
-                                    itemSpacing: 15,
-                                    indicatorRadius: 5),
-                                children: List.generate(
-                                  snapshot.data!.length,
-                                  (index) => Padding(
-                                    padding:
-                                        const EdgeInsets.only(bottom: 20.0),
-                                    child: CachedNetworkImage(
-                                      imageUrl: snapshot.data![index]
-                                          ['imageLink'],
-                                      fit: BoxFit.fill,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          future: _bannersFuture,
-                        ),
-                      ),
                       const SizedBox(height: 15),
-                      _mainContentBigImages(),
-                      _mainContentSmallImages(),
-                      const SizedBox(height: 15),
-                      const SizedBox(height: 5),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20.0),
-                        child: Text(
-                          'Home & Garden',
-                          style: TextStyle(
-                            fontSize: 27,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Segoe UI',
-                          ),
-                        ),
+                      Consumer<BrandsProvider>(
+                        builder: (context, brandsProvider, child) {
+                          return _buildBrandsSections(brandsProvider);
+                        },
                       ),
-                      const SizedBox(height: 25),
-                      _homeGardenBrandsDesign(),
-                      const SizedBox(height: 5),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20.0),
-                        child: Text(
-                          'Shoes & Apparels',
-                          style: TextStyle(
-                            fontSize: 27,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Segoe UI',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 25),
-                      _shoesApparelsDesign(),
                       const SizedBox(height: 45),
                     ],
                   ),
@@ -2160,48 +1513,13 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-  // Commented out original API call - now using SQLite database
-  // Future<Map<String, List<dynamic>>> fetchBrands() async {
-  //   try {
-  //     log('method running');
-  //     final response = await http
-  //         .get(
-  //           Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
-  //         )
-  //         .timeout(const Duration(seconds: 30));
-  //     log('Brand API: https://www.minsellprice.com/api/minsell-brand');
-
-  //     if (response.statusCode == 200) {
-  //       log('status code ${response.statusCode}');
-  //       final Map<String, dynamic> jsonData = json.decode(response.body);
-
-  //       final homeGardenBrands =
-  //           jsonData["Home & Garden Brands"] as List<dynamic>;
-  //       final shoesApparels = jsonData["Shoes & Apparels"] as List<dynamic>;
-
-  //       return {
-  //         "Home & Garden Brands": homeGardenBrands,
-  //         "Shoes & Apparels": shoesApparels,
-  //       };
-  //     } else {
-  //       log('Error Brand API: ${response.statusCode}');
-  //       throw Exception('Failed to load brands: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     log("Exception In Brand API: ${e.toString()}");
-  //     throw Exception('Error fetching brands: $e');
-  //   }
-  // }
-
-  // Method to fetch brands from API
   Future<Map<String, List<dynamic>>> fetchBrands() async {
     try {
       log('Fetching brands from API');
       final response = await http
           .get(
             Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
-          )
-          .timeout(const Duration(seconds: 30));
+          ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         log('Brand API status code: ${response.statusCode}');
@@ -2228,562 +1546,152 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     }
   }
 
-  Widget _homeGardenBrandsDesign() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: FutureBuilder<Map<String, List<dynamic>>>(
-          future: _brandsFuture ?? Future.value({}),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(
-                  child: Text('Failed to load brands: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No brands available.'));
-            }
+  Widget _buildBrandsSections(BrandsProvider brandsProvider) {
+    log('_buildBrandsSections called with state: ${brandsProvider.state}');
+    log('Home & Garden count: ${brandsProvider.homeGardenBrands.length}');
+    log('Shoes & Apparels count: ${brandsProvider.shoesApparels.length}');
 
-            final allBrands = _homeGardenBrands;
-            log('Home & Garden Brands count: ${allBrands.length}');
-
-            return Column(
-              children: [
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 5,
-                    crossAxisSpacing: 5,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: allBrands.length,
-                  itemBuilder: (context, index) {
-                    final brand = allBrands[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BrandProductListScreen(
-                              brandId: brand['brand_id'],
-                              brandName: brand['brand_name'],
-                              dataList: const [],
-                            ),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        elevation: 0.5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          side: const BorderSide(color: Colors.black),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Flexible(
-                              flex: 1,
-                              child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5.0),
-                                  child: BrandImageWidget(brand: brand)
-                                  // SizedBox(
-                                  //   width: double.infinity,
-                                  //   height: 115,
-                                  //   child: CachedNetworkImage(
-                                  //     imageUrl:
-                                  //         'https://growth.matridtech.net/brand-logo/brands/${brand['brand_key'].toString().replaceAll(' ', '-').toLowerCase()}.png',
-                                  //         //'https://www.minsellprice.com/Brand-logo-images/${brand['brand_name'].toString().replaceAll(' ', '-').toLowerCase()}.png',
-                                  //     fit: BoxFit.contain,
-                                  //     placeholder: (context, url) => const Center(
-                                  //         child: CircularProgressIndicator()),
-                                  //     errorWidget: (context, url, error) =>
-                                  //         Image.asset(
-                                  //       'assets/images/no_image.png',
-                                  //       fit: BoxFit.contain,
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                  ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 10.0, left: 8.0, right: 8.0),
-                              child: Text(
-                                brand['brand_name'].toString().trim(),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  fontFamily: 'Segoe UI',
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                // if (hasMoreBrands)
-                //   Padding(
-                //       padding: const EdgeInsets.only(bottom: 20.0, top: 0),
-                //       child: Container(
-                //         decoration: BoxDecoration(
-                //           borderRadius: BorderRadius.circular(12.0),
-                //           gradient: LinearGradient(
-                //             colors: [
-                //               Colors.blue.shade700,
-                //               Colors.blue.shade900
-                //             ], // Darker blue gradient
-                //             begin: Alignment.centerLeft,
-                //             end: Alignment.centerRight,
-                //           ),
-                //           boxShadow: [
-                //             BoxShadow(
-                //               color: Colors.blue.withOpacity(0.3),
-                //               spreadRadius: 2,
-                //               blurRadius: 8,
-                //               offset: Offset(0, 4),
-                //             ),
-                //           ],
-                //         ),
-                //         child: MaterialButton(
-                //           onPressed: () {
-                //             Navigator.push(
-                //               context,
-                //               MaterialPageRoute(
-                //                 builder: (context) => BrandSearchScreen(
-                //                   brands: List<Map<String, dynamic>>.from(
-                //                       allBrands),
-                //                   database: widget.database,
-                //                 ),
-                //               ),
-                //             );
-                //           },
-                //           padding: EdgeInsets.symmetric(
-                //               horizontal: 40, vertical: 15),
-                //           shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(12.0),
-                //           ),
-                //           elevation: 0,
-                //           color: Colors.transparent,
-                //           child: const Text(
-                //             'See More Brands',
-                //             style: TextStyle(
-                //               fontSize: 16,
-                //               fontWeight: FontWeight.w600,
-                //               color: Colors.white,
-                //             ),
-                //           ),
-                //         ),
-                //       )),
-              ],
-            );
-          },
+    if (brandsProvider.state == BrandsState.loading || brandsProvider.state == BrandsState.initial) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          BrandsSectionShimmer(title: ''),
+          SizedBox(height: 25),
+          BrandsSectionShimmer(title: ''),
+        ],
+      );
+    } else if (brandsProvider.state == BrandsState.error) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Failed to load brands',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              brandsProvider.errorMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => brandsProvider.retry(),
+              child: const Text('Retry'),
+            ),
+          ],
         ),
-      ),
-    );
+      );
+    } else {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 20.0),
+            child: Text(
+              'Home & Garden',
+              style: const TextStyle(
+                fontSize: 27,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Segoe UI',
+              ),
+            ),
+          ),
+          const SizedBox(height: 25),
+          _brandsGrid(brandsProvider.homeGardenBrands),
+          const SizedBox(height: 5),
+          Padding(
+            padding: const EdgeInsets.only(left: 20.0),
+            child: Text(
+              'Shoes & Apparels',
+              style: const TextStyle(
+                fontSize: 27,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Segoe UI',
+              ),
+            ),
+          ),
+          const SizedBox(height: 25),
+          _brandsGrid(brandsProvider.shoesApparels),
+        ],
+      );
+    }
   }
 
-  Widget _shoesApparelsDesign() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: FutureBuilder<Map<String, List<dynamic>>>(
-          future: _brandsFuture ?? Future.value({}),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(
-                  child: Text('Failed to load brands: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No brands available.'));
-            }
-
-            final allBrands = _shoesApparels;
-            log('Shoes & Apparels count: ${allBrands.length}');
-
-            return Column(
-              // mainAxisSize: MainAxisSize.min,
-              // crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 5,
-                    crossAxisSpacing: 5,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: allBrands.length,
-                  itemBuilder: (context, index) {
-                    final brand = allBrands[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BrandProductListScreen(
-                              brandId: brand['brand_id'],
-                              brandName: brand['brand_name'],
-                              dataList: const [],
-                            ),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        elevation: 0.5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          side: const BorderSide(color: Colors.black),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Flexible(
-                              flex: 1,
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 5.0),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  height: 115,
-                                  child: CachedNetworkImage(
-                                    imageUrl:
-                                        'https://www.minsellprice.com/Brand-logo-images/${brand['brand_name'].toString().replaceAll(' ', '-').toLowerCase()}.png',
-                                    fit: BoxFit.contain,
-                                    placeholder: (context, url) => const Center(
-                                        child: CircularProgressIndicator()),
-                                    errorWidget: (context, url, error) =>
-                                        Image.asset(
-                                      'assets/images/no_image.png',
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 10.0, left: 8.0, right: 8.0),
-                              child: Text(
-                                brand['brand_name'].toString().trim(),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  fontFamily: 'Segoe UI',
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                // if (hasMoreBrands)
-                //   Padding(
-                //       padding: const EdgeInsets.only(bottom: 20.0, top: 0),
-                //       child: Container(
-                //         decoration: BoxDecoration(
-                //           borderRadius: BorderRadius.circular(12.0),
-                //           gradient: LinearGradient(
-                //             colors: [
-                //               Colors.blue.shade700,
-                //               Colors.blue.shade900
-                //             ], // Darker blue gradient
-                //             begin: Alignment.centerLeft,
-                //             end: Alignment.centerRight,
-                //           ),
-                //           boxShadow: [
-                //             BoxShadow(
-                //               color: Colors.blue.withOpacity(0.3),
-                //               spreadRadius: 2,
-                //               blurRadius: 8,
-                //               offset: Offset(0, 4),
-                //             ),
-                //           ],
-                //         ),
-                //         child: MaterialButton(
-                //           onPressed: () {
-                //             Navigator.push(
-                //               context,
-                //               MaterialPageRoute(
-                //                 builder: (context) => BrandSearchScreen(
-                //                   brands: List<Map<String, dynamic>>.from(
-                //                       allBrands),
-                //                   database: widget.database,
-                //                 ),
-                //               ),
-                //             );
-                //           },
-                //           padding: EdgeInsets.symmetric(
-                //               horizontal: 40, vertical: 15),
-                //           shape: RoundedRectangleBorder(
-                //             borderRadius: BorderRadius.circular(12.0),
-                //           ),
-                //           elevation: 0,
-                //           color: Colors.transparent,
-                //           child: const Text(
-                //             'See More Brands',
-                //             style: TextStyle(
-                //               fontSize: 16,
-                //               fontWeight: FontWeight.w600,
-                //               color: Colors.white,
-                //             ),
-                //           ),
-                //         ),
-                //       )),
-              ],
-            );
-          },
+  Widget _brandsGrid(List<Map<String, dynamic>> brands) {
+    if (brands.isEmpty) {
+      return const Center(child: Text('No brands available.'));
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 5,
+          crossAxisSpacing: 5,
+          childAspectRatio: 1,
         ),
-      ),
-    );
-  }
-
-  Widget _mainContentBigImages() {
-    return SizedBox(
-      height: h * .28,
-      child: FutureBuilder(
-        future: _mainContentBigImagesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: const CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const SizedBox();
-          } else {
-            return Column(
-              children: List.generate(
-                  snapshot.data!.length,
-                  (index) => Column(
-                        children: [
-                          Stack(
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 5),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  child: Image.network(
-                                    snapshot.data![index]['image_link'],
-                                    fit: BoxFit.fitWidth,
-                                  ),
-                                ),
-                              ),
-                              Column(
-                                children: [
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        snapshot.data![index]['large_text'],
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontFamily: 'Futura BdCn BT Bold',
-                                          wordSpacing: 1,
-                                          letterSpacing: 1,
-                                          fontSize: w * .07,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        snapshot.data![index]['small_text'],
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontFamily: 'Futura BdCn BT Bold',
-                                          wordSpacing: 1,
-                                          letterSpacing: 1,
-                                          fontSize: w * .045,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      ElevatedButton(
-                                        onPressed: () {},
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.primary,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            snapshot.data![index]
-                                                ['button_name'],
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontFamily: 'Futura BdCn BT Bold',
-                                              wordSpacing: 1,
-                                              letterSpacing: 1,
-                                              fontSize: w * .045,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                      )),
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _mainContentSmallImages() {
-    return SizedBox(
-      height: h * .28,
-      child: FutureBuilder(
-        future: _mainContentSmallImagesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: const CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const SizedBox();
-          } else {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: Row(
+        itemCount: brands.length,
+        itemBuilder: (context, index) {
+          final brand = brands[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BrandProductListScreen(
+                    brandId: brand['brand_id'],
+                    brandName: brand['brand_name'],
+                    dataList: const [],
+                  ),
+                ),
+              );
+            },
+            child: Card(
+              elevation: 0.5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: const BorderSide(color: Colors.black),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Column(
-                      children: List.generate(
-                        snapshot.data!.length,
-                        // Up to half the length for left column
-                        (index) => index < (snapshot.data!.length / 2)
-                            ? GestureDetector(
-                                onTap: () {
-                                  log('index1 - $index');
-                                },
-                                child: SizedBox(
-                                  width:
-                                      double.infinity, // Fill available width
-                                  child: Column(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
-                                        child: Image.network(
-                                          snapshot.data![index]['image_link'],
-                                          fit: BoxFit.cover, // Adjust as needed
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : Container(), // Placeholder for unused space
-                      ),
+                  Flexible(
+                    flex: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                      child: BrandImageWidget(brand: brand),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      children: List.generate(
-                        snapshot.data!.length,
-                        // Up to half the length for right column
-                        (index) => index >= (snapshot.data!.length / 2)
-                            ? GestureDetector(
-                                onTap: () {
-                                  log('index2 - $index');
-                                },
-                                child: SizedBox(
-                                  width:
-                                      double.infinity, // Fill available width
-                                  child: Column(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
-                                        child: Image.network(
-                                          snapshot.data![index]['image_link'],
-                                          fit: BoxFit.cover, // Adjust as needed
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : Container(),
+                  Padding(
+                    padding:
+                        const EdgeInsets.only(top: 10.0, left: 8.0, right: 8.0),
+                    child: Text(
+                      brand['brand_name'].toString().trim(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontFamily: 'Segoe UI',
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-            );
-          }
+            ),
+          );
         },
       ),
     );
-  }
-
-  Future<Map<String, dynamic>> getDataFromRemoteConfig() async {
-    final data = await remoteConfig.getString('msp_app_config');
-
-    return jsonDecode(data);
-  }
-
-  Future<List<Map<String, dynamic>>> getBanners() async {
-    final data = await getDataFromRemoteConfig();
-    List<Map<String, dynamic>> list =
-        List.from((data['banners'] as List<dynamic>).map((e) => e));
-    return list;
-  }
-
-  Future<List<Map<String, dynamic>>> getMainContentBigImages() async {
-    final data = await getDataFromRemoteConfig();
-    List<Map<String, dynamic>> list = List.from(
-        (data['main_content_big_images'] as List<dynamic>).map((e) => e));
-    list.sort((a, b) => a['id'].compareTo(b['id']));
-    return list;
-  }
-
-  Future<List<Map<String, dynamic>>> getMainContentSmallImages() async {
-    final data = await getDataFromRemoteConfig();
-    List<Map<String, dynamic>> list = List.from(
-        (data['main_content_small_images'] as List<dynamic>).map((e) => e));
-    list.sort((a, b) => a['id'].compareTo(b['id']));
-    return list;
-  }
-
-  Future<List<Map<String, dynamic>>> getGrillsMenu() async {
-    final data = await getDataFromRemoteConfig();
-    List<Map<String, dynamic>> list =
-        List.from((data['grills_menu'] as List<dynamic>).map((e) => e));
-    list.sort((a, b) => int.parse(a['id']).compareTo(int.parse(b['id'])));
-    return list;
   }
 
   @override

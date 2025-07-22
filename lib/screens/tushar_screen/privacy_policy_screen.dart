@@ -112,7 +112,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
             _buildSection(
               'How We Use Your Information',
-              'We use the information we collect to:\n• Provide and maintain our services\n• Send you price alerts and notifications\n• Improve our product comparison features\n• Communicate with you about updates and offers\n• Analyze usage patterns to enhance user experience',
+              'We use the information we collect to:\n• Provide and maintain our services\n• Improve our product comparison features\n• Communicate with you about updates and offers\n• Analyze usage patterns to enhance user experience',
               Icons.settings,
             ),
 

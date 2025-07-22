@@ -59,9 +59,9 @@ dependencies:
   flutter_background_service_android: ^6.3.0
   device_info_plus: ^11.4.0
   shared_preferences: ^2.5.3
+  provider: ^6.1.1
 
-  # optional if you wish to use a custom foreground service notification
-  flutter_local_notifications: ^19.2.0
+
   animated_notch_bottom_bar: ^1.0.3
   dot_navigation_bar: ^1.0.2
   flutter_side_menu: ^0.5.41
@@ -72,7 +72,6 @@ dependencies:
   screenshot:
   share_plus: ^11.0.0
   delayed_display: ^2.0.0
-  firebase_messaging:
   firebase_in_app_messaging:
   firebase_app_installations:
   firebase_analytics:
@@ -155,7 +154,6 @@ flutter:
 
     - assets/images/background.jpeg
     - assets/images/no_image.png
-    - assets/lottie_animations/notification_animation.json
     - assets/images/world-wide-web.png
     - assets/lottie_animations/animation/
     - assets/home_screen_assets/

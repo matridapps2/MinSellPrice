@@ -1,8 +1,6 @@
-import 'dart:developer';
 import 'dart:io';
 import 'package:connection_notifier/connection_notifier.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -10,17 +8,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:minsellprice/services/extra_functions.dart';
+
 import 'package:minsellprice/screens/tushar_screen/dashboard_screen/dashboard_screen.dart';
-import 'package:minsellprice/permissions/permissions.dart';
 import 'package:minsellprice/screens/widgets/bridge_class/bridge_class.dart';
 import 'package:minsellprice/services/background_service.dart';
 import 'package:minsellprice/firebase_options.dart';
 import 'package:provider/provider.dart';
-import 'auth_provider.dart' as my_auth; // adjust path if needed
-import 'package:minsellprice/notification_page/notification_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'auth_provider.dart' as my_auth;
 
 import 'colors.dart';
 
@@ -32,9 +26,6 @@ Future<void> permission() async {
   }
 }
 
-bool _notificationClicked = false;
-String _initialNotificationData = '';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -42,12 +33,8 @@ void main() async {
           ? DefaultFirebaseOptions.android
           : DefaultFirebaseOptions.ios);
 
-  requestNotificationPermission();
-  setupFlutterNotifications();
-
   FlutterBackgroundService().invoke("setAsBackground");
   await initializeService();
-  setupRemoteConfig();
   GestureBinding.instance.resamplingEnabled = true;
 
   if (Platform.isAndroid) {
@@ -60,7 +47,7 @@ void main() async {
 
     if (swAvailable && swInterceptAvailable) {
       AndroidServiceWorkerController serviceWorkerController =
-      AndroidServiceWorkerController.instance();
+          AndroidServiceWorkerController.instance();
 
       await serviceWorkerController
           .setServiceWorkerClient(AndroidServiceWorkerClient(
@@ -77,38 +64,6 @@ void main() async {
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
-    final notificationJson = message.notification != null
-        ? jsonEncode({
-      'title': message.notification?.title ?? '',
-      'message': message.notification?.body ?? '',
-      'image': message.notification?.android?.imageUrl ??
-          message.notification?.apple?.imageUrl ??
-          message.data['image'] ??
-          '',
-      'name': message.data['name'] ?? '',
-      'time': DateTime.now().toIso8601String(),
-      'isRead': false,
-    })
-        : '';
-    if (notificationJson.isNotEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      final List<String> stored = prefs.getStringList('notifications') ?? [];
-      stored.insert(0, notificationJson); // newest first
-      await prefs.setStringList('notifications', stored);
-      log('Notification added to shared preferences:');
-      log(notificationJson);
-    }
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(
-        builder: (context) => NotificationPage(),
-      ),
-    );
-  });
-
-  String? token = await FirebaseMessaging.instance.getToken();
-  log("FCM Token: $token");
 
   runApp(
     ChangeNotifierProvider(
@@ -137,7 +92,7 @@ void main() async {
             ),
             cardColor: Colors.white,
             appBarTheme:
-            AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
+                AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
             // Set the card theme:
             cardTheme: CardTheme(
               color: Colors.white,
@@ -169,36 +124,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_notificationClicked) {
-        // Prepare notification data as JSON string
-        final notificationJson = _initialNotificationData.isNotEmpty
-            ? jsonEncode({
-          'title': '',
-          'message': _initialNotificationData,
-          'image':
-          '', // Add image URL if available in initial notification
-          'name': '',
-          'time': DateTime.now().toIso8601String(),
-          'isRead': false,
-        })
-            : '';
-        if (notificationJson.isNotEmpty) {
-          final prefs = await SharedPreferences.getInstance();
-          final List<String> stored =
-              prefs.getStringList('notifications') ?? [];
-          stored.insert(0, notificationJson);
-          await prefs.setStringList('notifications', stored);
-          log('Notification added to shared preferences (from _notificationClicked):');
-          log(notificationJson);
-        }
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(builder: (context) => NotificationPage()),
-        );
-        _notificationClicked = false;
-        _initialNotificationData = '';
-      }
-    });
     return ConnectionNotifier(
       connectionNotificationOptions: const ConnectionNotificationOptions(
         alignment: AlignmentDirectional.topCenter,
@@ -223,7 +148,7 @@ class _MyAppState extends State<MyApp> {
           ),
           cardColor: Colors.white,
           appBarTheme:
-          AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
+              AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
           // Set the card theme:
           cardTheme: CardTheme(
             color: Colors.white,

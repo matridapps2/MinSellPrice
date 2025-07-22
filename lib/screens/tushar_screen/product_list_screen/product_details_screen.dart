@@ -1,25 +1,19 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:minsellprice/app.dart';
 import 'package:minsellprice/colors.dart' show AppColors;
 import 'package:minsellprice/screens/tushar_screen/dashboard_screen/dashboard_screen.dart';
-import 'package:minsellprice/model/product_list_model_new.dart'
+import 'package:minsellprice/screens/tushar_screen/model/product_list_model_new.dart'
     show ProductListModelNew, VendorProduct;
 import 'package:minsellprice/reposotory_services/network_reposotory.dart'
     show NetworkCalls;
-import 'package:minsellprice/screens/tushar_screen/comparison_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/comparison_screen/comparison_screen.dart';
 import 'package:minsellprice/screens/tushar_screen/model/product_details_model.dart';
 import 'package:minsellprice/screens/tushar_screen/service_new/comparison_db.dart';
-import 'package:minsellprice/services/extra_functions.dart'
-    show ColorExtension, getUniqueBrands;
 import 'package:minsellprice/screens/tushar_screen/service_new/liked_preference_db.dart';
 import 'package:minsellprice/size.dart';
-
-import 'model/brand_product_details_api_model.dart' as brand_api;
 
 class ProductDetailsScreen extends StatefulWidget {
   final int productId;
@@ -53,9 +47,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   List<ProductListModelNew> brandDetails = [];
   final ScrollController _scrollController = ScrollController();
   String loadingMessage = '';
-  List<brand_api.VendorProductData> vendorProductData = [];
+  List<VendorProductData> vendorProductData = [];
 
-  // Liked state variable
   bool isLiked = false;
   bool isInComparison = false;
   int comparisonCount = 0;
@@ -68,15 +61,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   void _initCall() async {
+    log('_initCall started');
     await _fetchProductDetails();
     await _fetchBrandProducts();
-    await _checkIfLiked(); // Check liked status after vendor data is fetched
-    await _checkIfInComparison(); // Check comparison status
+    await _checkIfLiked();
+    await _checkIfInComparison();
   }
 
   Future<void> _checkIfLiked() async {
     try {
-      // Get vendor_product_id from API response
       int? actualVendorProductId;
       if (vendorProductData.isNotEmpty) {
         final currentProduct = vendorProductData.firstWhere(
@@ -86,10 +79,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         actualVendorProductId = currentProduct.vendorProductId;
       }
 
-      // If we don't have the vendor_product_id from API, create a fallback
       actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
 
-      // Check if product is liked using the new database
       final isProductLiked = await LikedPreferencesDB.isProductLiked(
         vendorProductId: actualVendorProductId,
       );
@@ -108,7 +99,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Future<void> _checkIfInComparison() async {
     try {
-      // Get vendor_product_id from API response
       int? actualVendorProductId;
       if (vendorProductData.isNotEmpty) {
         final currentProduct = vendorProductData.firstWhere(
@@ -118,15 +108,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         actualVendorProductId = currentProduct.vendorProductId;
       }
 
-      // If we don't have the vendor_product_id from API, create a fallback
       actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
 
-      // Check if product is in comparison using the new database
       final isProductInComparison = await ComparisonDB.isInComparison(
         vendorProductId: actualVendorProductId,
       );
 
-      // Get current comparison count
       final currentComparisonCount = await ComparisonDB.getComparisonCount();
 
       if (mounted) {
@@ -145,7 +132,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Future<void> _toggleComparison() async {
     try {
-      // Get vendor_product_id from API response
       int? actualVendorProductId;
       if (vendorProductData.isNotEmpty) {
         final currentProduct = vendorProductData.firstWhere(
@@ -155,10 +141,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         actualVendorProductId = currentProduct.vendorProductId;
       }
 
-      // If we don't have the vendor_product_id from API, create a fallback
       actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
 
-      // Toggle comparison status using the new database
       final nowInComparison = await ComparisonDB.toggleComparison(
         productId: widget.productId,
         vendorProductId: actualVendorProductId,
@@ -169,17 +153,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         productPrice: widget.productPrice?.toString() ?? '0',
       );
 
-      // Update UI state
       if (mounted) {
         setState(() {
           isInComparison = nowInComparison;
         });
       }
 
-      // Refresh comparison count after toggle
       await _checkIfInComparison();
 
-      // Show feedback to user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -226,7 +207,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Future<void> _toggleLiked() async {
     try {
-      // Get vendor_product_id from API response
       int? actualVendorProductId;
       if (vendorProductData.isNotEmpty) {
         final currentProduct = vendorProductData.firstWhere(
@@ -236,10 +216,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         actualVendorProductId = currentProduct.vendorProductId;
       }
 
-      // If we don't have the vendor_product_id from API, create a fallback
       actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
 
-      // Toggle like status using the new database
       final nowLiked = await LikedPreferencesDB.toggleLikeProduct(
         productId: widget.productId,
         vendorProductId: actualVendorProductId,
@@ -250,14 +228,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         productPrice: widget.productPrice?.toString() ?? '0',
       );
 
-      // Update UI state
       if (mounted) {
         setState(() {
           isLiked = nowLiked;
         });
       }
 
-      // Show feedback to user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -305,10 +281,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       if (mounted) {
         setState(() {
           productDetails = details;
+          vendorProductData = details.vendorProductData ?? [];
         });
-        // Debug: Print the fetched data
         log('Single API Data is');
         log('${productDetails?.toJson()}');
+        log('Vendor Product Data count: ${vendorProductData.length}');
       }
     } catch (e) {
       if (mounted) {
@@ -370,19 +347,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ? filteredProducts.take(20).toList()
           : filteredProducts;
 
-      List<String> uniqueVendorsLocal = getUniqueBrands(limitedProducts);
-      uniqueVendorsLocal =
-          uniqueVendorsLocal.where((element1) => element1 != '--').toList();
-      List<String> tempList = [];
-      for (final vendor in uniqueVendorsLocal) {
-        tempList.add(
-            '$vendor Total Product(s): ${limitedProducts.where((element) => element.vendorName == vendor).toList().length} ');
-      }
+      // List<String> uniqueVendorsLocal = getUniqueBrands(limitedProducts);
+      // uniqueVendorsLocal =
+      //     uniqueVendorsLocal.where((element1) => element1 != '--').toList();
+      // List<String> tempList = [];
+      // for (final vendor in uniqueVendorsLocal) {
+      //   tempList.add(
+      //       '$vendor Total Product(s): ${limitedProducts.where((element) => element.vendorName == vendor).toList().length} ');
+      // }
 
       if (mounted) {
         setState(() {
           brandProducts = limitedProducts;
-          uniqueVendors = tempList;
+         // uniqueVendors = tempList;
           tempProductList = limitedProducts;
           finalList = limitedProducts;
           filterVendor = [];
@@ -432,7 +409,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             onRefresh: _refreshProductDetails,
             child: _buildBody(),
           ),
-          // Floating Comparison Bar
           if (comparisonCount > 0) _buildFloatingComparisonBar(),
         ],
       ),
@@ -517,8 +493,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           const SizedBox(height: 16),
           _buyAtDesign(),
           const SizedBox(height: 24),
-          _buildShippingInfo(),
-          const SizedBox(height: 16),
+          //_buildShippingInfo(),
+          //  const SizedBox(height: 16),
           _buildMoreName(),
           const SizedBox(height: 16),
           _buildMoreDesign(),
@@ -534,6 +510,40 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       children: [
         Text(data.productName ?? 'Product Name Not Available',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Brand: ${data.brandName ?? widget.brandName ?? 'Unknown'}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    'ID: #${data.productSku ?? widget.productMPN ?? 'Unknown'}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -1399,13 +1409,46 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   Widget _buyAtName() {
-    return Text(
-      'Buy At:',
-      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+    return Row(
+      children: [
+        Text(
+          'Buy At:',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 
   Widget _buyAtDesign() {
+    log('_buyAtDesign called with ${vendorProductData.length} vendor products');
+
+    if (vendorProductData.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'No vendor data available',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Vendor pricing information will appear here when available.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1414,6 +1457,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           controller: _scrollController,
           child: Row(
             children: vendorProductData.map((product) {
+              log('Rendering vendor: ${product.vendorName} with price: ${product.vendorpricePrice}');
               return Container(
                 width: 160,
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -1423,7 +1467,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      // Handle vendor selection
+                      log('Selected vendor: ${product.vendorName}');
+                    },
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Column(
@@ -1462,19 +1509,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 const Icon(
-                                  Icons.local_shipping,
-                                  size: 16,
+                                  Icons.local_shipping_outlined,
+                                  size: 20,
                                   color: Colors.grey,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
-                                  child: Text(
-                                    '\$${product.vendorpriceShipping ?? '--'}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  child: _buildShippingText(
+                                      product.vendorpriceShipping),
                                 ),
                               ],
                             ),
@@ -1499,46 +1541,44 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildVendorLogo(String vendorName) {
-    String logoPath;
-
-    switch (vendorName.toLowerCase()) {
-      case 'home depot':
-        logoPath = 'assets/vendor_logos/home_depot.png';
-        break;
-      case 'amazon.com':
-      case 'amazon':
-        logoPath = 'assets/vendor_logos/amazon.png';
-        break;
-      case 'lowe\'s':
-      case 'lowes':
-        logoPath = 'assets/vendor_logos/lowes.png';
-        break;
-      case 'wayfair':
-        logoPath = 'assets/vendor_logos/wayfair.png';
-        break;
-      case 'houzz':
-        logoPath = 'assets/vendor_logos/houzz.png';
-        break;
-      case 'home essentials direct':
-        logoPath = 'assets/vendor_logos/home_essentials_direct.png';
-        break;
-      case 'gosupps.com':
-        logoPath = 'assets/vendor_logos/gosupps.png';
-        break;
-      case 'supply online':
-        logoPath = 'assets/vendor_logos/supply_online.png';
-        break;
-      case 'wwcsupply.com':
-        logoPath = 'assets/vendor_logos/wwcsupply.png';
-        break;
-      default:
-        // For unknown vendors, try to create a logo URL or use a default
-        logoPath = 'assets/vendor_logos/default_vendor.png';
-        break;
+  Widget _buildShippingText(String? shippingValue) {
+    bool isFree = false;
+    if (shippingValue != null) {
+      final doubleValue = double.tryParse(shippingValue);
+      isFree = doubleValue == 0.0;
     }
 
-    return Image.asset(
+    if (isFree) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Text(
+          'FREE',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+          ),
+        ),
+      );
+    } else {
+      return Text(
+        '\$${shippingValue ?? '--'}',
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+  }
+
+  Widget _buildVendorLogo(String vendorName) {
+    String logoPath =
+        'https://growth.matridtech.net/vendor-logo/$vendorName.jpg';
+
+    return Image.network(
       logoPath,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) {
@@ -1559,6 +1599,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          padding: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: CircularProgressIndicator(
+            value: loadingProgress.expectedTotalBytes != null
+                ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                : null,
+            strokeWidth: 2,
           ),
         );
       },

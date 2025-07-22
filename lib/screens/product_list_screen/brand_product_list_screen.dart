@@ -1,21 +1,15 @@
 import 'dart:developer';
 import 'dart:convert';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:minsellprice/app.dart';
 import 'package:minsellprice/colors.dart' show AppColors;
-import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/screens/tushar_screen/model/product_list_model_new.dart';
 import 'package:minsellprice/reposotory_services/network_reposotory.dart';
-import 'package:minsellprice/screens/InAppBrowser.dart';
-import 'package:minsellprice/screens/tushar_screen/product_details_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/product_list_screen/product_details_screen.dart';
 import 'package:minsellprice/screens/widgets/custom_loader.dart';
-import 'package:minsellprice/screens/widgets/custom_view_button.dart';
-import 'package:minsellprice/services/extra_functions.dart';
 import 'package:minsellprice/screens/tushar_screen/service_new/filter_preferences_db.dart';
 import 'package:minsellprice/size.dart';
 import 'package:sqflite/sqflite.dart';
@@ -120,14 +114,14 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
       final List<VendorProduct> fetchedProducts =
           jsonList.map((e) => VendorProduct.fromJson(e)).toList();
 
-      List<String> uniqueVendorsLocal = getUniqueBrands(fetchedProducts);
-      uniqueVendorsLocal =
-          uniqueVendorsLocal.where((element1) => element1 != '--').toList();
-      List<String> tempList = [];
-      for (final vendor in uniqueVendorsLocal) {
-        tempList.add(
-            '$vendor Total Product(s): ${fetchedProducts.where((element) => element.vendorName == vendor).toList().length} ');
-      }
+      // List<String> uniqueVendorsLocal = getUniqueBrands(fetchedProducts);
+      // uniqueVendorsLocal =
+      //     uniqueVendorsLocal.where((element1) => element1 != '--').toList();
+      // List<String> tempList = [];
+      // for (final vendor in uniqueVendorsLocal) {
+      //   tempList.add(
+      //       '$vendor Total Product(s): ${fetchedProducts.where((element) => element.vendorName == vendor).toList().length} ');
+      // }
 
       int start = currentPage * itemsPerPage;
       int end = (start + itemsPerPage > fetchedProducts.length)
@@ -151,7 +145,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
 
       setState(() {
         brandProducts = fetchedProducts;
-        uniqueVendors = tempList;
+      //  uniqueVendors = tempList;
         tempProductList = fetchedProducts;
         maxPriceFromAPI = calculatedMaxPrice;
 
@@ -495,8 +489,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   TextOverflow
                                                                       .ellipsis,
                                                               style: TextStyle(
-                                                                  color: '#222223'
-                                                                      .toColor(),
+                                                                 // color: '#222223'.toColor(),
                                                                   fontFamily:
                                                                       'Myriad Arabic',
                                                                   fontSize:

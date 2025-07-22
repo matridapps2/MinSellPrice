@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:minsellprice/colors.dart';
 import 'package:minsellprice/screens/tushar_screen/service_new/comparison_db.dart';
-import 'package:minsellprice/screens/tushar_screen/product_details_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/product_list_screen/product_details_screen.dart';
 
 /**
  * ComparisonScreen - Displays products side-by-side for comparison

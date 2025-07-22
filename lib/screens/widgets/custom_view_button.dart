@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:minsellprice/app.dart';
 import 'package:minsellprice/colors.dart';
-import 'package:minsellprice/services/extra_functions.dart';
 import 'package:minsellprice/size.dart';
 
 class BuyAtButton extends StatelessWidget {

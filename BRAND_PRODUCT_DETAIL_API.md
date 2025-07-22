@@ -158,4 +158,4 @@ Potential improvements:
 - Pagination for large vendor lists
 - Filtering and sorting options
 - Real-time price updates
-- Push notifications for price changes 
+ 

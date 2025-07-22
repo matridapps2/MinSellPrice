@@ -23,7 +23,7 @@ A comprehensive Flutter-based e-commerce platform that provides a seamless shopp
   - In-app messaging
 - 💾 Local SQLite database
 - 🔄 Background data synchronization
-- 📱 Push notifications
+
 - 🌐 Offline support
 - 🔒 Secure data storage
 

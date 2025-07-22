@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:minsellprice/screens/tushar_screen/product_details_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/product_list_screen/product_details_screen.dart';
 import 'package:minsellprice/screens/tushar_screen/service_new/liked_preference_db.dart';
 import 'package:sqflite/sqflite.dart';
-
-import '../widgets/liked_product_list_item/liked_item.dart';
 
 class LikedProduct extends StatefulWidget {
   const LikedProduct({super.key, required this.database});

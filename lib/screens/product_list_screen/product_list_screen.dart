@@ -18,7 +18,7 @@
 // import 'package:minsellprice/screens/product_list_screen/utils/product_list_screen_api_handler.dart';
 // import 'package:minsellprice/screens/widgets/custom_view_button.dart';
 // import 'package:minsellprice/screens/widgets/product_screen_2.dart';
-// import 'package:minsellprice/services/extra_functions.dart';
+// 
 // import 'package:minsellprice/size.dart';
 // import 'package:sqflite/sqflite.dart';
 //

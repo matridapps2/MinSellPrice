@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:minsellprice/screens/tushar_screen/liked_product_screen.dart';
+import 'package:minsellprice/screens/tushar_screen/liked_product_screen/liked_product_screen.dart';
 import 'package:minsellprice/screens/tushar_screen/loging_page/loging_page.dart';
 import 'package:minsellprice/screens/tushar_screen/register_page/register_page.dart';
 import 'package:minsellprice/screens/tushar_screen/privacy_policy_screen.dart';
@@ -241,8 +241,6 @@ class _AccountScreenState extends State<AccountScreen> {
               _orderCartOption(Icons.location_on_outlined, 'Track Order'),
               _orderCartOption(Icons.shopping_cart_outlined, 'View Cart'),
               _orderCartOption(Icons.favorite_border, 'My Wishlist'),
-              _orderCartOption(
-                  Icons.notifications_none_outlined, 'Notification'),
               const SizedBox(height: 24),
               const Text(
                 'SUPPORT & INFO',
