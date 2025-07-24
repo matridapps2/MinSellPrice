@@ -1,22 +1,24 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:connection_notifier/connection_notifier.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
+import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
 import 'package:permission_handler/permission_handler.dart';
-
-import 'package:minsellprice/screens/tushar_screen/dashboard_screen/dashboard_screen.dart';
-import 'package:minsellprice/screens/widgets/bridge_class/bridge_class.dart';
 import 'package:minsellprice/services/background_service.dart';
-import 'package:minsellprice/firebase_options.dart';
+import 'package:minsellprice/services/notification_service.dart';
+import 'package:minsellprice/core/utils/firebase/firebase_options.dart';
 import 'package:provider/provider.dart';
-import 'auth_provider.dart' as my_auth;
+import 'core/utils/firebase/auth_provider.dart' as my_auth;
 
-import 'colors.dart';
+import 'core/utils/constants/colors.dart';
 
 const Color primaryColor = AppColors.primary;
 
@@ -26,12 +28,24 @@ Future<void> permission() async {
   }
 }
 
+// Firebase messaging background handler
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  log('Handling a background message: ${message.messageId}');
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
       options: Platform.isAndroid
           ? DefaultFirebaseOptions.android
           : DefaultFirebaseOptions.ios);
+
+  // Setup Firebase messaging
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Initialize notification service
+  await NotificationService().initialize();
 
   FlutterBackgroundService().invoke("setAsBackground");
   await initializeService();
@@ -112,61 +126,6 @@ void main() async {
       ),
     ),
   );
-}
-
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  @override
-  Widget build(BuildContext context) {
-    return ConnectionNotifier(
-      connectionNotificationOptions: const ConnectionNotificationOptions(
-        alignment: AlignmentDirectional.topCenter,
-      ),
-      child: MaterialApp(
-        navigatorKey: navigatorKey,
-        title: 'MinSellPrice',
-        debugShowMaterialGrid: false,
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          fontFamily: 'Segoe UI',
-          primarySwatch: MaterialColor(_d90310, colorCodes),
-          useMaterial3: true,
-          // Disable Material 3 if needed
-          // Customize other theme properties as desired
-          // For example, you can set the primary color:
-          primaryColor: Colors.white,
-          // Or adjust the text selection theme:
-          textSelectionTheme: const TextSelectionThemeData(
-            selectionColor: Colors.blue,
-            cursorColor: Colors.blue,
-          ),
-          cardColor: Colors.white,
-          appBarTheme:
-              AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
-          // Set the card theme:
-          cardTheme: CardTheme(
-            color: Colors.white,
-            margin: const EdgeInsets.all(2),
-            // Set the desired card color
-            elevation: 4, // Adjust elevation if needed
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8), // Customize card shape
-            ),
-          ),
-        ),
-        home: const SafeArea(
-          top: true,
-          child: BridgeClass(),
-        ),
-      ),
-    );
-  }
 }
 
 const int _d90310 = 0xFFd90310;

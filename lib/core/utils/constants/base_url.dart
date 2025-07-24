@@ -1,0 +1,1 @@
+const brandUrl = 'https://www.minsellprice.com/api';

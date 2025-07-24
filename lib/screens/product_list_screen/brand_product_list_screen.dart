@@ -5,13 +5,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:minsellprice/colors.dart' show AppColors;
-import 'package:minsellprice/screens/tushar_screen/model/product_list_model_new.dart';
-import 'package:minsellprice/reposotory_services/network_reposotory.dart';
-import 'package:minsellprice/screens/tushar_screen/product_list_screen/product_details_screen.dart';
-import 'package:minsellprice/screens/widgets/custom_loader.dart';
-import 'package:minsellprice/screens/tushar_screen/service_new/filter_preferences_db.dart';
-import 'package:minsellprice/size.dart';
+import 'package:minsellprice/core/apis/apis_calls.dart';
+import 'package:minsellprice/core/utils/constants/colors.dart';
+import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
+import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
+import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/service_new/filter_preferences_db.dart';
 import 'package:sqflite/sqflite.dart';
 
 class BrandProductListScreen extends StatefulWidget {
@@ -104,7 +104,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   Future<void> _fetchBrandProducts() async {
     setState(() => _isLoading = true);
     try {
-      final allProductsResponse = await NetworkCalls()
+      final allProductsResponse = await BrandsApi
           .getProductListByBrandName(
               widget.brandName.toString(), currentPage + 1);
       final Map<String, dynamic> decoded =
@@ -145,7 +145,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
 
       setState(() {
         brandProducts = fetchedProducts;
-      //  uniqueVendors = tempList;
+        //  uniqueVendors = tempList;
         tempProductList = fetchedProducts;
         maxPriceFromAPI = calculatedMaxPrice;
 
@@ -206,11 +206,16 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                 ),
                 body: Align(
                   alignment: Alignment.center,
-                  child: CustomLoader(
-                      vendorName: '',
-                      imageString:
-                          'https://www.minsellprice.com/Brand-logo-images/${widget.brandName.toString().replaceAll(' ', '-').toLowerCase()}.png',
-                      isAssetImage: true),
+                  child: BrandImageWidget(
+                    brand: {
+                      'brand_name': widget.brandName,
+                      'brand_key':
+                          widget.brandName, // Use original brand name as key
+                      'brand_id': widget.brandId,
+                    },
+                    width: 150,
+                    height: 115,
+                  ),
                 ),
               )
             : _isError
@@ -447,7 +452,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         Center(
                                                             child:
                                                                 Image.network(
-                                                          '${finalList[index].productImage}',
+                                                          _getProperImageUrl(
+                                                              finalList[index]
+                                                                  .productImage),
                                                           height: w * .3,
                                                           fit: BoxFit.cover,
                                                           errorBuilder:
@@ -489,7 +496,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   TextOverflow
                                                                       .ellipsis,
                                                               style: TextStyle(
-                                                                 // color: '#222223'.toColor(),
+                                                                  // color: '#222223'.toColor(),
                                                                   fontFamily:
                                                                       'Myriad Arabic',
                                                                   fontSize:
@@ -874,6 +881,26 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
     } catch (e) {
       log('Error saving filter preferences: $e');
     }
+  }
+
+  // Helper method to fix image URLs from API
+  String _getProperImageUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return 'https://www.minsellprice.com/assets/no_image/no_image.jpg';
+    }
+
+    // If URL starts with //, add https:
+    if (imageUrl.startsWith('//')) {
+      return 'https:$imageUrl';
+    }
+
+    // If URL doesn't start with http/https, add https://
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      return 'https://$imageUrl';
+    }
+
+    // Return as is if it's already a proper URL
+    return imageUrl;
   }
 }
 

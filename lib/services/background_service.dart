@@ -107,9 +107,9 @@ class _BackgroundServiceClassState extends State<BackgroundServiceClass> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+        appBar: AppBar(
         title: const Text('Service'),
-      ),
+        ),
       body: Center(
         child: Column(
           children: [
