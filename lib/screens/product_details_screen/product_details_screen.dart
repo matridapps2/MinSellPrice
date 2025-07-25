@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:minsellprice/InAppBrowser.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/app.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
@@ -203,7 +205,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       final success = await NotificationService().subscribeToPriceAlert(
         productId: widget.productId.toString(),
         priceThreshold: threshold,
-        currentPrice: currentPrice, // Pass real current price
+        currentPrice: currentPrice,
+        // Pass real current price
         productName: widget.brandName,
         productImage: widget.productImage?.toString() ?? '',
         productMpn: widget.productMPN,
@@ -496,10 +499,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       });
 
       final details = await BrandsApi.getProductDetails(
-        brandName: widget.brandName,
-        productMPN: widget.productMPN,
-        productId: widget.productId,
-      );
+          brandName: widget.brandName,
+          productMPN: widget.productMPN,
+          productId: widget.productId,
+          context: context);
 
       if (mounted) {
         setState(() {
@@ -538,8 +541,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           });
         }
 
-        final allProductsResponse = await BrandsApi
-            .getProductListByBrandName(widget.brandName.toString(), pageNumber);
+        final allProductsResponse = await BrandsApi.getProductListByBrandName(
+            widget.brandName.toString(), pageNumber, context);
         final Map<String, dynamic> decoded =
             jsonDecode(allProductsResponse ?? '{}');
 
@@ -626,6 +629,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           )
         ],
       ),
+      bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom != 0.0
+          ? const SizedBox()
+          : Container(
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withValues(alpha: 2),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+            ),
       body: Stack(
         children: [
           RefreshIndicator(
@@ -702,20 +721,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           const SizedBox(height: 16),
           _buildProductHeader(),
           const SizedBox(height: 16),
-          _buildProductActionsBar(),
+          _buyAtName(),
           const SizedBox(height: 16),
-          _buildProductDetails(),
-          const SizedBox(height: 16),
-          _buildPriceAndRating(),
+          _buyAtDesign(),
+          const SizedBox(height: 24),
+          // const SizedBox(height: 16),
+          // _buildProductDetails(),
+          // const SizedBox(height: 16),
+          // _buildPriceAndRating(),
           const SizedBox(height: 16),
           _buildSubscribeButton(),
           const SizedBox(height: 24),
           _buildSpecifications(),
           const SizedBox(height: 16),
-          _buyAtName(),
-          const SizedBox(height: 16),
-          _buyAtDesign(),
-          const SizedBox(height: 24),
+          _buildProductActionsBar(),
           //_buildShippingInfo(),
           //  const SizedBox(height: 16),
           _buildMoreName(),
@@ -729,43 +748,51 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Widget _buildProductHeader() {
     final data = productDetails!.data!;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Text(data.productName ?? 'Product Name Not Available',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
+        const SizedBox(height: 0),
         Container(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Brand: ${data.brandName ?? widget.brandName ?? 'Unknown'}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
+          padding: const EdgeInsets.only(left: 12, right: 12),
+          child: Row(children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Brand: ${data.brandName ?? widget.brandName}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Text(
-                    'ID: #${data.productSku ?? widget.productMPN ?? 'Unknown'}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      'ID: #${data.productSku ?? widget.productMPN}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                ),
+              ],
+            ),
+            Spacer(),
+            Column(
+              children: [
+                _buildProductDetails(),
+              ],
+            )
+          ]),
         ),
       ],
     );
@@ -773,94 +800,353 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Widget _buildProductImages() {
     final apiImages = productDetails!.data!.images;
-    final productName = productDetails!.data!.productName ?? '';
     final fallbackImage = widget.productImage;
 
     if (apiImages != null && apiImages.isNotEmpty) {
-      return SizedBox(
-        height: 200,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: apiImages.length,
-          itemBuilder: (context, index) {
-            return Stack(
-              alignment: Alignment.bottomLeft,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      apiImages[index],
-                      width: 200,
-                      height: 200,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 200,
-                          height: 200,
-                          color: Colors.grey[200],
-                          child: const Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+      return Column(
+        children: [
+          // Main image carousel
+          Container(
+            height: 280,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 2,
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
-            );
-          },
-        ),
-      );
-    }
-
-    if (fallbackImage != null && fallbackImage.toString().isNotEmpty) {
-      return Stack(
-        alignment: Alignment.bottomLeft,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              fallbackImage,
-              width: double.infinity,
-              height: w * .5,
-              fit: BoxFit.fitHeight,
-              errorBuilder: (context, error, stackTrace) {
+            ),
+            child: PageView.builder(
+              itemCount: apiImages.length,
+              itemBuilder: (context, index) {
                 return Container(
-                  width: double.infinity,
-                  height: 200,
-                  color: Colors.grey[200],
-                  child: const Icon(
-                    Icons.broken_image,
-                    color: Colors.grey,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      children: [
+                        // Main product image
+                        Image.network(
+                          apiImages[index],
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.broken_image,
+                                    size: 48,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Image not available',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        // Zoom button overlay
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.zoom_in,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                _showImageFullScreen(apiImages[index]);
+                              },
+                            ),
+                          ),
+                        ),
+                        // Image counter overlay
+                        Positioned(
+                          bottom: 12,
+                          right: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${index + 1}/${apiImages.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           ),
+          const SizedBox(height: 16),
+          // Image indicators
+          if (apiImages.length > 1)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                apiImages.length,
+                (index) => Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: index == 0 ? AppColors.primary : Colors.grey[300],
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 8),
+          // Thumbnail strip
+          if (apiImages.length > 1)
+            SizedBox(
+              height: 80,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: apiImages.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: index == 0
+                                ? AppColors.primary
+                                : Colors.grey[300]!,
+                            width: index == 0 ? 2 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Image.network(
+                          apiImages[index],
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 80,
+                              height: 80,
+                              color: Colors.grey[200],
+                              child: Icon(
+                                Icons.broken_image,
+                                color: Colors.grey[400],
+                                size: 24,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
         ],
       );
     }
 
-    return Stack(
-      alignment: Alignment.bottomLeft,
-      children: [
-        Container(
-          height: 200,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(
-            Icons.image_not_supported,
-            size: 64,
-            color: Colors.grey,
+    if (fallbackImage != null && fallbackImage.toString().isNotEmpty) {
+      return Container(
+        height: 280,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 2,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              Image.network(
+                fallbackImage,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Image not available',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              // Zoom button overlay
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.zoom_in,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _showImageFullScreen(fallbackImage);
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      );
+    }
+
+    return Container(
+      height: 280,
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No image available',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Product image will appear here',
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImageFullScreen(String imageUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+            elevation: 0,
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[900],
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Image not available',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1580,7 +1866,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               product.productImage ?? '',
                               height: 80,
                               width: double.infinity,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.fill,
                               errorBuilder: (context, error, stackTrace) =>
                                   Image.asset('assets/no_image/no_image.jpg',
                                       height: 80, fit: BoxFit.cover),
@@ -1692,9 +1978,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: InkWell(
-                    onTap: () {
-                      // Handle vendor selection
+                    onTap: () async {
                       log('Selected vendor: ${product.vendorName}');
+                      await MyInAppBrowser().openUrlRequest(
+                        urlRequest: URLRequest(
+                          url: WebUri(
+                            '${product.vendorUrl}',
+                          ),
+                        ),
+                      );
+                      log('vendor URL: ${product.vendorUrl}');
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),

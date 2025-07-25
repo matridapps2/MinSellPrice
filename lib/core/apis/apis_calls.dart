@@ -2,22 +2,25 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:minsellprice/core/utils/constants/base_url.dart';
 import 'package:minsellprice/model/product_details_model.dart';
 import 'package:retry/retry.dart';
 
+import 'api_utility_methods.dart';
+
 class BrandsApi {
   BrandsApi._();
 
-  static Future<Map<String, List<dynamic>>> fetchBrands() async {
+  static Future<Map<String, List<dynamic>>> fetchBrands(
+      BuildContext context) async {
     try {
       log('Fetching brands from API');
-      final response = await http
-          .get(
-            Uri.parse('$brandUrl/minsell-brand'),
-          );
+      final response = await http.get(
+        Uri.parse('$brandUrl/minsell-brand'),
+      );
       log('Fetching brands from API2');
       log('Brand API: $brandUrl/minsell-brand');
 
@@ -42,12 +45,16 @@ class BrandsApi {
       }
     } catch (e) {
       log("Exception In Brand API: ${e.toString()}");
-      throw Exception('Error fetching brands: $e');
+      onExceptionResponse(context: context, exception: e.toString());
+      return {
+        "Home & Garden Brands": [],
+        "Shoes & Apparels": [],
+      };
     }
   }
 
   static Future<String?> getProductListByBrandName(
-      String brandName, int pageNumber) async {
+      String brandName, int pageNumber,BuildContext context) async {
     try {
       String uri = '$brandUrl/brands/$brandName?page_no=$pageNumber';
 
@@ -74,6 +81,7 @@ class BrandsApi {
       }
     } catch (e) {
       log('Exception: ${e.toString()}');
+      onExceptionResponse(context: context, exception: e.toString());
       return null;
     }
   }
@@ -82,6 +90,7 @@ class BrandsApi {
     required String brandName,
     required String productMPN,
     required int productId,
+    required BuildContext context
   }) async {
     log('Product API running');
     log('Parameters - brandName: $brandName, productMPN: $productMPN, productId: $productId');
@@ -120,6 +129,7 @@ class BrandsApi {
       }
     } catch (e) {
       log('Error in getProductDetails: $e');
+      onExceptionResponse(context: context, exception: e.toString());
       throw Exception('Error fetching product details: $e');
     }
   }

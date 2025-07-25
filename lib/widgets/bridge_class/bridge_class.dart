@@ -1,9 +1,7 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 import 'package:minsellprice/screens/spalsh_screen/splash_screen.dart';
-
-import '../../../reposotory_services/database/database_constants.dart';
+import 'package:minsellprice/core/utils/constants/colors.dart';
 
 class BridgeClass extends StatefulWidget {
   const BridgeClass({super.key});
@@ -19,42 +17,53 @@ class BridgeClass extends StatefulWidget {
 
 class _BridgeClassState extends State<BridgeClass> {
   UniqueKey key = UniqueKey();
+  bool _showSplash = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeDatabase();
+    // Show splash screen after minimal delay to prevent white screen
+    Future.delayed(const Duration(milliseconds: 10), () {
+      if (mounted) {
+        setState(() {
+          _showSplash = true;
+        });
+      }
+    });
   }
 
   void restartApp() {
     setState(() => key = UniqueKey());
   }
 
-  // Removed _showWhiteScreen variable since we always show splash screen
-
-  Future<void> _initializeDatabase() async {
-    try {
-      final database = await DatabaseHelper().database;
-      if (database == null) {
-        throw Exception('Database initialization failed');
-      }
-
-      log('Database initialized successfully in BridgeClass');
-      // No need to switch screens since we start with splash screen
-    } catch (e) {
-      // Handle database initialization error
-      log('Database initialization error in BridgeClass: $e');
-      // Even if database fails, we still show splash screen
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return KeyedSubtree(
       key: key,
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        body: const SplashScreen(), // Always show splash screen immediately
+      child:
+          _showSplash ? const SplashScreen() : _buildImmediateLoadingScreen(),
+    );
+  }
+
+  Widget _buildImmediateLoadingScreen() {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary,
+              AppColors.primary.withOpacity(0.8),
+              AppColors.primary.withOpacity(0.6),
+            ],
+          ),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        ),
       ),
     );
   }

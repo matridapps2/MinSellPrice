@@ -96,6 +96,7 @@ dependencies:
   motion_toast: ^2.13.0
   image_network: ^2.6.0
   firebase_database: ^11.3.6
+  logger: ^2.2.0
 
 dev_dependencies:
 #  flutter_test:

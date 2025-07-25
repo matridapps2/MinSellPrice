@@ -34,51 +34,43 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   log('Handling a background message: ${message.messageId}');
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-      options: Platform.isAndroid
-          ? DefaultFirebaseOptions.android
-          : DefaultFirebaseOptions.ios);
+// Immediate loading screen to prevent white screen
+class ImmediateLoadingScreen extends StatelessWidget {
+  const ImmediateLoadingScreen({super.key});
 
-  // Setup Firebase messaging
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Initialize notification service
-  await NotificationService().initialize();
-
-  FlutterBackgroundService().invoke("setAsBackground");
-  await initializeService();
-  GestureBinding.instance.resamplingEnabled = true;
-
-  if (Platform.isAndroid) {
-    await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
-
-    var swAvailable = await AndroidWebViewFeature.isFeatureSupported(
-        AndroidWebViewFeature.SERVICE_WORKER_BASIC_USAGE);
-    var swInterceptAvailable = await AndroidWebViewFeature.isFeatureSupported(
-        AndroidWebViewFeature.SERVICE_WORKER_SHOULD_INTERCEPT_REQUEST);
-
-    if (swAvailable && swInterceptAvailable) {
-      AndroidServiceWorkerController serviceWorkerController =
-          AndroidServiceWorkerController.instance();
-
-      await serviceWorkerController
-          .setServiceWorkerClient(AndroidServiceWorkerClient(
-        shouldInterceptRequest: (request) async {
-          if (kDebugMode) {
-            print(request);
-          }
-          return null;
-        },
-      ));
-    }
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.primary,
+                AppColors.primary.withOpacity(0.8),
+                AppColors.primary.withOpacity(0.6),
+              ],
+            ),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+        ),
+      ),
+    );
   }
+}
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+void main() async {
+  // Minimal initialization - only what's absolutely necessary
+  WidgetsFlutterBinding.ensureInitialized();
 
+  // Run the app immediately with loading screen - no delays
   runApp(
     ChangeNotifierProvider(
       create: (_) => my_auth.AuthProvider(),
@@ -95,11 +87,7 @@ void main() async {
             fontFamily: 'Segoe UI',
             primarySwatch: MaterialColor(_d90310, colorCodes),
             useMaterial3: true,
-            // Disable Material 3 if needed
-            // Customize other theme properties as desired
-            // For example, you can set the primary color:
             primaryColor: Colors.white,
-            // Or adjust the text selection theme:
             textSelectionTheme: const TextSelectionThemeData(
               selectionColor: Colors.blue,
               cursorColor: Colors.blue,
@@ -107,14 +95,12 @@ void main() async {
             cardColor: Colors.white,
             appBarTheme:
                 AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
-            // Set the card theme:
             cardTheme: CardTheme(
               color: Colors.white,
               margin: const EdgeInsets.all(2),
-              // Set the desired card color
-              elevation: 4, // Adjust elevation if needed
+              elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8), // Customize card shape
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
@@ -126,6 +112,67 @@ void main() async {
       ),
     ),
   );
+
+  // Initialize everything in background after app is running
+  _initializeEverythingInBackground();
+}
+
+// Initialize everything in background
+Future<void> _initializeEverythingInBackground() async {
+  try {
+    // Set orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+
+    // Initialize Firebase
+    await Firebase.initializeApp(
+        options: Platform.isAndroid
+            ? DefaultFirebaseOptions.android
+            : DefaultFirebaseOptions.ios);
+
+    // Setup Firebase messaging background handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Initialize notification service
+    await NotificationService().initialize();
+
+    // Initialize background service
+    FlutterBackgroundService().invoke("setAsBackground");
+    await initializeService();
+
+    // Set gesture binding
+    GestureBinding.instance.resamplingEnabled = true;
+
+    // Android-specific initializations
+    if (Platform.isAndroid) {
+      await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
+
+      var swAvailable = await AndroidWebViewFeature.isFeatureSupported(
+          AndroidWebViewFeature.SERVICE_WORKER_BASIC_USAGE);
+      var swInterceptAvailable = await AndroidWebViewFeature.isFeatureSupported(
+          AndroidWebViewFeature.SERVICE_WORKER_SHOULD_INTERCEPT_REQUEST);
+
+      if (swAvailable && swInterceptAvailable) {
+        AndroidServiceWorkerController serviceWorkerController =
+            AndroidServiceWorkerController.instance();
+
+        await serviceWorkerController
+            .setServiceWorkerClient(AndroidServiceWorkerClient(
+          shouldInterceptRequest: (request) async {
+            if (kDebugMode) {
+              print(request);
+            }
+            return null;
+          },
+        ));
+      }
+    }
+
+    log('All services initialized successfully in background');
+  } catch (e) {
+    log('Background service initialization error: $e');
+  }
 }
 
 const int _d90310 = 0xFFd90310;

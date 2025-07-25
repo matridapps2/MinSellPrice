@@ -67,6 +67,37 @@ class _DashboardScreenState extends State<DashboardScreen>
       )
     ];
     super.initState();
+    _initializeDatabase();
+  }
+
+  void _initializeDatabase() async {
+    try {
+      final db = await DatabaseHelper().database ??
+          await DatabaseHelper().initDatabase();
+      if (mounted) {
+        setState(() {
+          database = db;
+          _screens = [
+            ChangeNotifierProvider(
+              create: (context) {
+                final provider = BrandsProvider();
+                provider.fetchBrands();
+                return provider;
+              },
+              child: DashboardScreenWidget(
+                database: db,
+                vendorId: '${AppInfo.kVendorId}',
+              ),
+            ),
+            LikedProduct(database: db),
+            CategoriesScreen(database: db, vendorId: vendorId),
+            AccountScreen(),
+          ];
+        });
+      }
+    } catch (e) {
+      log('Dashboard database initialization error: $e');
+    }
   }
 
   @override
@@ -85,135 +116,78 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    return SafeArea(
-      top: true,
-      child: WillPopScope(
-        onWillPop: () async {
-          if (_activeIndex != 0) {
-            setState(() {
-              _activeIndex = 0;
-            });
-            Fluttertoast.showToast(
-              msg: 'Press back again to exit',
-              toastLength: Toast.LENGTH_LONG,
-              gravity: ToastGravity.CENTER,
-            );
-            return false;
-          } else {
-            return true;
-          }
-        },
-        child: FutureBuilder<Database>(
-          future: DatabaseHelper().initDatabase(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (snapshot.hasData) {
-              database = snapshot.data!;
-              _screens = [
-                ChangeNotifierProvider(
-                  create: (context) {
-                    final provider = BrandsProvider();
-                    provider.fetchBrands();
-                    return provider;
-                  },
-                  child: DashboardScreenWidget(
-                    database: database,
-                    vendorId: '${AppInfo.kVendorId}',
-                  ),
-                ),
-                LikedProduct(
-                  database: database,
-                ),
-                CategoriesScreen(
-                  database: database,
-                  vendorId: vendorId,
-                ),
-                AccountScreen(
-                  database: database,
-                )
-              ];
-              return GestureDetector(
-                onTap: () {
-                  FocusScopeNode currentFocus = FocusScope.of(context);
-                  currentFocus.unfocus();
-                },
-                child: SafeArea(
-                  child: Scaffold(
-                    key: scaffoldKey,
-                    extendBody: true,
-                    resizeToAvoidBottomInset: false,
-                    appBar: AppBar(
-                      surfaceTintColor: Colors.white,
-                      toolbarHeight: .18 * w,
-                      centerTitle: true,
-                      title: Image.asset(
-                        // 'assets/logo.png',
-                        'assets/minsellprice_logo.png',
-                        height: .2 * w,
-                      ),
-                      actionsPadding: EdgeInsets.only(right: 15),
-                      actions: const [
-                        Icon(
-                          Icons.shopping_cart,
-                          size: 35,
-                          color: AppColors.primary,
-                        )
-                      ],
-                      shape: Border.all(color: AppColors.primary, width: 0),
-                    ),
-                    bottomNavigationBar: MediaQuery.of(context)
-                                .viewInsets
-                                .bottom !=
-                            0.0
-                        ? const SizedBox()
-                        : SalomonBottomBar(
-                            backgroundColor: Colors.white,
-                            currentIndex: _activeIndex,
-                            onTap: (i) => setState(() => _activeIndex = i),
-                            items: [
-                              /// Home
-                              SalomonBottomBarItem(
-                                icon: const Icon(Icons.home),
-                                title: const Text("Home"),
-                                selectedColor: AppColors.primary,
-                              ),
+    if (database == null || _screens.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-                              /// Likes
-                              SalomonBottomBarItem(
-                                icon: const Icon(Icons.favorite_border),
-                                title: const Text("Likes"),
-                                selectedColor: AppColors.primary,
-                              ),
-
-                              // /// Search
-                              SalomonBottomBarItem(
-                                icon: const Icon(Icons.category),
-                                title: const Text("Categories"),
-                                selectedColor: AppColors.primary,
-                              ),
-
-                              /// account
-                              SalomonBottomBarItem(
-                                icon: const Icon(Icons.account_circle_rounded),
-                                title: const Text("Account"),
-                                selectedColor: AppColors.primary,
-                              ),
-                            ],
-                          ),
-                    body: _screens[_activeIndex],
-                  ),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        key: scaffoldKey,
+        extendBody: true,
+        resizeToAvoidBottomInset: false,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          toolbarHeight: 80,
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.show_chart,
+                color: AppColors.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'MinSellPrice',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Segoe UI',
                 ),
-              );
-            } else {
-              Fluttertoast.showToast(msg: 'Database not init');
-              return const Center(child: Text('Database not initialized'));
-            }
-          },
+              ),
+            ],
+          ),
+          actionsPadding: const EdgeInsets.only(right: 15),
+          actions: const [
+            Icon(Icons.shopping_cart, size: 35, color: AppColors.primary),
+          ],
         ),
+        bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom != 0.0
+            ? const SizedBox()
+            : SalomonBottomBar(
+                backgroundColor: Colors.white,
+                currentIndex: _activeIndex,
+                onTap: (i) => setState(() => _activeIndex = i),
+                items: [
+                  SalomonBottomBarItem(
+                    icon: const Icon(Icons.home),
+                    title: const Text("Home"),
+                    selectedColor: AppColors.primary,
+                  ),
+                  SalomonBottomBarItem(
+                    icon: const Icon(Icons.favorite_border),
+                    title: const Text("Likes"),
+                    selectedColor: AppColors.primary,
+                  ),
+                  SalomonBottomBarItem(
+                    icon: const Icon(Icons.category),
+                    title: const Text("Categories"),
+                    selectedColor: AppColors.primary,
+                  ),
+                  SalomonBottomBarItem(
+                    icon: const Icon(Icons.account_circle_rounded),
+                    title: const Text("Account"),
+                    selectedColor: AppColors.primary,
+                  ),
+                ],
+              ),
+        body: _screens[_activeIndex],
       ),
     );
   }
@@ -250,7 +224,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         Positioned(
           bottom: 0,
           child: ClipPath(
-            clipper: NavBarClipper(),
+            //  clipper: NavBarClipper(),
             child: Container(
               height: 50,
               width: w,
@@ -385,952 +359,6 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   }
 }
 
-@override
-// TODO: implement wantKeepAlive
-bool get wantKeepAlive => true;
-
-class BrandSlider extends StatelessWidget {
-  BrandSlider(
-      {Key? key,
-      required this.data,
-      required this.vendorId,
-      required this.database})
-      : super(key: key);
-  final String vendorId;
-  Map<String, dynamic> data;
-  List<Map<String, dynamic>> list = [];
-  final Database database;
-
-  @override
-  Widget build(BuildContext context) {
-    data.forEach((key, value) {
-      Map<String, dynamic> brand = {"brandName": key, ...value};
-      list.add(brand);
-    });
-
-    return Row(
-      children: List.generate(
-        list.length,
-        (index) => buildPadding(index, context, vendorId, list, database),
-      ),
-    );
-  }
-}
-
-Widget buildPadding(int index, BuildContext context, String vendorId,
-    List<Map<String, dynamic>> list, Database database) {
-  // List<int> temp = [];
-  // temp.add(list[index]['lower more than 15%']);
-  //
-  // temp.add(list[index]['lower from 5% - 15%']);
-  // temp.add(list[index]['lower upto 5%']);
-  // temp.add(list[index]['higher upto 5%']);
-  // temp.add(list[index]['higher from 5% - 15%']);
-  // temp.add(list[index]['higher more than 15%']);
-  //
-  // List<int> orderedList = temp;
-
-  return AspectRatio(
-    aspectRatio: .66,
-    child: SizedBox(
-      width: w,
-      // height: .52 * h,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        child: Card(
-          color: Colors.white,
-          elevation: 4,
-          child: Container(
-            decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(8)),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CachedNetworkImage(
-                        imageUrl:
-                            'http://growth.matridtech.net/${list[index]['Image']}',
-                        height: .13 * w,
-                        width: .6 * w,
-                        placeholder: (context, url) => Center(
-                          child: Lottie.asset(
-                            'assets/lottie_animations/loading_bar.json',
-                            repeat: true,
-                            animate: true,
-                            width: 50,
-                            height: 50,
-                            frameRate: FrameRate(
-                              60,
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.error),
-                        // fit: BoxFit.fill,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: AutoSizeText(
-                          'Total Products: ${list[index]['total_products'].toString().toUpperCase()}',
-                          maxLines: 1,
-                          style: GoogleFonts.montserrat(
-                            fontSize: w * 0.045,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  width: w,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      SizedBox(
-                        width: w * .41,
-                      ),
-                      Card(
-                        color: Colors.white,
-                        child: Container(
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 16.0, horizontal: 8),
-                            child: AutoSizeText(
-                              'Map',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.montserrat(
-                                fontSize: w * .035,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Card(
-                        color: Colors.white,
-                        child: Container(
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 4.0, horizontal: 8),
-                            child: AutoSizeText(
-                              'Map\nExempt',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.montserrat(
-                                fontSize: w * .035,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Card(
-                        color: Colors.white,
-                        child: Container(
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 16.0, horizontal: 8),
-                            child: AutoSizeText(
-                              'Other',
-                              style: GoogleFonts.montserrat(
-                                fontSize: w * .035,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4),
-                  child: GestureDetector(
-                    onTap: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => ContentScreen(
-                      //       loadingString: 'Very Low 15%',
-                      //       isVendorTable: false,
-                      //       brandKey: list[index]['brandName'],
-                      //       vendorName: 'Lowest by 15%',
-                      //       vendorImage:
-                      //           'http://growth.matridtech.net/${list[index]['Image']}',
-                      //       vendorId: vendorId.toString(),
-                      //       id: list[index]['id_lower more than 15%']
-                      //           .toString(),
-                      //       date: dateFormat
-                      //           .format(
-                      //             DateTime.now().subtract(
-                      //               const Duration(days: 1),
-                      //             ),
-                      //           )
-                      //           .replaceAll('/', '-'),
-                      //       isVendorPriceAnalysis: false,
-                      //       loadingData:
-                      //           list[index]['brandName'] + ' Very Low 15%',
-                      //       database: database,
-                      //     ),
-                      //   ),
-                      // );
-
-                      // log(list[index]['id_lowest_by_15%'].toString());
-                    },
-                    child: SizedBox(
-                      width: w,
-                      child: Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          SizedBox(
-                            width: .48 * w,
-                            height: .13 * w,
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: .4 * w,
-                                  height: .13 * w,
-                                  constraints: BoxConstraints(
-                                    minHeight: .1 * w,
-                                    // maxHeight: .3 * w,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.redAccent,
-                                  ),
-                                  child: Center(
-                                    child: RichText(
-                                      textAlign: TextAlign.center,
-                                      text: TextSpan(
-                                          text: 'Very Low\n'.toUpperCase(),
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: w * 0.045,
-                                            color: Colors.white,
-                                            decoration:
-                                                TextDecoration.underline,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: '<15%',
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: w * 0.04,
-                                                color: Colors.white,
-                                                decoration: TextDecoration.none,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                          ]),
-                                    ),
-                                  ),
-                                ),
-                                const Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Icon(
-                                      Icons.arrow_right,
-                                      size: 50,
-                                      color: Colors.redAccent,
-                                    ))
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: .13 * w,
-                            child: SizedBox(
-                              width: w * .4,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Center(
-                                    child: AutoSizeText(
-                                      list[index]['lower more than 15%']
-                                              ['map_count']
-                                          .toString(),
-                                      maxLines: 1,
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.redAccent,
-                                        fontSize: w * .05,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Center(
-                                    child: AutoSizeText(
-                                      list[index]['lower more than 15%']
-                                              ['nonmap_count']
-                                          .toString(),
-                                      maxLines: 1,
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.redAccent,
-                                        fontSize: w * .05,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Center(
-                                    child: AutoSizeText(
-                                      list[index]['lower more than 15%']
-                                              ['reviewed_count']
-                                          .toString(),
-                                      maxLines: 1,
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.redAccent,
-                                        fontSize: w * .05,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4),
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: SizedBox(
-                      width: w,
-                      child: Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            width: .48 * w,
-                            height: .13 * w,
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: .4 * w,
-                                  height: .13 * w,
-                                  constraints: BoxConstraints(
-                                    minHeight: .1 * w,
-                                    // maxHeight: .3 * w,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.redAccent.withOpacity(.7),
-                                  ),
-                                  child: Center(
-                                    child: RichText(
-                                      textAlign: TextAlign.center,
-                                      text: TextSpan(
-                                          text: 'Low\n'.toUpperCase(),
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: w * 0.045,
-                                            color: Colors.white,
-                                            decoration:
-                                                TextDecoration.underline,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: '5% - 15%',
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: w * 0.04,
-                                                color: Colors.white,
-                                                decoration: TextDecoration.none,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                          ]),
-                                    ),
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Icon(
-                                    Icons.arrow_right,
-                                    size: 50,
-                                    color: Colors.redAccent.withOpacity(.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: .13 * w,
-                            width: w * .4,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['lower from 5% - 15%']
-                                            ['map_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent.withOpacity(.7),
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['lower from 5% - 15%']
-                                            ['nonmap_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent.withOpacity(.7),
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['lower from 5% - 15%']
-                                            ['reviewed_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent.withOpacity(.7),
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4),
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: SizedBox(
-                      width: w,
-                      child: Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            width: .48 * w,
-                            height: .13 * w,
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: .4 * w,
-                                  height: .13 * w,
-                                  constraints: BoxConstraints(
-                                    minHeight: .1 * w,
-                                    // maxHeight: .3 * w,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.green,
-                                  ),
-                                  child: Center(
-                                    child: AutoSizeText(
-                                      'Moderate'.toUpperCase(),
-                                      textAlign: TextAlign.center,
-                                      // maxFontSize: w * .06,
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: w * 0.045,
-                                        decoration: TextDecoration.underline,
-                                        decorationColor: Colors.white,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Icon(
-                                    Icons.arrow_right,
-                                    size: 50,
-                                    color: Colors.green,
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: .13 * w,
-                            width: w * .4,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['lower upto 5%']['map_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.green,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['lower upto 5%']['nonmap_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.green,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['lower upto 5%']
-                                            ['reviewed_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.green,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4),
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: SizedBox(
-                      width: w,
-                      child: Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            width: .48 * w,
-                            height: .13 * w,
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: .4 * w,
-                                  height: .13 * w,
-                                  constraints: BoxConstraints(
-                                    minHeight: .1 * w,
-                                    // maxHeight: .3 * w,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.green,
-                                  ),
-                                  child: Center(
-                                    child: AutoSizeText(
-                                      'Moderate'.toUpperCase(),
-                                      textAlign: TextAlign.center,
-                                      // maxFontSize: w * .06,
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: w * 0.045,
-                                        color: Colors.white,
-                                        decoration: TextDecoration.underline,
-                                        decorationColor: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Icon(
-                                      Icons.arrow_right,
-                                      size: 50,
-                                      color: Colors.green,
-                                    ))
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: .13 * w,
-                            width: w * .4,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher upto 5%']['map_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.green,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher upto 5%']
-                                            ['nonmap_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.green,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher upto 5%']
-                                            ['reviewed_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.green,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4),
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: SizedBox(
-                      width: w,
-                      child: Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            width: .48 * w,
-                            height: .13 * w,
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: .4 * w,
-                                  height: .13 * w,
-                                  constraints: BoxConstraints(
-                                    minHeight: .1 * w,
-                                    // maxHeight: .3 * w,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.redAccent.withOpacity(.7),
-                                  ),
-                                  child: Center(
-                                    child: RichText(
-                                      textAlign: TextAlign.center,
-                                      text: TextSpan(
-                                          text: 'High\n'.toUpperCase(),
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: w * 0.045,
-                                            color: Colors.white,
-                                            decoration:
-                                                TextDecoration.underline,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: '5% - 15%',
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: w * 0.04,
-                                                color: Colors.white,
-                                                decoration: TextDecoration.none,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                          ]),
-                                    ),
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Icon(
-                                    Icons.arrow_right,
-                                    size: 50,
-                                    color: Colors.redAccent.withOpacity(.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: .13 * w,
-                            width: w * .4,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher from 5% - 15%']
-                                            ['map_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent.withOpacity(.7),
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher from 5% - 15%']
-                                            ['nonmap_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent.withOpacity(.7),
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher from 5% - 15%']
-                                            ['reviewed_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent.withOpacity(.7),
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4),
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: SizedBox(
-                      width: w,
-                      child: Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            width: .48 * w,
-                            height: .13 * w,
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: .4 * w,
-                                  height: .13 * w,
-                                  constraints: BoxConstraints(
-                                    minHeight: .1 * w,
-                                    // maxHeight: .3 * w,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.redAccent,
-                                  ),
-                                  child: Center(
-                                    child: RichText(
-                                      textAlign: TextAlign.center,
-                                      text: TextSpan(
-                                          text: 'Very High\n'.toUpperCase(),
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: w * 0.045,
-                                            color: Colors.white,
-                                            decoration:
-                                                TextDecoration.underline,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: '>15%',
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: w * 0.04,
-                                                color: Colors.white,
-                                                decoration: TextDecoration.none,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                          ]),
-                                    ),
-                                  ),
-                                ),
-                                const Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Icon(
-                                      Icons.arrow_right,
-                                      size: 50,
-                                      color: Colors.redAccent,
-                                    ))
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: .13 * w,
-                            width: w * .4,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher more than 15%']
-                                            ['map_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher more than 15%']
-                                            ['nonmap_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Center(
-                                  child: AutoSizeText(
-                                    list[index]['higher more than 15%']
-                                            ['reviewed_count']
-                                        .toString(),
-                                    maxLines: 1,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.redAccent,
-                                      fontSize: w * .05,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-List<ProductColor> colorList = [
-  ProductColor(
-    title: 'High Count',
-    color: Colors.redAccent.withOpacity(.8),
-  ),
-  ProductColor(
-    title: 'Semi High Count',
-    color: Colors.redAccent.withOpacity(.6),
-  ),
-  ProductColor(
-    title: 'Less High Count',
-    color: Colors.redAccent.withOpacity(.5),
-  ),
-  ProductColor(
-    title: 'High Lowest Count',
-    color: Colors.redAccent.withOpacity(.4),
-  ),
-  ProductColor(
-    title: 'Semi Low Count',
-    color: Colors.redAccent.withOpacity(.3),
-  ),
-  ProductColor(
-    title: 'Low Count',
-    color: Colors.redAccent.withOpacity(.2),
-  ),
-  ProductColor(
-    title: 'No Count',
-    color: Colors.grey.withOpacity(.6),
-  ),
-];
-
-class ProductColor {
-  final String title;
-  final Color color;
-
-  ProductColor({required this.title, required this.color});
-}
-
-class NavBarClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    Path path = Path();
-    final width = size.width;
-    final height = size.height;
-
-    path.cubicTo(width / 12, 0, width / 12, 2 * height / 5, 2 * width / 12,
-        2 * height / 5);
-    path.cubicTo(
-        3 * width / 12, 2 * height / 5, 3 * width / 12, 0, 4 * width / 12, 0);
-    path.cubicTo(5 * width / 12, 0, 5 * width / 12, 2 * height / 5,
-        6 * width / 12, 2 * height / 5);
-    path.cubicTo(
-        7 * width / 12, 2 * height / 5, 7 * width / 12, 0, 8 * width / 12, 0);
-    path.cubicTo(9 * width / 12, 0, 9 * width / 12, 2 * height / 5,
-        10 * width / 12, 2 * height / 5);
-    path.cubicTo(11 * width / 12, 2 * height / 5, 11 * width / 12, 0, width, 0);
-    path.lineTo(width, height);
-    path.lineTo(0, height);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
-    // TODO: implement shouldReclip
-    return false;
-  }
-}
-
 class DashboardScreenWidget extends StatefulWidget {
   const DashboardScreenWidget({
     super.key,
@@ -1373,12 +401,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     super.dispose();
   }
 
-  void _initCall() async{
+  void _initCall() async {
     await _getBrands().timeout(Duration(seconds: 10));
   }
 
   Future<void> _getBrands() async {
-    _brandsFuture =  BrandsApi.fetchBrands();
+    _brandsFuture = BrandsApi.fetchBrands(context);
     final brandsData = await _brandsFuture!;
 
     setState(() {
@@ -1512,7 +540,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-
   Widget _buildBrandsSections(BrandsProvider brandsProvider) {
     log('_buildBrandsSections called with state: ${brandsProvider.state}');
     log('Home & Garden count: ${brandsProvider.homeGardenBrands.length}');
@@ -1591,18 +618,47 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   Widget _brandsGrid(List<Map<String, dynamic>> brands) {
     if (brands.isEmpty) {
-      return const Center(child: Text('No brands available.'));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No brands available',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Brands will appear here once loaded',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      );
     }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          mainAxisSpacing: 5,
-          crossAxisSpacing: 5,
-          childAspectRatio: 1,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 0.85, // Slightly taller for better logo display
         ),
         itemCount: brands.length,
         itemBuilder: (context, index) {
@@ -1620,40 +676,122 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 ),
               );
             },
-            child: Card(
-              elevation: 0.5,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: const BorderSide(color: Colors.black),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Flexible(
-                    flex: 1,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                      child: BrandImageWidget(brand: brand),
-                    ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 2,
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                  Padding(
-                    padding:
-                        const EdgeInsets.only(top: 10.0, left: 8.0, right: 8.0),
-                    child: Text(
-                      brand['brand_name'].toString().trim(),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        fontFamily: 'Segoe UI',
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.05),
+                    spreadRadius: 1,
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
                 ],
+              ),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white,
+                        Colors.grey[50]!,
+                      ],
+                    ),
+                    border: Border.all(
+                      color: Colors.grey[200]!,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Container(
+                          margin: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.08),
+                                spreadRadius: 1,
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: BrandImageWidget(
+                              brand: brand,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 12.0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  brand['brand_name'].toString().trim(),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    fontFamily: 'Segoe UI',
+                                    letterSpacing: 0.3,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              // const SizedBox(height: 4),
+                              // Container(
+                              //   width: 24,
+                              //   height: 2,
+                              //   decoration: BoxDecoration(
+                              //     color: AppColors.primary.withOpacity(0.6),
+                              //     borderRadius: BorderRadius.circular(1),
+                              //   ),
+                              // ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           );
@@ -1706,7 +844,6 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
       String brandKey = widget.brand['brand_key']?.toString() ?? '';
       int brandId = widget.brand['brand_id'] ?? 0;
 
-
       String processedBrandName = brandName.replaceAll(' ', '-').toLowerCase();
       String processedBrandKey = brandKey.replaceAll(' ', '-').toLowerCase();
 
@@ -1746,65 +883,174 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-      child: SizedBox(
-        width: widget.width ?? double.infinity,
-        height: widget.height ?? 115,
-        child: _currentUrl.isEmpty
-            ? Container(
-                width: widget.width ?? 50,
-                height: widget.height ?? 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(8),
+    return Container(
+      width: widget.width ?? double.infinity,
+      height: widget.height ?? 115,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+      ),
+      child: _currentUrl.isEmpty
+          ? _buildPlaceholderWidget()
+          : CachedNetworkImage(
+              imageUrl: _currentUrl,
+              fit: BoxFit.contain,
+              placeholder: (context, url) => _buildLoadingWidget(),
+              errorWidget: (context, url, error) {
+                log('Image load error for URL: $url, Error: $error');
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    _onImageError();
+                  }
+                });
+                return _buildErrorWidget();
+              },
+            ),
+    );
+  }
+
+  Widget _buildPlaceholderWidget() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.grey[100]!,
+            Colors.grey[200]!,
+          ],
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-                child: const Icon(
-                  Icons.image_not_supported,
-                  color: Colors.grey,
-                  size: 24,
+              ],
+            ),
+            child: Icon(
+              Icons.image,
+              color: Colors.grey[400],
+              size: 28,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingWidget() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.grey[50]!,
+            Colors.grey[100]!,
+          ],
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-              )
-            : CachedNetworkImage(
-                imageUrl: _currentUrl,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => Container(
-                  width: widget.width ?? 50,
-                  height: widget.height ?? 60,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
+              ],
+            ),
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.primary.withOpacity(0.7),
                 ),
-                errorWidget: (context, url, error) {
-                  log('Image load error for URL: $url, Error: $error');
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      _onImageError();
-                    }
-                  });
-                  return Container(
-                    width: widget.width ?? 50,
-                    height: widget.height ?? 60,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.broken_image,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
-                  );
-                },
               ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Loading...',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.red[50]!,
+            Colors.red[100]!,
+          ],
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.broken_image_outlined,
+              color: Colors.red[400],
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Image Error',
+            style: TextStyle(
+              color: Colors.red[600],
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -15,26 +15,24 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _logoController;
-  late AnimationController _fadeController;
   late Animation<double> _logoAnimation;
-  late Animation<double> _fadeAnimation;
   Database? database;
+  bool _animationsInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initCall();
+    // Start everything immediately
+    _initializeAnimations();
+    _initializeDatabaseInBackground();
+    _startSplashTimer();
   }
 
-  void _initCall() async{
-    await _initializeAnimations();
-    await _initializeDatabase();
-    await _startSplashTimer();
-  }
+  void _initializeAnimations() {
+    if (_animationsInitialized) return;
 
-  Future<void> _initializeAnimations() async {
     _logoController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
 
@@ -43,38 +41,26 @@ class _SplashScreenState extends State<SplashScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _logoController,
-      curve: Curves.elasticOut,
+      curve: Curves.easeOut,
     ));
 
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
-
+    // Start animation immediately
     _logoController.forward();
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _fadeController.forward();
-    });
+    _animationsInitialized = true;
   }
 
-  Future<void> _initializeDatabase() async {
+  Future<void> _initializeDatabaseInBackground() async {
     try {
       database = await DatabaseHelper().database;
+      log('Database initialized successfully in splash screen');
     } catch (e) {
-      log('Database initialization error: $e');
+      log('Database initialization error in splash screen: $e');
     }
   }
 
   Future<void> _startSplashTimer() async {
-    await Future.delayed(const Duration(milliseconds: 5500));
+    // Very short splash duration for faster startup
+    await Future.delayed(const Duration(milliseconds: 1500));
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -86,14 +72,14 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _logoController.dispose();
-    _fadeController.dispose();
+    if (_animationsInitialized) {
+      _logoController.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    log('Splash screen build method called');
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -114,12 +100,49 @@ class _SplashScreenState extends State<SplashScreen>
               Expanded(
                 flex: 3,
                 child: Center(
-                  child: AnimatedBuilder(
-                    animation: _logoAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _logoAnimation.value,
-                        child: Container(
+                  child: _animationsInitialized
+                      ? AnimatedBuilder(
+                          animation: _logoAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _logoAnimation.value,
+                              child: Container(
+                                width: 150,
+                                height: 150,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      spreadRadius: 5,
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Image.asset(
+                                    'assets/minsellprice_logo.png',
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        padding: const EdgeInsets.all(20),
+                                        child: const Icon(
+                                          Icons.shopping_bag,
+                                          size: 80,
+                                          color: AppColors.primary,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
                           width: 150,
                           height: 150,
                           decoration: BoxDecoration(
@@ -152,36 +175,8 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
                 ),
               ),
-              // Expanded(
-              //   flex: 2,
-              //   child: AnimatedBuilder(
-              //     animation: _fadeAnimation,
-              //     builder: (context, child) {
-              //       return Opacity(
-              //         opacity: _fadeAnimation.value,
-              //         child: Column(
-              //           mainAxisAlignment: MainAxisAlignment.center,
-              //           children: [
-              //             const Text(
-              //               'MinSellPrice',
-              //               style: TextStyle(
-              //                 fontSize: 32,
-              //                 fontWeight: FontWeight.bold,
-              //                 color: Colors.white,
-              //                 letterSpacing: 2.0,
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       );
-              //     },
-              //   ),
-              // ),
               Expanded(
                 flex: 2,
                 child: Column(
@@ -199,23 +194,6 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // AnimatedBuilder(
-                    //   animation: _fadeAnimation,
-                    //   builder: (context, child) {
-                    //     return Opacity(
-                    //       opacity: _fadeAnimation.value,
-                    //       child: Text(
-                    //         'Loading...',
-                    //         style: TextStyle(
-                    //           fontSize: 14,
-                    //           color: Colors.white.withOpacity(0.8),
-                    //           fontWeight: FontWeight.w500,
-                    //         ),
-                    //       ),
-                    //     );
-                    //   },
-                    // ),
                   ],
                 ),
               ),

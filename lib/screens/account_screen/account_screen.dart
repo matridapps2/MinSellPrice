@@ -14,7 +14,6 @@ import 'package:minsellprice/reposotory_services/database/database_functions.dar
 class AccountScreen extends StatefulWidget {
   const AccountScreen({
     super.key,
-    required Database database,
   });
 
   @override
@@ -29,7 +28,7 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
+    _initCall();
   }
 
   @override
@@ -38,7 +37,12 @@ class _AccountScreenState extends State<AccountScreen> {
     super.dispose();
   }
 
+  void _initCall() async{
+    await _checkLoginStatus();
+  }
+
   Future<void> _checkLoginStatus() async {
+
     try {
       final firebaseUser = FirebaseAuth.instance.currentUser;
       bool firebaseLoggedIn = firebaseUser != null;
@@ -219,9 +223,9 @@ class _AccountScreenState extends State<AccountScreen> {
                     await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => LoginPage(
-                          onLoginSuccess: () {
+                          onLoginSuccess: () async{
                             authProvider.login();
-                            _checkLoginStatus();
+                           await _checkLoginStatus();
                           },
                         ),
                       ),
