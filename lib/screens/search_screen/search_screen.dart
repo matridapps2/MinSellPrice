@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
@@ -105,46 +106,37 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _loadAllBrands() async {
     try {
-      final response = await http
-          .get(
-            Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
-          )
-          .timeout(const Duration(seconds: 30));
+      log('Loading brands using centralized API method');
+      final brandsData = await BrandsApi.fetchAllBrands(context);
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = json.decode(response.body);
+      final homeGardenBrands = (brandsData["Home & Garden Brands"] ?? [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
 
-        final homeGardenBrands = (jsonData["Home & Garden Brands"] ?? [])
-            .whereType<Map<String, dynamic>>()
-            .toList();
+      final shoesApparels = (brandsData["Shoes & Apparels"] ?? [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
 
-        final shoesApparels = (jsonData["Shoes & Apparels"] ?? [])
-            .whereType<Map<String, dynamic>>()
-            .toList();
+      setState(() {
+        _allBrands = [...homeGardenBrands, ...shoesApparels];
+        _list = [...homeGardenBrands, ...shoesApparels];
+      });
 
-        setState(() {
-          _allBrands = [...homeGardenBrands, ...shoesApparels];
-          _list = [...homeGardenBrands, ...shoesApparels];
-        });
+      log('Loaded ${_allBrands.length} brands from centralized API');
+      log('Sample brand data: ${_allBrands.isNotEmpty ? _allBrands.first : 'No brands'}');
 
-        log('Loaded ${_allBrands.length} brands from API');
-        log('Sample brand data: ${_allBrands.isNotEmpty ? _allBrands.first : 'No brands'}');
-
-        // Log all brands with "American" in the name for debugging
-        log('=== DEBUGGING AMERICAN BRANDS ===');
-        for (int i = 0; i < _allBrands.length; i++) {
-          final brand = _allBrands[i];
-          final brandName = brand['brand_name']?.toString() ?? '';
-          if (brandName.toLowerCase().contains('american')) {
-            log('Brand $i: "$brandName" - Key: "${brand['brand_key']}" - ID: ${brand['brand_id']}');
-          }
+      // Log all brands with "American" in the name for debugging
+      log('=== DEBUGGING AMERICAN BRANDS ===');
+      for (int i = 0; i < _allBrands.length; i++) {
+        final brand = _allBrands[i];
+        final brandName = brand['brand_name']?.toString() ?? '';
+        if (brandName.toLowerCase().contains('american')) {
+          log('Brand $i: "$brandName" - Key: "${brand['brand_key']}" - ID: ${brand['brand_id']}');
         }
-        log('=== END DEBUGGING ===');
-      } else {
-        log('Error loading brands: ${response.statusCode}');
       }
+      log('=== END DEBUGGING ===');
     } catch (e) {
-      log('Exception loading brands: ${e.toString()}');
+      log('Exception loading brands from centralized API: ${e.toString()}');
     }
   }
 
@@ -473,8 +465,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                 key: ValueKey(
                                     'brand_${brand['brand_id']}_${index}'),
                                 brand: brand,
-                                width: 50,
-                                height: 60,
+                                width: 75,
+                                height: 75,
                               ),
                               title: Text(
                                 brand['brand_name']?.toString() ?? '',

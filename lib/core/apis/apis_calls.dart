@@ -14,8 +14,8 @@ import 'api_utility_methods.dart';
 class BrandsApi {
   BrandsApi._();
 
-  static Future<Map<String, List<dynamic>>> fetchBrands(
-      BuildContext context) async {
+  static Future<Map<String, List<dynamic>>> fetchAllBrands(
+      [BuildContext? context]) async {
     try {
       log('Fetching brands from API');
       final response = await http.get(
@@ -45,7 +45,9 @@ class BrandsApi {
       }
     } catch (e) {
       log("Exception In Brand API: ${e.toString()}");
-      onExceptionResponse(context: context, exception: e.toString());
+      if (context != null) {
+        onExceptionResponse(context: context, exception: e.toString());
+      }
       return {
         "Home & Garden Brands": [],
         "Shoes & Apparels": [],
@@ -54,7 +56,7 @@ class BrandsApi {
   }
 
   static Future<String?> getProductListByBrandName(
-      String brandName, int pageNumber,BuildContext context) async {
+      String brandName, int pageNumber, BuildContext context) async {
     try {
       String uri = '$brandUrl/brands/$brandName?page_no=$pageNumber';
 
@@ -86,12 +88,11 @@ class BrandsApi {
     }
   }
 
-  static Future<ProductDetailsModel> getProductDetails({
-    required String brandName,
-    required String productMPN,
-    required int productId,
-    required BuildContext context
-  }) async {
+  static Future<ProductDetailsModel> getProductDetails(
+      {required String brandName,
+      required String productMPN,
+      required int productId,
+      required BuildContext context}) async {
     log('Product API running');
     log('Parameters - brandName: $brandName, productMPN: $productMPN, productId: $productId');
 

@@ -1,373 +1,27 @@
 import 'dart:async';
 import 'dart:developer';
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
-import 'package:minsellprice/core/utils/constants/app.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
-import 'package:minsellprice/screens/account_screen/account_screen.dart';
+import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
-import 'package:minsellprice/screens/categories_screen/categories_screen.dart';
-import 'package:minsellprice/screens/liked_product_screen/liked_product_screen.dart';
 import 'package:minsellprice/screens/search_screen/search_screen.dart';
 import 'package:minsellprice/widgets/category_shimmer.dart';
 import 'package:provider/provider.dart';
-import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
 import 'package:sqflite/sqflite.dart';
-import '../../../reposotory_services/database/database_functions.dart';
-import '../../core/utils/constants/size.dart';
-
-GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({
-    super.key,
-  });
-
-  @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  int vendorId = 0;
-
-  DateTime date = DateTime.now().subtract(
-    const Duration(days: 1),
-  );
-  GlobalKey widgetKey = GlobalKey();
-  late Offset widgetOffset;
-
-  double opacity = 1;
-
-  final ScrollController _otherCompetitorController = ScrollController();
-  final ScrollController _priceHealthController = ScrollController();
-
-  bool shouldScrollMain = true;
-
-  int _activeIndex = 0;
-
-  List<Widget> _screens = [];
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    _screens = [
-      const Center(
-        child: CircularProgressIndicator(),
-      )
-    ];
-    super.initState();
-    _initializeDatabase();
-  }
-
-  void _initializeDatabase() async {
-    try {
-      final db = await DatabaseHelper().database ??
-          await DatabaseHelper().initDatabase();
-      if (mounted) {
-        setState(() {
-          database = db;
-          _screens = [
-            ChangeNotifierProvider(
-              create: (context) {
-                final provider = BrandsProvider();
-                provider.fetchBrands();
-                return provider;
-              },
-              child: DashboardScreenWidget(
-                database: db,
-                vendorId: '${AppInfo.kVendorId}',
-              ),
-            ),
-            LikedProduct(database: db),
-            CategoriesScreen(database: db, vendorId: vendorId),
-            AccountScreen(),
-          ];
-        });
-      }
-    } catch (e) {
-      log('Dashboard database initialization error: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _priceHealthController.dispose();
-    _otherCompetitorController.dispose();
-  }
-
-  final List<Widget> bottomBarPages = [const DashboardScreen()];
-
-  Map<String, dynamic> userData = {};
-  String vendorName = '';
-  late Database database;
-  final scaffoldKey = GlobalKey<ScaffoldState>();
-
-  @override
-  Widget build(BuildContext context) {
-    if (database == null || _screens.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        key: scaffoldKey,
-        extendBody: true,
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          toolbarHeight: 80,
-          centerTitle: true,
-          automaticallyImplyLeading: false,
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.show_chart,
-                color: AppColors.primary,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'MinSellPrice',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Segoe UI',
-                ),
-              ),
-            ],
-          ),
-          actionsPadding: const EdgeInsets.only(right: 15),
-          actions: const [
-            Icon(Icons.shopping_cart, size: 35, color: AppColors.primary),
-          ],
-        ),
-        bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom != 0.0
-            ? const SizedBox()
-            : SalomonBottomBar(
-                backgroundColor: Colors.white,
-                currentIndex: _activeIndex,
-                onTap: (i) => setState(() => _activeIndex = i),
-                items: [
-                  SalomonBottomBarItem(
-                    icon: const Icon(Icons.home),
-                    title: const Text("Home"),
-                    selectedColor: AppColors.primary,
-                  ),
-                  SalomonBottomBarItem(
-                    icon: const Icon(Icons.favorite_border),
-                    title: const Text("Likes"),
-                    selectedColor: AppColors.primary,
-                  ),
-                  SalomonBottomBarItem(
-                    icon: const Icon(Icons.category),
-                    title: const Text("Categories"),
-                    selectedColor: AppColors.primary,
-                  ),
-                  SalomonBottomBarItem(
-                    icon: const Icon(Icons.account_circle_rounded),
-                    title: const Text("Account"),
-                    selectedColor: AppColors.primary,
-                  ),
-                ],
-              ),
-        body: _screens[_activeIndex],
-      ),
-    );
-  }
-
-  @override
-  // TODO: implement wantKeepAlive
-  bool get wantKeepAlive => true;
-}
-
-class CustomBottomNavBar extends StatefulWidget {
-  final ValueChanged<int> onTap;
-  int activeIndex;
-
-  CustomBottomNavBar(
-      {super.key, required this.onTap, required this.activeIndex});
-
-  @override
-  State<CustomBottomNavBar> createState() => _CustomBottomNavBarState();
-}
-
-class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
-  int activeIndex = 0;
-
-  @override
-  void initState() {
-    activeIndex = widget.activeIndex;
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          bottom: 0,
-          child: ClipPath(
-            //  clipper: NavBarClipper(),
-            child: Container(
-              height: 50,
-              width: w,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue,
-                    Colors.blue.withOpacity(0.2),
-                    Colors.blue.withOpacity(0.3),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 30,
-          child: SizedBox(
-            width: w,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    widget.onTap(0);
-                  },
-                  child: AnimatedCrossFade(
-                    duration: const Duration(seconds: 2),
-                    alignment: Alignment.bottomCenter,
-                    firstChild: const CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      radius: 28,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        radius: 23,
-                        child: Icon(Icons.home),
-                      ),
-                    ),
-                    secondChild: const CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      radius: 30,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        radius: 25,
-                        child: Icon(
-                          Icons.home,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    crossFadeState: widget.activeIndex == 0
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: () {
-                    widget.onTap(1);
-                  },
-                  child: AnimatedCrossFade(
-                    alignment: Alignment.bottomCenter,
-                    duration: const Duration(seconds: 2),
-                    firstChild: const CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      radius: 28,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        radius: 23,
-                        child: Icon(Icons.star),
-                      ),
-                    ),
-                    secondChild: const CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      radius: 32,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        radius: 25,
-                        child: Icon(
-                          Icons.star,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    crossFadeState: widget.activeIndex == 1
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: () {
-                    widget.onTap(2);
-                  },
-                  child: AnimatedCrossFade(
-                    alignment: Alignment.bottomCenter,
-                    duration: const Duration(seconds: 2),
-                    firstChild: const CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      radius: 28,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.white,
-                        radius: 23,
-                        child: Icon(Icons.search),
-                      ),
-                    ),
-                    secondChild: const CircleAvatar(
-                      backgroundColor: Colors.blue,
-                      radius: 32,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        radius: 25,
-                        child: Icon(
-                          Icons.search,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    crossFadeState: widget.activeIndex == 2
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class DashboardScreenWidget extends StatefulWidget {
   const DashboardScreenWidget({
     super.key,
     required this.database,
-    required this.vendorId,
   });
 
   final Database database;
-  final String vendorId;
 
   @override
   State<DashboardScreenWidget> createState() => _DashboardScreenWidgetState();
@@ -380,15 +34,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   final FocusNode _searchFocusNode = FocusNode();
 
   final _scrollController = ScrollController();
-  Future<Map<String, List<dynamic>>>? _brandsFuture;
-  List<Map<String, dynamic>> _homeGardenBrands = [];
-  List<Map<String, dynamic>> _shoesApparels = [];
-  List<Map<String, dynamic>> _allBrands = [];
 
   @override
   void initState() {
     super.initState();
-    _initCall();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.unfocus();
     });
@@ -400,35 +49,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     _searchFocusNode.dispose();
     super.dispose();
   }
-
-  void _initCall() async {
-    await _getBrands().timeout(Duration(seconds: 10));
-  }
-
-  Future<void> _getBrands() async {
-    _brandsFuture = BrandsApi.fetchBrands(context);
-    final brandsData = await _brandsFuture!;
-
-    setState(() {
-      _homeGardenBrands = (brandsData["Home & Garden Brands"] ?? [])
-          .whereType<Map<String, dynamic>>()
-          .toList();
-
-      _shoesApparels = (brandsData["Shoes & Apparels"] ?? [])
-          .whereType<Map<String, dynamic>>()
-          .toList();
-
-      _allBrands = [..._homeGardenBrands, ..._shoesApparels];
-    });
-  }
-
-  IconData? selectedIcon;
-  List<IconData> iconsList = [
-    Icons.favorite_border,
-    Icons.compare_arrows_outlined,
-    Icons.visibility_outlined,
-    Icons.shopping_bag_outlined
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -702,16 +322,16 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white,
-                        Colors.grey[50]!,
-                      ],
-                    ),
+                    // gradient: LinearGradient(
+                    //   begin: Alignment.topLeft,
+                    //   end: Alignment.bottomRight,
+                    //   colors: [
+                    //     Colors.white,
+                    //     Colors.grey[50]!,
+                    //   ],
+                    // ),
                     border: Border.all(
-                      color: Colors.grey[200]!,
+                      color: Colors.white,
                       width: 1,
                     ),
                   ),
@@ -772,7 +392,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                     fontFamily: 'Segoe UI',
                                     letterSpacing: 0.3,
                                   ),
-                                  maxLines: 2,
+                                 // maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -839,6 +459,9 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
   }
 
   Future<void> _initializeImageUrls() async {
+    log('Get Image From Site');
+    log('width: ${widget.width}');
+    log('height: ${widget.height}');
     try {
       String brandName = widget.brand['brand_name']?.toString() ?? '';
       String brandKey = widget.brand['brand_key']?.toString() ?? '';
@@ -885,10 +508,10 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
   Widget build(BuildContext context) {
     return Container(
       width: widget.width ?? double.infinity,
-      height: widget.height ?? 115,
+      height: widget.height ?? 100,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
+        // color: Colors.white,
       ),
       child: _currentUrl.isEmpty
           ? _buildPlaceholderWidget()
@@ -912,6 +535,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
   Widget _buildPlaceholderWidget() {
     return Container(
       decoration: BoxDecoration(
+        color: Colors.red,
         borderRadius: BorderRadius.circular(12),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -967,9 +591,9 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            width: 33,
+            height: 33,
             decoration: BoxDecoration(
-              color: Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -982,7 +606,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
             ),
             child: SizedBox(
               width: 24,
-              height: 24,
+              height:  24,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(

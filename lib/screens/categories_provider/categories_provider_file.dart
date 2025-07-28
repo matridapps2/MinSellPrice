@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:minsellprice/core/apis/apis_calls.dart';
 
 enum BrandsState { initial, loading, loaded, error }
 
@@ -27,28 +26,19 @@ class BrandsProvider extends ChangeNotifier {
     _setState(BrandsState.loading);
 
     try {
-      log('Fetching brands from API');
-      final response = await http
-          .get(Uri.parse('https://www.minsellprice.com/api/minsell-brand'))
-          .timeout(const Duration(seconds: 30));
+      log('Fetching brands using BrandsApi');
+      final brandsData = await BrandsApi.fetchAllBrands();
 
-      if (response.statusCode == 200) {
-        log('Brand API status code: ${response.statusCode}');
-        final Map<String, dynamic> jsonData = json.decode(response.body);
+      _homeGardenBrands = (brandsData["Home & Garden Brands"] ?? [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
 
-        _homeGardenBrands = (jsonData["Home & Garden Brands"] ?? [])
-            .whereType<Map<String, dynamic>>()
-            .toList();
+      _shoesApparels = (brandsData["Shoes & Apparels"] ?? [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
 
-        _shoesApparels = (jsonData["Shoes & Apparels"] ?? [])
-            .whereType<Map<String, dynamic>>()
-            .toList();
-
-        log('Brands loaded successfully - Home & Garden: ${_homeGardenBrands.length}, Shoes & Apparels: ${_shoesApparels.length}');
-        _setState(BrandsState.loaded);
-      } else {
-        throw Exception('Failed to load brands: ${response.statusCode}');
-      }
+      log('Brands loaded successfully - Home & Garden: ${_homeGardenBrands.length}, Shoes & Apparels: ${_shoesApparels.length}');
+      _setState(BrandsState.loaded);
     } catch (e) {
       log('Error fetching brands: $e');
       _errorMessage = e.toString();

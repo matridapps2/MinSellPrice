@@ -104,24 +104,14 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   Future<void> _fetchBrandProducts() async {
     setState(() => _isLoading = true);
     try {
-      final allProductsResponse = await BrandsApi
-          .getProductListByBrandName(
-              widget.brandName.toString(), currentPage + 1, context);
+      final allProductsResponse = await BrandsApi.getProductListByBrandName(
+          widget.brandName.toString(), currentPage + 1, context);
       final Map<String, dynamic> decoded =
           jsonDecode(allProductsResponse ?? '{}');
 
       final List<dynamic> jsonList = decoded['brand_product'] ?? [];
       final List<VendorProduct> fetchedProducts =
           jsonList.map((e) => VendorProduct.fromJson(e)).toList();
-
-      // List<String> uniqueVendorsLocal = getUniqueBrands(fetchedProducts);
-      // uniqueVendorsLocal =
-      //     uniqueVendorsLocal.where((element1) => element1 != '--').toList();
-      // List<String> tempList = [];
-      // for (final vendor in uniqueVendorsLocal) {
-      //   tempList.add(
-      //       '$vendor Total Product(s): ${fetchedProducts.where((element) => element.vendorName == vendor).toList().length} ');
-      // }
 
       int start = currentPage * itemsPerPage;
       int end = (start + itemsPerPage > fetchedProducts.length)
@@ -173,450 +163,475 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        _focusNode.unfocus();
-      },
-      child: _isLoading
-          ? Scaffold(
-              appBar: AppBar(
-                // surfaceTintColor: Colors.transparent,
-                // toolbarHeight: .18 * w,
-                // backgroundColor: Colors.white,
-                backgroundColor: Colors.white,
-                surfaceTintColor: Colors.transparent,
-                elevation: 0,
-                toolbarHeight: 80,
-                automaticallyImplyLeading: false,
-                centerTitle: false,
-                title: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                  child: SizedBox(
-                    width: w * .54,
-                    child: AutoSizeText(
-                      '${widget.brandName}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: w * .04),
-                    ),
-                  ),
-                ),
-                actions: [
-                  Image.asset(
-                    'assets/minsellprice_app_icon.png',
-                    height: .23 * w,
-                    fit: BoxFit.fill,
-                  ),
-                ],
-              ),
-              body: Align(
-                alignment: Alignment.center,
-                child: BrandImageWidget(
-                  brand: {
-                    'brand_name': widget.brandName,
-                    'brand_key':
-                        widget.brandName, // Use original brand name as key
-                    'brand_id': widget.brandId,
-                  },
-                  width: 150,
-                  height: 115,
-                ),
-              ),
-            )
-          : _isError
-              ? Scaffold(
-                  appBar: AppBar(
-                    surfaceTintColor: Colors.white,
-                    toolbarHeight: .18 * w,
-                    backgroundColor: Colors.white,
-                    centerTitle: false,
-                    title: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                      child: SizedBox(
-                        width: w * .54,
-                        child: AutoSizeText(
-                          '${widget.brandName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: w * .06),
-                        ),
+        onTap: () {
+          _focusNode.unfocus();
+        },
+        child: _isLoading
+            ? Scaffold(
+                appBar: AppBar(
+                  // toolbarHeight: .18 * w,
+                  // backgroundColor: Colors.white,
+                  backgroundColor: Colors.white,
+                  surfaceTintColor: Colors.transparent,
+                  elevation: 0,
+                  toolbarHeight: 80,
+                  automaticallyImplyLeading: false,
+                  centerTitle: false,
+                  title: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                    child: SizedBox(
+                      width: w * .54,
+                      child: AutoSizeText(
+                        '${widget.brandName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: w * .04),
                       ),
                     ),
-                    actions: [
-                      Image.asset(
-                        'assets/minsellprice_app_icon.png',
-                        height: .23 * w,
-                        fit: BoxFit.fill,
-                      ),
-                    ],
                   ),
-                  body: Center(
-                    child: RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                          text: 'No Product(s) found.\n',
-                          style: TextStyle(
-                              fontSize: .06 * w,
-                              fontFamily: 'Futura BdCn BT Bold',
-                              fontWeight: FontWeight.w300,
-                              color: Colors.black),
-                          children: [
-                            TextSpan(
-                              text: 'Return Back',
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () => Navigator.pop(context),
-                              style: TextStyle(
-                                  fontSize: .06 * w,
-                                  fontFamily: 'Futura BdCn BT Bold',
-                                  fontWeight: FontWeight.w300,
-                                  color: AppColors.primary),
-                            )
-                          ]),
+                  actions: [
+                    Image.asset(
+                      'assets/minsellprice_app_icon.png',
+                      height: .23 * w,
+                      fit: BoxFit.fill,
                     ),
-                  ),
-                )
-              : Scaffold(
-                  key: _scaffoldKey,
-                  endDrawer: FilterMenu(
-                    filterProductDetails: brandProducts,
-                    brandName: widget.brandName ?? 'Unknown',
-                    maxPriceFromAPI: maxPriceFromAPI,
-                    currentVendorFilters: filterVendor,
-                    currentPriceSorting: priceSorting,
-                    currentPriceRange: currentPriceRange,
-                    currentInStockOnly: currentInStockOnly,
-                    currentOnSaleOnly: currentOnSaleOnly,
-                    onFiltersApplied: (vendors, priceSorting, priceRange,
-                        inStockOnly, onSaleOnly) {
-                      _applyFilters(vendors, priceSorting, priceRange,
-                          inStockOnly, onSaleOnly);
+                  ],
+                ),
+                body: Align(
+                  alignment: Alignment.center,
+                  child: BrandImageWidget(
+                    brand: {
+                      'brand_name': widget.brandName,
+                      'brand_key':
+                          widget.brandName, // Use original brand name as key
+                      'brand_id': widget.brandId,
                     },
+                    width: 150,
+                    height: 115,
                   ),
-                  appBar: AppBar(
-                    surfaceTintColor: Colors.white,
-                    toolbarHeight: .18 * w,
-                    backgroundColor: Colors.white,
-                    centerTitle: false,
-                    title: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                      child: SizedBox(
-                        width: w * .54,
-                        child: AutoSizeText(
-                          '${widget.brandName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: w * .06),
+                ),
+              )
+            : _isError
+                ? Scaffold(
+                    appBar: AppBar(
+                      surfaceTintColor: Colors.white,
+                      toolbarHeight: .18 * w,
+                      backgroundColor: Colors.white,
+                      centerTitle: false,
+                      title: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                        child: SizedBox(
+                          width: w * .54,
+                          child: AutoSizeText(
+                            '${widget.brandName}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: w * .06),
+                          ),
                         ),
                       ),
+                      actions: [
+                        Image.asset(
+                          'assets/minsellprice_app_icon.png',
+                          height: .23 * w,
+                          fit: BoxFit.fill,
+                        ),
+                      ],
                     ),
-                    actions: [
-                      Image.asset(
-                        'assets/minsellprice_app_icon.png',
-                        fit: BoxFit.fill,
-                      ),
-                    ],
-                  ),
-                  body: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 5),
-                      Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              _scaffoldKey.currentState!.openEndDrawer();
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.filter_list_alt),
-                                  AutoSizeText(
-                                    'Filters',
-                                    style: TextStyle(
-                                      fontSize: .04 * w,
-                                      fontFamily: 'Futura BdCn BT Bold',
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: AutoSizeText(
-                              '${tempProductList.length} Product(s)',
-                              style: TextStyle(
+                    body: Center(
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                            text: 'No Product(s) found.\n',
+                            style: TextStyle(
                                 fontSize: .06 * w,
                                 fontFamily: 'Futura BdCn BT Bold',
                                 fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ),
-                        ],
+                                color: Colors.black),
+                            children: [
+                              TextSpan(
+                                text: 'Return Back',
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => Navigator.pop(context),
+                                style: TextStyle(
+                                    fontSize: .06 * w,
+                                    fontFamily: 'Futura BdCn BT Bold',
+                                    fontWeight: FontWeight.w300,
+                                    color: AppColors.primary),
+                              )
+                            ]),
                       ),
-                      const SizedBox(height: 5),
-                      tempProductList.isEmpty
-                          ? SizedBox(
-                              width: w,
-                              height: h * .6,
-                              child: Center(
-                                child: RichText(
-                                  textAlign: TextAlign.center,
-                                  text: TextSpan(
-                                      text: 'No Product(s) found.\n',
-                                      style: TextStyle(
-                                          fontSize: .06 * w,
-                                          fontFamily: 'Futura BdCn BT Bold',
-                                          fontWeight: FontWeight.w300,
-                                          color: Colors.black),
-                                      children: [
-                                        TextSpan(
-                                          text: 'Return Back',
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap =
-                                                () => Navigator.pop(context),
-                                          style: TextStyle(
-                                              fontSize: .06 * w,
-                                              fontFamily:
-                                                  'Futura BdCn BT Bold',
-                                              fontWeight: FontWeight.w300,
-                                              color: AppColors.primary),
-                                        )
-                                      ]),
-                                ),
-                              ),
-                            )
-                          : Flexible(
-                              child: Align(
-                                alignment: Alignment.topCenter,
-                                child: Scrollbar(
-                                  thickness: 4,
-                                  thumbVisibility: true,
-                                  trackVisibility: true,
-                                  interactive: true,
-                                  controller: _scrollController,
-                                  child: SingleChildScrollView(
-                                    controller: _scrollController,
+                    ),
+                  )
+                : Scaffold(
+                    key: _scaffoldKey,
+                    endDrawer: FilterMenu(
+                      filterProductDetails: brandProducts,
+                      brandName: widget.brandName ?? 'Unknown',
+                      maxPriceFromAPI: maxPriceFromAPI,
+                      currentVendorFilters: filterVendor,
+                      currentPriceSorting: priceSorting,
+                      currentPriceRange: currentPriceRange,
+                      currentInStockOnly: currentInStockOnly,
+                      currentOnSaleOnly: currentOnSaleOnly,
+                      onFiltersApplied: (vendors, priceSorting, priceRange,
+                          inStockOnly, onSaleOnly) {
+                        _applyFilters(vendors, priceSorting, priceRange,
+                            inStockOnly, onSaleOnly);
+                      },
+                    ),
+                    appBar: AppBar(
+                      surfaceTintColor: Colors.white,
+                      toolbarHeight: .18 * w,
+                      backgroundColor: Colors.white,
+                      centerTitle: false,
+                      title: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                        child: SizedBox(
+                          width: w * .54,
+                          child: AutoSizeText(
+                            '${widget.brandName}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: w * .06),
+                          ),
+                        ),
+                      ),
+                      actions: [
+                        Image.asset(
+                          'assets/minsellprice_app_icon.png',
+                          fit: BoxFit.fill,
+                        ),
+                      ],
+                    ),
+                    body: Stack(
+                      children: [
+                        SafeArea(
+                          bottom: true,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 5),
+                              Row(
+                                mainAxisSize: MainAxisSize.max,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+                                      _scaffoldKey.currentState!
+                                          .openEndDrawer();
+                                    },
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 10.0),
-                                      child: Wrap(
-                                        runSpacing: 10,
-                                        children: List.generate(
-                                          finalList.length,
-                                          (index) => Padding(
-                                            padding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 4.0),
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) => ProductDetailsScreen(
-                                                          productId:
-                                                              finalList[index]
-                                                                  .productId,
-                                                          brandName: widget
-                                                                  .brandName ??
-                                                              'Unknown Brand',
-                                                          productMPN:
-                                                              finalList[index]
-                                                                  .productMpn,
-                                                          productImage:
-                                                              finalList[index]
-                                                                  .productImage,
-                                                          productPrice:
-                                                              finalList[index]
-                                                                  .vendorpricePrice)),
-                                                );
-                                              },
-                                              child: Card(
-                                                shape:
-                                                    const RoundedRectangleBorder(
-                                                  side: BorderSide(
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                                child: Container(
-                                                  width: w * .42,
-                                                  color: Colors.white,
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      const SizedBox(
-                                                          height: 5),
-                                                      Center(
-                                                          child:
-                                                              Image.network(
-                                                        _getProperImageUrl(
-                                                            finalList[index]
-                                                                .productImage),
-                                                        height: w * .3,
-                                                        fit: BoxFit.cover,
-                                                        errorBuilder:
-                                                            (context, error,
-                                                                stackTrace) {
-                                                          return Image.asset(
-                                                            'assets/no_image/no_image.jpg',
-                                                            height: w * .3,
-                                                            fit: BoxFit.cover,
-                                                          );
-                                                        },
-                                                      )),
-                                                      const SizedBox(
-                                                          height: 2),
-                                                      Container(
-                                                        constraints:
-                                                            BoxConstraints(
-                                                                minHeight:
-                                                                    w * .15,
-                                                                maxHeight:
-                                                                    w * .15),
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  left: 8,
-                                                                  right: 10.0,
-                                                                  top: 8),
-                                                          child: Text(
-                                                            finalList[index]
-                                                                    .productName
-                                                                    .isEmpty
-                                                                ? '--'
-                                                                : finalList[
-                                                                        index]
-                                                                    .productName,
-                                                            maxLines: 3,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            style: TextStyle(
-                                                                // color: '#222223'.toColor(),
-                                                                fontFamily:
-                                                                    'Myriad Arabic',
-                                                                fontSize:
-                                                                    w * .06,
-                                                                height: 1,
-                                                                wordSpacing:
-                                                                    0,
-                                                                letterSpacing:
-                                                                    0,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w900),
+                                          horizontal: 16.0),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.filter_list_alt),
+                                          AutoSizeText(
+                                            'Filters',
+                                            style: TextStyle(
+                                              fontSize: .04 * w,
+                                              fontFamily: 'Futura BdCn BT Bold',
+                                              fontWeight: FontWeight.w300,
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0),
+                                    child: AutoSizeText(
+                                      '${tempProductList.length} Product(s)',
+                                      style: TextStyle(
+                                        fontSize: .06 * w,
+                                        fontFamily: 'Futura BdCn BT Bold',
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 5),
+                              tempProductList.isEmpty
+                                  ? SizedBox(
+                                      width: w,
+                                      height: h * .6,
+                                      child: Center(
+                                        child: RichText(
+                                          textAlign: TextAlign.center,
+                                          text: TextSpan(
+                                              text: 'No Product(s) found.\n',
+                                              style: TextStyle(
+                                                  fontSize: .06 * w,
+                                                  fontFamily:
+                                                      'Futura BdCn BT Bold',
+                                                  fontWeight: FontWeight.w300,
+                                                  color: Colors.black),
+                                              children: [
+                                                TextSpan(
+                                                  text: 'Return Back',
+                                                  recognizer:
+                                                      TapGestureRecognizer()
+                                                        ..onTap = () =>
+                                                            Navigator.pop(
+                                                                context),
+                                                  style: TextStyle(
+                                                      fontSize: .06 * w,
+                                                      fontFamily:
+                                                          'Futura BdCn BT Bold',
+                                                      fontWeight:
+                                                          FontWeight.w300,
+                                                      color: AppColors.primary),
+                                                )
+                                              ]),
+                                        ),
+                                      ),
+                                    )
+                                  : Expanded(
+                                      child: Align(
+                                        alignment: Alignment.topCenter,
+                                        child: Scrollbar(
+                                          thickness: 4,
+                                          thumbVisibility: true,
+                                          trackVisibility: true,
+                                          interactive: true,
+                                          controller: _scrollController,
+                                          child: SingleChildScrollView(
+                                            controller: _scrollController,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10.0),
+                                              child: Wrap(
+                                                runSpacing: 10,
+                                                children: List.generate(
+                                                  finalList.length,
+                                                  (index) => Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 4.0),
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (context) => ProductDetailsScreen(
+                                                                  productId: finalList[
+                                                                          index]
+                                                                      .productId,
+                                                                  brandName: widget
+                                                                          .brandName ??
+                                                                      'Unknown Brand',
+                                                                  productMPN: finalList[
+                                                                          index]
+                                                                      .productMpn,
+                                                                  productImage:
+                                                                      finalList[
+                                                                              index]
+                                                                          .productImage,
+                                                                  productPrice:
+                                                                      finalList[
+                                                                              index]
+                                                                          .vendorpricePrice)),
+                                                        );
+                                                      },
+                                                      child: Card(
+                                                        shape:
+                                                            const RoundedRectangleBorder(
+                                                          side: BorderSide(
+                                                            color: Colors.grey,
                                                           ),
                                                         ),
-                                                      ),
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal:
-                                                                    8.0,
-                                                                vertical: 8),
-                                                        child: AutoSizeText(
-                                                          'MPN# ${finalList[index].productMpn}',
-                                                          maxLines: 1,
-                                                          overflow:
-                                                              TextOverflow
-                                                                  .ellipsis,
-                                                          style: TextStyle(
-                                                              color: Colors
-                                                                  .black,
-                                                              fontFamily:
-                                                                  'Segoe UI',
-                                                              fontSize:
-                                                                  w * .04,
-                                                              wordSpacing: 0,
-                                                              letterSpacing:
-                                                                  0,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500
-
-                                                              // fontWeight: FontWeight.w900
+                                                        child: Container(
+                                                          width: w * .42,
+                                                          color: Colors.white,
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              const SizedBox(
+                                                                  height: 5),
+                                                              Center(
+                                                                  child: Image
+                                                                      .network(
+                                                                _getProperImageUrl(
+                                                                    finalList[
+                                                                            index]
+                                                                        .productImage),
+                                                                height: w * .3,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                                errorBuilder:
+                                                                    (context,
+                                                                        error,
+                                                                        stackTrace) {
+                                                                  return Image
+                                                                      .asset(
+                                                                    'assets/no_image/no_image.jpg',
+                                                                    height:
+                                                                        w * .3,
+                                                                    fit: BoxFit
+                                                                        .cover,
+                                                                  );
+                                                                },
+                                                              )),
+                                                              const SizedBox(
+                                                                  height: 2),
+                                                              Container(
+                                                                constraints: BoxConstraints(
+                                                                    minHeight:
+                                                                        w * .15,
+                                                                    maxHeight:
+                                                                        w * .15),
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          left:
+                                                                              8,
+                                                                          right:
+                                                                              10.0,
+                                                                          top:
+                                                                              8),
+                                                                  child: Text(
+                                                                    finalList[index]
+                                                                            .productName
+                                                                            .isEmpty
+                                                                        ? '--'
+                                                                        : finalList[index]
+                                                                            .productName,
+                                                                    maxLines: 3,
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                    style: TextStyle(
+                                                                        // color: '#222223'.toColor(),
+                                                                        fontFamily: 'Myriad Arabic',
+                                                                        fontSize: w * .06,
+                                                                        height: 1,
+                                                                        wordSpacing: 0,
+                                                                        letterSpacing: 0,
+                                                                        fontWeight: FontWeight.w900),
+                                                                  ),
+                                                                ),
                                                               ),
-                                                        ),
-                                                      ),
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal:
-                                                                    8.0,
-                                                                vertical: 5),
-                                                        child: RichText(
-                                                          text: TextSpan(
-                                                            text:
-                                                                '\$${finalList[index].vendorpricePrice}',
-                                                            style: TextStyle(
-                                                              color: Colors
-                                                                  .black87,
-                                                              fontFamily:
-                                                                  'MyriadPro-BoldCond',
-                                                              fontSize:
-                                                                  w * .08,
-                                                              wordSpacing: .1,
-                                                              letterSpacing:
-                                                                  0,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
+                                                              Padding(
+                                                                padding: const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        8.0,
+                                                                    vertical:
+                                                                        8),
+                                                                child:
+                                                                    AutoSizeText(
+                                                                  'MPN# ${finalList[index].productMpn}',
+                                                                  maxLines: 1,
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .black,
+                                                                      fontFamily:
+                                                                          'Segoe UI',
+                                                                      fontSize:
+                                                                          w *
+                                                                              .04,
+                                                                      wordSpacing:
+                                                                          0,
+                                                                      letterSpacing:
+                                                                          0,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500
+
+                                                                      // fontWeight: FontWeight.w900
+                                                                      ),
+                                                                ),
+                                                              ),
+                                                              Padding(
+                                                                padding: const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        8.0,
+                                                                    vertical:
+                                                                        5),
+                                                                child: RichText(
+                                                                  text:
+                                                                      TextSpan(
+                                                                    text:
+                                                                        '\$${finalList[index].vendorpricePrice}',
+                                                                    style:
+                                                                        TextStyle(
+                                                                      color: Colors
+                                                                          .black87,
+                                                                      fontFamily:
+                                                                          'MyriadPro-BoldCond',
+                                                                      fontSize:
+                                                                          w * .08,
+                                                                      wordSpacing:
+                                                                          .1,
+                                                                      letterSpacing:
+                                                                          0,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              Padding(
+                                                                padding: const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        8.0,
+                                                                    vertical:
+                                                                        8),
+                                                                child: Text(
+                                                                  'Show Prices (${finalList[index].vendorIdCount})',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        22,
+                                                                    color: Colors
+                                                                        .blue,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              // Center(
+                                                              //   child: InkWell(
+                                                              //     onTap: () async =>
+                                                              //         await MyInAppBrowser().openUrlRequest(
+                                                              //       urlRequest: URLRequest(
+                                                              //         url: WebUri(finalList[index].vendorUrl + '?utm_source=minsellprice..com&utm_medium=mobile-app',),
+                                                              //       ),
+                                                              //       options:
+                                                              //           InAppBrowserClassOptions(
+                                                              //         crossPlatform:
+                                                              //             InAppBrowserOptions(
+                                                              //           toolbarTopBackgroundColor:
+                                                              //                AppColors.primary,
+                                                              //         ),
+                                                              //       ),
+                                                              //     ),
+                                                              //     child: BuyAtButton(
+                                                              //         imageUrl: finalList[index].vendorName),
+                                                              //   ),
+                                                              // ),
+                                                              const SizedBox(
+                                                                  height: 15)
+                                                            ],
                                                           ),
                                                         ),
                                                       ),
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal:
-                                                                    8.0,
-                                                                vertical: 8),
-                                                        child: Text(
-                                                          'Show Prices (${finalList[index].vendorIdCount})',
-                                                          style: TextStyle(
-                                                            fontSize: 22,
-                                                            color:
-                                                                Colors.blue,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      // Center(
-                                                      //   child: InkWell(
-                                                      //     onTap: () async =>
-                                                      //         await MyInAppBrowser().openUrlRequest(
-                                                      //       urlRequest: URLRequest(
-                                                      //         url: WebUri(finalList[index].vendorUrl + '?utm_source=minsellprice..com&utm_medium=mobile-app',),
-                                                      //       ),
-                                                      //       options:
-                                                      //           InAppBrowserClassOptions(
-                                                      //         crossPlatform:
-                                                      //             InAppBrowserOptions(
-                                                      //           toolbarTopBackgroundColor:
-                                                      //                AppColors.primary,
-                                                      //         ),
-                                                      //       ),
-                                                      //     ),
-                                                      //     child: BuyAtButton(
-                                                      //         imageUrl: finalList[index].vendorName),
-                                                      //   ),
-                                                      // ),
-                                                      const SizedBox(
-                                                          height: 15)
-                                                    ],
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -625,192 +640,444 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                         ),
                                       ),
                                     ),
+                              const SizedBox(height: 10),
+                              // Stylish Pagination Container
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 15, horizontal: 16),
+                                // margin: EdgeInsets.only(
+                                //   bottom: MediaQuery.of(context).padding.bottom + 10,
+                                // ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.grey[100]!,
+                                      Colors.grey[200]!,
+                                    ],
                                   ),
+                                  border: Border(
+                                    top: BorderSide(
+                                        color: Colors.grey[300]!, width: 1),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 3,
+                                      offset: const Offset(0, -1),
+                                    ),
+                                  ],
                                 ),
+                                child: tempProductList.length > itemsPerPage
+                                    ? Column(
+                                        children: [
+                                          // Page Counter
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 16, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.grey
+                                                      .withOpacity(0.2),
+                                                  spreadRadius: 1,
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  'Page ${currentPage + 1} of ${(tempProductList.length / itemsPerPage).ceil()}',
+                                                  style: TextStyle(
+                                                    fontSize: w * .035,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Colors.grey[800],
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primary
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                  ),
+                                                  child: Text(
+                                                    '${tempProductList.length} total',
+                                                    style: TextStyle(
+                                                      fontSize: w * .03,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: AppColors.primary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          // Navigation Buttons
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: <Widget>[
+                                              // Previous Button
+                                              Expanded(
+                                                child: Container(
+                                                  height: 50,
+                                                  margin: const EdgeInsets.only(
+                                                      right: 8),
+                                                  child: ElevatedButton(
+                                                    style: ButtonStyle(
+                                                      backgroundColor:
+                                                          MaterialStateProperty
+                                                              .resolveWith<
+                                                                  Color>(
+                                                        (Set<MaterialState>
+                                                            states) {
+                                                          if (states.contains(
+                                                              MaterialState
+                                                                  .pressed)) {
+                                                            return AppColors
+                                                                .primary
+                                                                .withOpacity(
+                                                                    0.8);
+                                                          }
+                                                          return currentPage ==
+                                                                  0
+                                                              ? Colors
+                                                                  .grey[300]!
+                                                              : Colors.white;
+                                                        },
+                                                      ),
+                                                      foregroundColor:
+                                                          MaterialStateProperty
+                                                              .resolveWith<
+                                                                  Color>(
+                                                        (Set<MaterialState>
+                                                            states) {
+                                                          return currentPage ==
+                                                                  0
+                                                              ? Colors
+                                                                  .grey[500]!
+                                                              : AppColors
+                                                                  .primary;
+                                                        },
+                                                      ),
+                                                      side:
+                                                          MaterialStateProperty
+                                                              .resolveWith<
+                                                                  BorderSide>(
+                                                        (Set<MaterialState>
+                                                            states) {
+                                                          return currentPage ==
+                                                                  0
+                                                              ? BorderSide(
+                                                                  color: Colors
+                                                                          .grey[
+                                                                      300]!)
+                                                              : BorderSide(
+                                                                  color: AppColors
+                                                                      .primary,
+                                                                  width: 2);
+                                                        },
+                                                      ),
+                                                      shape: MaterialStateProperty
+                                                          .resolveWith<
+                                                              OutlinedBorder>(
+                                                        (states) =>
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(12),
+                                                        ),
+                                                      ),
+                                                      elevation:
+                                                          MaterialStateProperty
+                                                              .resolveWith<
+                                                                  double>(
+                                                        (Set<MaterialState>
+                                                            states) {
+                                                          if (states.contains(
+                                                              MaterialState
+                                                                  .pressed)) {
+                                                            return 2;
+                                                          }
+                                                          return currentPage ==
+                                                                  0
+                                                              ? 0
+                                                              : 3;
+                                                        },
+                                                      ),
+                                                      shadowColor:
+                                                          MaterialStateProperty
+                                                              .all(AppColors
+                                                                  .primary
+                                                                  .withOpacity(
+                                                                      0.3)),
+                                                    ),
+                                                    onPressed: currentPage == 0
+                                                        ? null
+                                                        : () {
+                                                            setState(() {
+                                                              currentPage--;
+                                                              startIndex =
+                                                                  currentPage *
+                                                                      itemsPerPage;
+                                                              endIndex = (startIndex + itemsPerPage >
+                                                                      tempProductList
+                                                                          .length)
+                                                                  ? tempProductList
+                                                                      .length
+                                                                  : startIndex +
+                                                                      itemsPerPage;
+                                                              finalList = tempProductList
+                                                                  .sublist(
+                                                                      startIndex,
+                                                                      endIndex);
+                                                            });
+                                                          },
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.arrow_back_ios,
+                                                          size: 18,
+                                                          color: currentPage ==
+                                                                  0
+                                                              ? Colors.grey[500]
+                                                              : AppColors
+                                                                  .primary,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 6),
+                                                        Text(
+                                                          'Previous',
+                                                          style: TextStyle(
+                                                            fontSize: w * .035,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            letterSpacing: 0.5,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+
+                                              // Next Button
+                                              Expanded(
+                                                child: Container(
+                                                  height: 50,
+                                                  margin: const EdgeInsets.only(
+                                                      left: 8),
+                                                  child: ElevatedButton(
+                                                    style: ButtonStyle(
+                                                      backgroundColor:
+                                                          MaterialStateProperty
+                                                              .resolveWith<
+                                                                  Color>(
+                                                        (Set<MaterialState>
+                                                            states) {
+                                                          if (states.contains(
+                                                              MaterialState
+                                                                  .pressed)) {
+                                                            return AppColors
+                                                                .primary
+                                                                .withOpacity(
+                                                                    0.8);
+                                                          }
+                                                          return endIndex ==
+                                                                  tempProductList
+                                                                      .length
+                                                              ? Colors
+                                                                  .grey[300]!
+                                                              : Colors.white;
+                                                        },
+                                                      ),
+                                                      foregroundColor:
+                                                          MaterialStateProperty
+                                                              .resolveWith<
+                                                                  Color>(
+                                                        (Set<MaterialState>
+                                                            states) {
+                                                          return endIndex ==
+                                                                  tempProductList
+                                                                      .length
+                                                              ? Colors
+                                                                  .grey[500]!
+                                                              : AppColors
+                                                                  .primary;
+                                                        },
+                                                      ),
+                                                      side:
+                                                          MaterialStateProperty
+                                                              .resolveWith<
+                                                                  BorderSide>(
+                                                        (Set<MaterialState>
+                                                            states) {
+                                                          return endIndex ==
+                                                                  tempProductList
+                                                                      .length
+                                                              ? BorderSide(
+                                                                  color: Colors
+                                                                          .grey[
+                                                                      300]!)
+                                                              : BorderSide(
+                                                                  color: AppColors
+                                                                      .primary,
+                                                                  width: 2);
+                                                        },
+                                                      ),
+                                                      shape: MaterialStateProperty
+                                                          .resolveWith<
+                                                              OutlinedBorder>(
+                                                        (states) =>
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(12),
+                                                        ),
+                                                      ),
+                                                      elevation:
+                                                          MaterialStateProperty
+                                                              .resolveWith<
+                                                                  double>(
+                                                        (Set<MaterialState>
+                                                            states) {
+                                                          if (states.contains(
+                                                              MaterialState
+                                                                  .pressed)) {
+                                                            return 2;
+                                                          }
+                                                          return endIndex ==
+                                                                  tempProductList
+                                                                      .length
+                                                              ? 0
+                                                              : 3;
+                                                        },
+                                                      ),
+                                                      shadowColor:
+                                                          MaterialStateProperty
+                                                              .all(AppColors
+                                                                  .primary
+                                                                  .withOpacity(
+                                                                      0.3)),
+                                                    ),
+                                                    onPressed: endIndex ==
+                                                            tempProductList
+                                                                .length
+                                                        ? null
+                                                        : () {
+                                                            _scrollController.animateTo(
+                                                                0,
+                                                                duration:
+                                                                    const Duration(
+                                                                        milliseconds:
+                                                                            500),
+                                                                curve: Curves
+                                                                    .easeInOut);
+                                                            setState(() {
+                                                              currentPage++;
+                                                              startIndex =
+                                                                  currentPage *
+                                                                      itemsPerPage;
+                                                              endIndex = (startIndex + itemsPerPage >
+                                                                      tempProductList
+                                                                          .length)
+                                                                  ? tempProductList
+                                                                      .length
+                                                                  : startIndex +
+                                                                      itemsPerPage;
+                                                              finalList = tempProductList
+                                                                  .sublist(
+                                                                      startIndex,
+                                                                      endIndex);
+                                                            });
+                                                          },
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Text(
+                                                          'Next',
+                                                          style: TextStyle(
+                                                            fontSize: w * .035,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            letterSpacing: 0.5,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 6),
+                                                        Icon(
+                                                          Icons
+                                                              .arrow_forward_ios,
+                                                          size: 18,
+                                                          color: endIndex ==
+                                                                  tempProductList
+                                                                      .length
+                                                              ? Colors.grey[500]
+                                                              : AppColors
+                                                                  .primary,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      )
+                                    : const SizedBox(),
                               ),
-                            ),
-                      const SizedBox(height: 5),
-                      tempProductList.length > itemsPerPage
-                          ? Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              mainAxisSize: MainAxisSize.max,
-                              children: <Widget>[
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  child: ElevatedButton(
-                                    style: ButtonStyle(
-                                      minimumSize: MaterialStateProperty
-                                          .resolveWith<Size>(
-                                              (states) => Size(w * .3, 40)),
-                                      maximumSize: MaterialStateProperty
-                                          .resolveWith<Size>(
-                                              (states) => Size(w * .3, 50)),
-                                      backgroundColor: MaterialStateProperty
-                                          .resolveWith<Color>(
-                                        (Set<MaterialState> states) {
-                                          return currentPage == 0
-                                              ? Colors.grey
-                                              : AppColors.primary;
-                                        },
-                                      ),
-                                      shape: MaterialStateProperty
-                                          .resolveWith<OutlinedBorder>(
-                                        (states) => RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                    ),
-                                    onPressed: currentPage == 0
-                                        ? null
-                                        : () {
-                                            setState(() {
-                                              currentPage--;
-                                              startIndex =
-                                                  currentPage * itemsPerPage;
-                                              endIndex = (startIndex +
-                                                          itemsPerPage >
-                                                      tempProductList.length)
-                                                  ? tempProductList.length
-                                                  : startIndex + itemsPerPage;
-                                              finalList =
-                                                  tempProductList.sublist(
-                                                      startIndex, endIndex);
-                                            });
-                                          },
-                                    child: Text(
-                                      'Previous ($currentPage)',
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: w * .03),
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  child: ElevatedButton(
-                                    style: ButtonStyle(
-                                      minimumSize: MaterialStateProperty
-                                          .resolveWith<Size>(
-                                              (states) => Size(w * .3, 40)),
-                                      maximumSize: MaterialStateProperty
-                                          .resolveWith<Size>(
-                                              (states) => Size(w * .3, 50)),
-                                      backgroundColor: MaterialStateProperty
-                                          .resolveWith<Color>(
-                                        (Set<MaterialState> states) {
-                                          return endIndex ==
-                                                  tempProductList.length
-                                              ? Colors.grey
-                                              : AppColors.primary;
-                                        },
-                                      ),
-                                      shape: MaterialStateProperty
-                                          .resolveWith<OutlinedBorder>(
-                                        (states) => RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                    ),
-                                    onPressed: endIndex ==
-                                            tempProductList.length
-                                        ? null
-                                        : () {
-                                            _scrollController.animateTo(0,
-                                                duration: const Duration(
-                                                    milliseconds: 500),
-                                                curve: Curves.linear);
-                                            setState(() {
-                                              currentPage++;
-                                              startIndex =
-                                                  currentPage * itemsPerPage;
-                                              endIndex = (startIndex +
-                                                          itemsPerPage >
-                                                      tempProductList.length)
-                                                  ? tempProductList.length
-                                                  : startIndex + itemsPerPage;
-                                              finalList =
-                                                  tempProductList.sublist(
-                                                      startIndex, endIndex);
-                                            });
-                                          },
-                                    child: Text(
-                                      'Next(${currentPage + 1})',
-                                      style: const TextStyle(
-                                          color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : const SizedBox(),
-                      const SizedBox(height: 5),
-                    ],
-                  ),
-                ),
-    );
-  }
-
-  // void sortingOfList({required List<VendorProduct> mainList}) {
-  //   setState(() {
-  //     if (filterVendor.isNotEmpty) {
-  //       tempProductList = mainList.where((product) {
-  //         return filterVendor.contains(product.firstVendorName);
-  //       }).toList();
-  //     } else {
-  //       tempProductList = mainList;
-  //     }
-  //
-  //     if (priceSorting != null) {
-  //       if (priceSorting == 1) {
-  //         tempProductList.sort((a, b) =>
-  //             extractDoubleFromString(a.firstVendorPrice)
-  //                 .compareTo(extractDoubleFromString(b.firstVendorPrice)));
-  //       } else {
-  //         tempProductList.sort((a, b) =>
-  //             extractDoubleFromString(b.firstVendorPrice)
-  //                 .compareTo(extractDoubleFromString(a.firstVendorPrice)));
-  //       }
-  //     } else if (priceSorting == null && filterVendor.isNotEmpty) {
-  //       tempProductList.clear();
-  //       tempProductList = mainList.where((product) {
-  //         return filterVendor.contains(product.firstVendorName);
-  //       }).toList();
-  //     } else if (filterVendor.isEmpty && priceSorting == null) {
-  //       tempProductList = mainList;
-  //     }
-  //
-  //     currentPage = 0;
-  //     startIndex = currentPage * itemsPerPage;
-  //     endIndex = (startIndex + itemsPerPage > tempProductList.length)
-  //         ? tempProductList.length
-  //         : startIndex + itemsPerPage;
-  //     finalList = tempProductList.sublist(startIndex, endIndex);
-  //   });
-  // }
-
-  showBottomModalDialog({
-    required BuildContext context,
-    required List<Widget> children,
-  }) {
-    showCupertinoModalPopup(
-        barrierDismissible: false,
-        context: context,
-        builder: (BuildContext modalContext) => Container(
-            height: h * 0.90,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-            ),
-            child: Material(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(25.0)),
-                child: Column(
-                    mainAxisSize: MainAxisSize.max, children: children))));
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Builder(
+                            builder: (BuildContext context) {
+                              final MediaQueryData mediaQuery =
+                                  MediaQuery.of(context);
+                              final double bottomPadding =
+                                  mediaQuery.padding.bottom;
+                              if (bottomPadding > 0) {
+                                return Container(
+                                  height: bottomPadding,
+                                  color: Colors.blueGrey,
+                                );
+                              } else {
+                                return const SizedBox.shrink();
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ));
   }
 
   void _applyFilters(List<String> vendors, int? priceSorting,

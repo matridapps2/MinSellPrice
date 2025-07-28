@@ -106,10 +106,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Future<void> _checkPriceAlertStatus() async {
     try {
-      // Get the real current price from API data
       double currentPrice = widget.productPrice;
 
-      // If we have vendor product data, use the first vendor's price as current price
       if (vendorProductData.isNotEmpty) {
         final firstVendor = vendorProductData.first;
         if (firstVendor.vendorpricePrice != null &&
@@ -618,7 +616,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       appBar: AppBar(
         title: Text(widget.brandName),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        //  foregroundColor: Colors.black,
         elevation: 0,
         actionsPadding: EdgeInsets.only(right: 15),
         actions: const [
@@ -629,22 +627,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           )
         ],
       ),
-      bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom != 0.0
-          ? const SizedBox()
-          : Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withValues(alpha: 2),
-                    spreadRadius: 1,
-                    blurRadius: 5,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-            ),
+      // bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom != 0.0
+      //     ? const SizedBox()
+      //     : Container(
+      //         height: 60,
+      //         decoration: BoxDecoration(
+      //           color: Colors.white,
+      //           boxShadow: [
+      //             BoxShadow(
+      //               color: Colors.grey.withValues(alpha: 2),
+      //               spreadRadius: 1,
+      //               blurRadius: 5,
+      //               offset: const Offset(0, -2),
+      //             ),
+      //           ],
+      //         ),
+      //       ),
       body: Stack(
         children: [
           RefreshIndicator(
@@ -712,37 +710,54 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildProductImages(),
-          const SizedBox(height: 16),
-          _buildProductHeader(),
-          const SizedBox(height: 16),
-          _buyAtName(),
-          const SizedBox(height: 16),
-          _buyAtDesign(),
-          const SizedBox(height: 24),
-          // const SizedBox(height: 16),
-          // _buildProductDetails(),
-          // const SizedBox(height: 16),
-          // _buildPriceAndRating(),
-          const SizedBox(height: 16),
-          _buildSubscribeButton(),
-          const SizedBox(height: 24),
-          _buildSpecifications(),
-          const SizedBox(height: 16),
-          _buildProductActionsBar(),
-          //_buildShippingInfo(),
-          //  const SizedBox(height: 16),
-          _buildMoreName(),
-          const SizedBox(height: 16),
-          _buildMoreDesign(),
-        ],
+    return Stack(children: [
+      SafeArea(
+        bottom: true,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProductImages(),
+              const SizedBox(height: 16),
+              _buildProductHeader(),
+              const SizedBox(height: 16),
+              _buyAtName(),
+              const SizedBox(height: 16),
+              _buyAtDesign(),
+              const SizedBox(height: 16),
+              _buildSubscribeButton(),
+              const SizedBox(height: 24),
+              _buildSpecifications(),
+              const SizedBox(height: 16),
+              _buildProductActionsBar(),
+              _buildMoreName(),
+              const SizedBox(height: 16),
+              _buildMoreDesign(),
+            ],
+          ),
+        ),
       ),
-    );
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: Builder(
+          builder: (BuildContext context) {
+            final MediaQueryData mediaQuery = MediaQuery.of(context);
+            final double bottomPadding = mediaQuery.padding.bottom;
+            if (bottomPadding > 0) {
+              return Container(
+                height: bottomPadding,
+                color: Colors.blueGrey,
+              );
+            } else {
+              return const SizedBox.shrink();
+            }
+          },
+        ),
+      ),
+    ]);
   }
 
   Widget _buildProductHeader() {
@@ -1037,10 +1052,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   );
                 },
               ),
-              // Zoom button overlay
               Positioned(
-                top: 12,
                 right: 12,
+                bottom: 12,
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.6),
@@ -1050,7 +1064,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     icon: const Icon(
                       Icons.zoom_in,
                       color: Colors.white,
-                      size: 20,
+                      size: 18,
                     ),
                     onPressed: () {
                       _showImageFullScreen(fallbackImage);
@@ -1108,40 +1122,53 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: Colors.white,
           appBar: AppBar(
-            backgroundColor: Colors.black,
-            iconTheme: const IconThemeData(color: Colors.white),
+            backgroundColor: Colors.white,
+            iconTheme: const IconThemeData(color: Colors.black),
             elevation: 0,
+            leading: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back_ios_new),
+            ),
           ),
-          body: Center(
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.white,
             child: InteractiveViewer(
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[900],
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.broken_image,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Image not available',
-                          style: TextStyle(
+              maxScale: 5.0,
+              minScale: 0.5,
+              child: Center(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      color: Colors.grey[100],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.broken_image,
+                            size: 64,
                             color: Colors.grey[400],
-                            fontSize: 16,
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                          const SizedBox(height: 16),
+                          Text(
+                            'Image not available',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),

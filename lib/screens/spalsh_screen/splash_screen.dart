@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
+import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -59,12 +60,11 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startSplashTimer() async {
-    // Very short splash duration for faster startup
     await Future.delayed(const Duration(milliseconds: 1500));
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => const DashboardScreen(),
+          builder: (context) => const HomePage(),
         ),
       );
     }

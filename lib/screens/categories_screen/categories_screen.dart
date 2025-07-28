@@ -3,17 +3,19 @@ import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen(
-      {super.key, required this.database, required this.vendorId});
+      {super.key, required this.database});
 
   final Database database;
-  final int vendorId;
 
   @override
   State<CategoriesScreen> createState() => _CategoriesScreenState();
@@ -21,9 +23,6 @@ class CategoriesScreen extends StatefulWidget {
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
   int selectedCategoryIndex = 0;
-  late Future<Map<String, List<dynamic>>> _brandsFuture;
-  List<Map<String, dynamic>> _homeGardenBrands = [];
-  List<Map<String, dynamic>> _shoesApparels = [];
 
   final List<Map<String, dynamic>> categories = [
     {
@@ -43,23 +42,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   void initState() {
     super.initState();
-    _initCall();
   }
 
-  Future<void> _initCall() async {
-    _brandsFuture = fetchBrands();
-    final brandsData = await _brandsFuture;
+  void _updateCategoriesWithProviderData(BrandsProvider brandsProvider) {
 
-    setState(() {
-      _homeGardenBrands = (brandsData["Home & Garden Brands"] ?? [])
-          .whereType<Map<String, dynamic>>()
-          .toList();
-
-      _shoesApparels = (brandsData["Shoes & Apparels"] ?? [])
-          .whereType<Map<String, dynamic>>()
-          .toList();
-
-      categories[0]['subcategories'] = _homeGardenBrands.map((brand) {
+      categories[0]['subcategories'] =
+          brandsProvider.homeGardenBrands.map((brand) {
         log('Processing Home & Garden brand: ${brand['brand_name']} with key: ${brand['brand_key']}');
         return {
           'name': brand['brand_name'] ?? 'Unknown Brand',
@@ -70,7 +58,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         };
       }).toList();
 
-      categories[1]['subcategories'] = _shoesApparels.map((brand) {
+      categories[1]['subcategories'] =
+          brandsProvider.shoesApparels.map((brand) {
         log('Processing Shoes & Apparels brand: ${brand['brand_name']} with key: ${brand['brand_key']}');
         return {
           'name': brand['brand_name'] ?? 'Unknown Brand',
@@ -80,42 +69,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           'brand_key': brand['brand_key'],
         };
       }).toList();
-    });
-  }
 
-  Future<Map<String, List<dynamic>>> fetchBrands() async {
-    try {
-      log('Fetching brands for categories screen');
-      final response = await http
-          .get(
-            Uri.parse('https://www.minsellprice.com/api/minsell-brand'),
-          )
-          .timeout(const Duration(seconds: 30));
-      log('Brand API: https://www.minsellprice.com/api/minsell-brand');
-
-      if (response.statusCode == 200) {
-        log('Brand API status code: ${response.statusCode}');
-        final Map<String, dynamic> jsonData = json.decode(response.body);
-
-        final homeGardenBrands =
-            jsonData["Home & Garden Brands"] as List<dynamic>;
-        final shoesApparels = jsonData["Shoes & Apparels"] as List<dynamic>;
-
-        log('Home & Garden Brands count: ${homeGardenBrands.length}');
-        log('Shoes & Apparels count: ${shoesApparels.length}');
-
-        return {
-          "Home & Garden Brands": homeGardenBrands,
-          "Shoes & Apparels": shoesApparels,
-        };
-      } else {
-        log('Error Brand API: ${response.statusCode}');
-        throw Exception('Failed to load brands: ${response.statusCode}');
-      }
-    } catch (e) {
-      log("Exception In Brand API: ${e.toString()}");
-      throw Exception('Error fetching brands: $e');
-    }
   }
 
   Widget _buildBrandImage(Map<String, dynamic> subcategory) {
@@ -157,12 +111,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: FutureBuilder<Map<String, List<dynamic>>>(
-        future: _brandsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: Consumer<BrandsProvider>(
+        builder: (context, brandsProvider, child) {
+          if (brandsProvider.state == BrandsState.loading ||
+              brandsProvider.state == BrandsState.initial) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
+          } else if (brandsProvider.state == BrandsState.error) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -175,23 +129,22 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    '${snapshot.error}',
+                    brandsProvider.errorMessage,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                   SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _initCall();
-                      });
-                    },
+                    onPressed: () => brandsProvider.retry(),
                     child: Text('Retry'),
                   ),
                 ],
               ),
             );
           }
+
+          // Update categories with provider data
+          _updateCategoriesWithProviderData(brandsProvider);
 
           return Row(
             children: [
