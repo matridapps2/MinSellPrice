@@ -71,7 +71,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       await _fetchBrandProducts();
       await _checkIfLiked();
       await _checkIfInComparison();
-      await _checkPriceAlertStatus();
     });
   }
 
@@ -104,36 +103,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  Future<void> _checkPriceAlertStatus() async {
-    try {
-      double currentPrice = widget.productPrice;
-
-      if (vendorProductData.isNotEmpty) {
-        final firstVendor = vendorProductData.first;
-        if (firstVendor.vendorpricePrice != null &&
-            firstVendor.vendorpricePrice!.isNotEmpty) {
-          currentPrice = double.tryParse(firstVendor.vendorpricePrice!) ??
-              widget.productPrice;
-        }
-      }
-
-      // Initialize price threshold (10% below current real price)
-      _priceThreshold = (currentPrice * 0.9);
-
-      // Check if user is already subscribed to price alerts for this product
-      final isSubscribed = await NotificationService()
-          .isSubscribedToProduct(widget.productId.toString());
-
-      if (mounted) {
-        setState(() {
-          _isSubscribedToPriceAlert = isSubscribed;
-        });
-      }
-    } catch (e) {
-      log('Error checking price alert status: $e');
-    }
-  }
-
   Future<void> _showPriceThresholdDialog() async {
     double threshold = _priceThreshold;
     await showDialog(
@@ -147,10 +116,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               Text('Get notified when ${widget.brandName} drops below:'),
               const SizedBox(height: 16),
               TextField(
-                keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Email Id..',
-                  prefixText: '\$',
+                  // prefixText: '\$',
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (value) {
@@ -199,15 +167,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         }
       }
 
-      final success = await NotificationService().subscribeToPriceAlert(
-        productId: widget.productId.toString(),
-        priceThreshold: threshold,
-        currentPrice: currentPrice,
-        // Pass real current price
-        productName: widget.brandName,
-        productImage: widget.productImage?.toString() ?? '',
-        productMpn: widget.productMPN,
-      );
+       final success = true; // = await NotificationService().subscribeToPriceAlert(
+      //   productId: widget.productId.toString(),
+      //   priceThreshold: threshold,
+      //   currentPrice: currentPrice,
+      //   // Pass real current price
+      //   productName: widget.brandName,
+      //   productImage: widget.productImage?.toString() ?? '',
+      //   productMpn: widget.productMPN,
+      // );
 
       if (success) {
         setState(() {
@@ -247,66 +215,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Error setting price alert. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingPriceAlert = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _unsubscribeFromPriceAlert() async {
-    setState(() {
-      _isLoadingPriceAlert = true;
-    });
-
-    try {
-      final success = await NotificationService().unsubscribeFromPriceAlert(
-        productId: widget.productId.toString(),
-      );
-
-      if (success) {
-        setState(() {
-          _isSubscribedToPriceAlert = false;
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text('Price alert removed'),
-                ],
-              ),
-              backgroundColor: Colors.grey,
-              duration: Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to remove price alert. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      log('Error unsubscribing from price alert: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error removing price alert. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1206,40 +1114,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildPriceAndRating() {
-    final data = widget.productPrice;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '\$${data ?? '--'}',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            ...List.generate(
-                4,
-                (index) =>
-                    const Icon(Icons.star, color: Colors.amber, size: 20)),
-            const Icon(Icons.star_border, color: Colors.amber, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              '(1 Reviews)', // You can use data.reviewCount if available
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
   Widget _buildSubscribeButton() {
     return Container(
       width: double.infinity,
@@ -1266,11 +1140,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: _isLoadingPriceAlert
-              ? null
-              : (_isSubscribedToPriceAlert
-                  ? _unsubscribeFromPriceAlert
-                  : _showPriceThresholdDialog),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             child: Row(
@@ -1347,153 +1216,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSpecifications() {
-    final List<Map<String, String>> specifications = [
-      {'label': 'Brand', 'value': widget.brandName},
-      {'label': 'Model', 'value': widget.productMPN},
-      {'label': 'Material', 'value': 'Stainless Steel'},
-      {'label': 'Dimensions', 'value': '24" W x 18" D x 36" H'},
-      {'label': 'Weight', 'value': '45 lbs'},
-      {'label': 'Color', 'value': 'Matte Black'},
-      {'label': 'Warranty', 'value': '2 Year Limited'},
-      {'label': 'Country of Origin', 'value': 'USA'},
-      {'label': 'Certifications', 'value': 'UL Listed, CSA Approved'},
-      {'label': 'Features', 'value': 'Smart Controls, LED Display'},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.info_outline,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Product Specifications',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 2,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: Colors.grey.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.list_alt,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Technical Details',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              /// Creates a fixed-length scrollable linear array of list "items" separated
-              /// by list item "separators".
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                itemCount: specifications.length,
-                separatorBuilder: (context, index) => const Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  color: Colors.grey,
-                ),
-                itemBuilder: (context, index) {
-                  final spec = specifications[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            spec['label']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            spec['value']!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black54,
-                              height: 1.3,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -1589,195 +1311,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildShippingInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.local_shipping,
-                color: Colors.green,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Shipping & Returns',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 2,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: Colors.grey.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.05),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.local_shipping,
-                          color: Colors.green,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Free Shipping',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Colors.green,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'FREE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'On orders over \$75. Delivery in 3-5 business days.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Delivery Options
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildShippingOption(
-                      Icons.flash_on,
-                      'Express Delivery',
-                      '1-2 business days',
-                      '\$15.99',
-                      Colors.orange,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildShippingOption(
-                      Icons.schedule,
-                      'Standard Delivery',
-                      '3-5 business days',
-                      'FREE',
-                      Colors.blue,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildShippingOption(
-                      Icons.store,
-                      'Store Pickup',
-                      'Ready in 2 hours',
-                      'FREE',
-                      Colors.purple,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Returns Section
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.05),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.assignment_return,
-                          color: Colors.blue,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Easy Returns',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '• 30-day return policy\n• Free return shipping\n• Full refund or exchange\n• No restocking fees',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -2265,6 +1798,375 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+
+  Widget _buildShippingInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.local_shipping,
+                color: Colors.green,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Shipping & Returns',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.05),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_shipping,
+                          color: Colors.green,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Free Shipping',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'FREE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'On orders over \$75. Delivery in 3-5 business days.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Delivery Options
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildShippingOption(
+                      Icons.flash_on,
+                      'Express Delivery',
+                      '1-2 business days',
+                      '\$15.99',
+                      Colors.orange,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildShippingOption(
+                      Icons.schedule,
+                      'Standard Delivery',
+                      '3-5 business days',
+                      'FREE',
+                      Colors.blue,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildShippingOption(
+                      Icons.store,
+                      'Store Pickup',
+                      'Ready in 2 hours',
+                      'FREE',
+                      Colors.purple,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Returns Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.05),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.assignment_return,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Easy Returns',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '• 30-day return policy\n• Free return shipping\n• Full refund or exchange\n• No restocking fees',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  Widget _buildSpecifications() {
+    final List<Map<String, String>> specifications = [
+      {'label': 'Brand', 'value': widget.brandName},
+      {'label': 'Model', 'value': widget.productMPN},
+      {'label': 'Material', 'value': 'Stainless Steel'},
+      {'label': 'Dimensions', 'value': '24" W x 18" D x 36" H'},
+      {'label': 'Weight', 'value': '45 lbs'},
+      {'label': 'Color', 'value': 'Matte Black'},
+      {'label': 'Warranty', 'value': '2 Year Limited'},
+      {'label': 'Country of Origin', 'value': 'USA'},
+      {'label': 'Certifications', 'value': 'UL Listed, CSA Approved'},
+      {'label': 'Features', 'value': 'Smart Controls, LED Display'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.info_outline,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Product Specifications',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.05),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.list_alt,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Technical Details',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              /// Creates a fixed-length scrollable linear array of list "items" separated
+              /// by list item "separators".
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: specifications.length,
+                separatorBuilder: (context, index) => const Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: Colors.grey,
+                ),
+                itemBuilder: (context, index) {
+                  final spec = specifications[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            spec['label']!,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            spec['value']!,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                              height: 1.3,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  Widget _buildPriceAndRating() {
+    final data = widget.productPrice;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '\$${data ?? '--'}',
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            ...List.generate(
+                4,
+                    (index) =>
+                const Icon(Icons.star, color: Colors.amber, size: 20)),
+            const Icon(Icons.star_border, color: Colors.amber, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '(1 Reviews)', // You can use data.reviewCount if available
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

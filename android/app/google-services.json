@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "998485099147",
+    "firebase_url": "https://msp-project-215c5-default-rtdb.firebaseio.com",
     "project_id": "msp-project-215c5",
     "storage_bucket": "msp-project-215c5.appspot.com"
   },
@@ -35,7 +36,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "998485099147-ipfldvpkc6mdj8rq342f8ii0hgb6ts4a.apps.googleusercontent.com",
+              "client_id": "110922353504137679471",
               "client_type": 3
             },
             {
@@ -53,7 +54,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:998485099147:android:33fb6ec6672e62b830ca8e",
         "android_client_info": {
-          "package_name": "com.matrid.minsellprice"
+          "package_name": "com.example.msp_ecommerece"
         }
       },
       "oauth_client": [
@@ -71,7 +72,79 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "998485099147-ipfldvpkc6mdj8rq342f8ii0hgb6ts4a.apps.googleusercontent.com",
+              "client_id": "110922353504137679471",
+              "client_type": 3
+            },
+            {
+              "client_id": "998485099147-7cc66t71qcknt34k07dgpkp74vgqhfbk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.matrid.msp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:998485099147:android:542308efadfb437830ca8e",
+        "android_client_info": {
+          "package_name": "com.example.remote_config"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "998485099147-ipfldvpkc6mdj8rq342f8ii0hgb6ts4a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCghL5nKLSkTwQQT1yU475SS7vhVpjdZnA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "110922353504137679471",
+              "client_type": 3
+            },
+            {
+              "client_id": "998485099147-7cc66t71qcknt34k07dgpkp74vgqhfbk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.matrid.msp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:998485099147:android:bf25a2b0165935e630ca8e",
+        "android_client_info": {
+          "package_name": "com.matrid.google_sign_in_sample"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "998485099147-ipfldvpkc6mdj8rq342f8ii0hgb6ts4a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCghL5nKLSkTwQQT1yU475SS7vhVpjdZnA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "110922353504137679471",
               "client_type": 3
             },
             {

@@ -9,12 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
-import 'package:minsellprice/screens/home_page/home_page.dart';
+import 'package:minsellprice/screens/dashboard_screen/notification_screen/notification_screen.dart';
 import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:minsellprice/services/background_service.dart';
 import 'package:minsellprice/services/notification_service.dart';
+import 'package:minsellprice/services/navigation_service.dart';
 import 'package:minsellprice/core/utils/firebase/firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'core/utils/firebase/auth_provider.dart' as my_auth;
@@ -80,10 +80,13 @@ void main() async {
           alignment: AlignmentDirectional.topCenter,
         ),
         child: MaterialApp(
-          navigatorKey: navigatorKey,
+          navigatorKey: NavigationService().getNavigatorKey(),
           title: 'FlutterMinSellPrice',
           debugShowMaterialGrid: false,
           debugShowCheckedModeBanner: false,
+          routes: {
+            '/notifications': (context) => const NotificationScreen(),
+          },
           theme: ThemeData(
             fontFamily: 'Segoe UI',
             primarySwatch: MaterialColor(_d90310, colorCodes),

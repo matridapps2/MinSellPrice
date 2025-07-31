@@ -9,12 +9,13 @@ import 'package:minsellprice/screens/account_screen/account_screen.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
 import 'package:minsellprice/screens/categories_screen/categories_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
+import 'package:minsellprice/screens/dashboard_screen/notification_screen/notification_screen.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_screen.dart';
+import 'package:minsellprice/services/notification_service.dart';
+import 'package:minsellprice/services/navigation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:sqflite/sqflite.dart';
-
-GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -25,7 +26,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage>
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   int vendorId = 0;
   int _activeIndex = 0;
 
@@ -53,6 +55,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
   }
 
   void _initCall() async {
+    await _showExampleNotifications();
     await _initializeDatabase();
   }
 
@@ -73,8 +76,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 });
                 return provider;
               },
-              child: DashboardScreenWidget(
-              ),
+              child: DashboardScreenWidget(),
             ),
             LikedProduct(database: db),
             ChangeNotifierProvider(
@@ -103,8 +105,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 provider.fetchBrands();
                 return provider;
               },
-              child: DashboardScreenWidget(
-              ),
+              child: DashboardScreenWidget(),
             ),
             LikedProduct(database: database),
             ChangeNotifierProvider(
@@ -120,6 +121,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
         });
       }
     }
+  }
+
+  // Example method to show static notifications
+  Future<void> _showExampleNotifications() async {
+    final notificationService = NotificationService();
+
+    // // Show welcome notification
+    // await notificationService.showWelcomeNotification();
+    //
+    // // Show feature announcement
+    // await notificationService.showFeatureAnnouncement(
+    //   featureName: 'Price Tracking',
+    //   description:
+    //       'Track your favorite products and get notified when prices drop!',
+    // );
+
+    // Show price drop notification (example)
+    await notificationService.showPriceDropNotification(
+      productName: 'Example Product',
+      oldPrice: 99.99,
+      newPrice: 79.99,
+      productId: 'example_product_123',
+    );
   }
 
   @override
@@ -176,13 +200,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
             //   ],
             // ),
             appBar: AppBar(
-                backgroundColor: Colors.white,
-                surfaceTintColor: Colors.transparent,
-                elevation: 0,
-                toolbarHeight: 80,
-                centerTitle: true,
-                automaticallyImplyLeading: false,
-             title:  Container(
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              toolbarHeight: 80,
+              centerTitle: true,
+              automaticallyImplyLeading: false,
+              title: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -205,7 +229,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                   children: [
                     // Header Section
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 20),
                       child: Row(
                         children: [
                           // App Logo
@@ -219,7 +244,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withOpacity(0.3),
+                                        color:
+                                            AppColors.primary.withOpacity(0.3),
                                         spreadRadius: 1,
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
@@ -235,7 +261,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'MinSellPrice',
@@ -284,7 +311,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(12),
                                     onTap: () {
-                                      // TODO: Navigate to notifications
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const NotificationScreen(),
+                                        ),
+                                      );
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(10),

@@ -8,11 +8,6 @@ class BridgeClass extends StatefulWidget {
 
   @override
   State<BridgeClass> createState() => _BridgeClassState();
-
-  /* This method will returns the State object of the nearest ancestor StatefulWidget widget that is an instance of the given type T.*/
-  static void createRebirth({required BuildContext context}) {
-    context.findAncestorStateOfType<_BridgeClassState>()!.restartApp();
-  }
 }
 
 class _BridgeClassState extends State<BridgeClass> {

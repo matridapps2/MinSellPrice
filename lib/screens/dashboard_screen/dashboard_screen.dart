@@ -305,12 +305,11 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (context) => BrandProductListScreen(
-                        brandId: brand['brand_id'],
-                        brandName: brand['brand_name'],
-                        dataList: const [],
-                      ),
+                  builder: (context) => BrandProductListScreen(
+                    brandId: brand['brand_id'],
+                    brandName: brand['brand_name'],
+                    dataList: const [],
+                  ),
                 ),
               );
             },
@@ -519,23 +518,22 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
         borderRadius: BorderRadius.circular(12),
         // color: Colors.white,
       ),
-      child:
-          _currentUrl.isEmpty
-              ? _buildPlaceholderWidget()
-              : CachedNetworkImage(
-                imageUrl: _currentUrl,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => _buildLoadingWidget(),
-                errorWidget: (context, url, error) {
-                  log('Image load error for URL: $url, Error: $error');
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      _onImageError();
-                    }
-                  });
-                  return _buildErrorWidget();
-                },
-              ),
+      child: _currentUrl.isEmpty
+          ? _buildPlaceholderWidget()
+          : CachedNetworkImage(
+              imageUrl: _currentUrl,
+              fit: BoxFit.contain,
+              placeholder: (context, url) => _buildLoadingWidget(),
+              errorWidget: (context, url, error) {
+                log('Image load error for URL: $url, Error: $error');
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    _onImageError();
+                  }
+                });
+                return _buildErrorWidget();
+              },
+            ),
     );
   }
 

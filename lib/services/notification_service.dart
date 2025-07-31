@@ -1,258 +1,186 @@
 import 'dart:developer';
-import 'dart:io';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/material.dart';
+import 'package:minsellprice/services/navigation_service.dart';
 
 class NotificationService {
+  // Singleton pattern - ensures only one instance exists
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  String? _deviceToken;
+  // Track if notification service has been initialized
   bool _isInitialized = false;
-  final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
-  // Get device token
-  String? get deviceToken => _deviceToken;
+  // Plugin instance for handling local notifications
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
+
+  // Getter to check if service is initialized
   bool get isInitialized => _isInitialized;
 
-  // Initialize notification service
+  // Main initialization method - sets up local notifications
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) return; // Skip if already initialized
 
     try {
-      // Request permission
-      NotificationSettings settings =
-          await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        log('Notification permission granted');
-
-        // Get device token
-        _deviceToken = await FirebaseMessaging.instance.getToken();
-        log('Device Token: $_deviceToken');
-
-        // Save token to Firebase
-        if (_deviceToken != null) {
-          await saveTokenToFirebase(_deviceToken!);
-        }
-
-        // Setup message handlers
-        _setupMessageHandlers();
-
-        _isInitialized = true;
-      } else {
-        log('Notification permission denied');
-      }
+      // Setup local notification channels and permissions
+      await _initializeLocalNotifications();
+      _isInitialized = true;
+      log('Local notification service initialized successfully');
     } catch (e) {
       log('Error initializing notification service: $e');
     }
   }
 
-  // Setup message handlers
-  void _setupMessageHandlers() {
-    // Handle foreground messages
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      log('Got a message whilst in the foreground!');
-      log('Message data: ${message.data}');
+  // Setup notification channels and permissions for Android/iOS
+  Future<void> _initializeLocalNotifications() async {
+    // Android settings - uses app icon and requests permissions
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      if (message.notification != null) {
-        log('Message also contained a notification: ${message.notification}');
-        // You can show a local notification here
-        _showLocalNotification(message);
-      }
-    });
+    // iOS settings - requests alert, badge, and sound permissions
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
-    // Handle when app is opened from notification
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      log('App opened from notification');
-      // Navigate to specific screen based on message data
-      if (message.data['productId'] != null) {
-        // Navigate to product details
-        log('Navigate to product: ${message.data['productId']}');
-        _handleNotificationNavigation(message.data);
-      }
-    });
+    // Combine platform-specific settings
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    // Initialize plugin with settings and tap handler
+    await _localNotifications.initialize(initializationSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped);
   }
 
-  // Show local notification
-  void _showLocalNotification(RemoteMessage message) {
-    // You can implement local notification here using flutter_local_notifications
-    log('Showing local notification: ${message.notification?.title}');
+  // Called when user taps on a notification
+  void _onNotificationTapped(NotificationResponse response) {
+    log('Notification tapped: ${response.payload}');
+    // Extract payload data and handle navigation
+    if (response.payload != null) {
+      _handleNotificationNavigation({'data': response.payload});
+    }
   }
 
-  // Handle notification navigation
+  // Navigate to appropriate screen based on notification type
   void _handleNotificationNavigation(Map<String, dynamic> data) {
-    // Implement navigation logic here
-    log('Navigate to: $data');
+    // Log navigation attempt for debugging
+    log('Navigate to notification screen: $data');
+
+    // Use global navigation service to open notification screen
+    final navigationService = NavigationService();
+    navigationService.navigateToNotifications();
   }
 
-  // Save token to Firebase
-  Future<void> saveTokenToFirebase(String token) async {
-    try {
-      await _database.child('deviceTokens').child(token).set({
-        'token': token,
-        'platform': Platform.isAndroid ? 'android' : 'ios',
-        'appVersion': '1.0.0',
-        'timestamp': ServerValue.timestamp,
-      });
-      log('Token saved to Firebase successfully');
-    } catch (e) {
-      log('Error saving token to Firebase: $e');
-    }
+  // Display a custom notification with title, body, and optional payload
+  Future<void> showStaticNotification({
+    required String title,
+    required String body,
+    String? payload,
+    String? imageUrl,
+  }) async {
+    // Android notification channel settings
+    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'static_notifications',
+      'Static Notifications',
+      channelDescription: 'Static in-app notifications',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+    );
+
+    // iOS notification settings
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    // Combine platform settings
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    // Show notification with unique ID and payload
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: payload,
+    );
   }
 
-  // Subscribe to price alerts for a specific product
-  Future<bool> subscribeToPriceAlert({
-    required String productId,
-    required double priceThreshold,
-    required double currentPrice,
+  // Show price drop notification with formatted price information
+  Future<void> showPriceDropNotification({
     required String productName,
-    required String productImage,
-    required String productMpn,
-  }) async {
-    if (_deviceToken == null) {
-      log('Device token not available');
-      return false;
-    }
-
-    try {
-      // Create a unique key for this alert
-      final alertKey = _database.child('priceAlerts').push().key;
-
-      if (alertKey != null) {
-        await _database.child('priceAlerts').child(alertKey).set({
-          'deviceToken': _deviceToken,
-          'productId': productId,
-          'priceThreshold': priceThreshold,
-          'currentPrice': currentPrice, // Store real current price
-          'productName': productName,
-          'productImage': productImage, // Store product image
-          'productMpn': productMpn, // Store product MPN
-          'platform': Platform.isAndroid ? 'android' : 'ios',
-          'timestamp': ServerValue.timestamp,
-          'isActive': true,
-        });
-
-        log('Price alert subscription successful');
-        return true;
-      } else {
-        log('Failed to create alert key');
-        return false;
-      }
-    } catch (e) {
-      log('Error subscribing to price alert: $e');
-      return false;
-    }
-  }
-
-  // Unsubscribe from price alerts
-  Future<bool> unsubscribeFromPriceAlert({
+    required double oldPrice,
+    required double newPrice,
     required String productId,
+    String? productImage,
   }) async {
-    if (_deviceToken == null) {
-      log('Device token not available');
-      return false;
-    }
+    // Create formatted title and body with price details
+    final title = 'Price Drop Alert! 🎉';
+    final body =
+        '$productName price dropped from \$${oldPrice.toStringAsFixed(2)} to \$${newPrice.toStringAsFixed(2)}';
 
-    try {
-      // Find and remove the alert
-      final alertsRef = _database.child('priceAlerts');
-      final snapshot = await alertsRef
-          .orderByChild('deviceToken')
-          .equalTo(_deviceToken)
-          .get();
-
-      if (snapshot.exists) {
-        for (final child in snapshot.children) {
-          final data = child.value as Map<dynamic, dynamic>;
-          if (data['productId'] == productId) {
-            await child.ref.remove();
-            log('Price alert unsubscription successful');
-            return true;
-          }
-        }
-      }
-
-      log('No matching alert found to unsubscribe');
-      return false;
-    } catch (e) {
-      log('Error unsubscribing from price alert: $e');
-      return false;
-    }
+    // Display notification with product-specific payload
+    await showStaticNotification(
+      title: title,
+      body: body,
+      payload: 'product:$productId',
+    );
   }
 
-  // Get all subscribed price alerts
-  Future<List<Map<String, dynamic>>> getSubscribedAlerts() async {
-    if (_deviceToken == null) {
-      log('Device token not available');
-      return [];
-    }
-
-    try {
-      final alertsRef = _database.child('priceAlerts');
-      final snapshot = await alertsRef
-          .orderByChild('deviceToken')
-          .equalTo(_deviceToken)
-          .get();
-
-      final List<Map<String, dynamic>> alerts = [];
-
-      if (snapshot.exists) {
-        for (final child in snapshot.children) {
-          final data = child.value as Map<dynamic, dynamic>;
-          alerts.add({
-            'alertId': child.key,
-            'productId': data['productId'] ?? '',
-            'productName': data['productName'] ?? '',
-            'priceThreshold': data['priceThreshold'] ?? 0.0,
-            'currentPrice': data['currentPrice'] ?? 0.0, // Added current price
-            'productImage': data['productImage'] ?? '', // Added product image
-            'productMpn': data['productMpn'] ?? '', // Added product MPN
-            'isActive': data['isActive'] ?? true,
-            'timestamp': data['timestamp'] ?? 0,
-          });
-        }
-      }
-
-      log('Retrieved ${alerts.length} price alerts');
-      return alerts;
-    } catch (e) {
-      log('Error getting subscribed alerts: $e');
-      return [];
-    }
+  // Display welcome notification for new users
+  Future<void> showWelcomeNotification() async {
+    await showStaticNotification(
+      title: 'Welcome to MinSellPrice! 👋',
+      body: 'Start tracking prices and never miss a deal again!',
+      payload: 'welcome',
+    );
   }
 
-  // Check if user is subscribed to a specific product
-  Future<bool> isSubscribedToProduct(String productId) async {
-    if (_deviceToken == null) {
-      return false;
-    }
+  // Announce new app features to users
+  Future<void> showFeatureAnnouncement({
+    required String featureName,
+    required String description,
+  }) async {
+    await showStaticNotification(
+      title: 'New Feature: $featureName 🆕',
+      body: description,
+      payload: 'feature:$featureName',
+    );
+  }
 
-    try {
-      final alertsRef = _database.child('priceAlerts');
-      final snapshot = await alertsRef
-          .orderByChild('deviceToken')
-          .equalTo(_deviceToken)
-          .get();
+  // Show reminder notifications for user engagement
+  Future<void> showReminderNotification({
+    required String title,
+    required String message,
+  }) async {
+    await showStaticNotification(
+      title: title,
+      body: message,
+      payload: 'reminder',
+    );
+  }
 
-      if (snapshot.exists) {
-        for (final child in snapshot.children) {
-          final data = child.value as Map<dynamic, dynamic>;
-          if (data['productId'] == productId && data['isActive'] == true) {
-            return true;
-          }
-        }
-      }
+  // Remove all active notifications from the system
+  Future<void> cancelAllNotifications() async {
+    await _localNotifications.cancelAll();
+  }
 
-      return false;
-    } catch (e) {
-      log('Error checking subscription status: $e');
-      return false;
-    }
+  // Remove a specific notification by its ID
+  Future<void> cancelNotification(int id) async {
+    await _localNotifications.cancel(id);
   }
 }
