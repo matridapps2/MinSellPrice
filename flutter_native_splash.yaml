@@ -1,0 +1,47 @@
+flutter_native_splash:
+  # Background color
+  color: "#FFFFFF"
+  
+  # Background image (optional)
+  # image: assets/minsellprice_logo.png
+  
+  # Logo image
+  image: assets/minsellprice_logo.png
+  
+  # Logo size (optional)
+  image_size: 150
+  
+  # Logo position (optional)
+  image_dark: assets/minsellprice_logo.png
+  
+  # Branding (optional)
+  branding: assets/minsellprice_logo.png
+  branding_dark: assets/minsellprice_logo.png
+  
+  # Color for branding (optional)
+  color_dark: "#FFFFFF"
+  
+  # Android specific
+  android_12:
+    image: assets/minsellprice_logo.png
+    icon_background_color: "#FFFFFF"
+    image_dark: assets/minsellprice_logo.png
+    icon_background_color_dark: "#FFFFFF"
+  
+  # iOS specific
+  ios: true
+  
+  # Web specific
+  web: false
+  
+  # Fullscreen mode
+  fullscreen: true
+  
+  # Android gravity
+  android_gravity: center
+  
+  # iOS content mode
+  ios_content_mode: center
+  
+  # Remove splash screen after initialization
+  remove_after: true 

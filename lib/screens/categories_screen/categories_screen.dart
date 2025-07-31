@@ -344,7 +344,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                                 brandId:
                                                     subcategory['brand_id'],
                                                 brandName: subcategory['name'],
-                                                database: widget.database,
                                                 dataList: const [],
                                               ),
                                             ),

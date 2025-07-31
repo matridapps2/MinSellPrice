@@ -60,7 +60,7 @@ class BrandsApi {
     try {
       String uri = '$brandUrl/brands/$brandName?page_no=$pageNumber';
 
-      log('Brand Product API: $uri');
+      log('Brand Product List API: $uri');
       final response = await retry(
         () async => await http.get(Uri.parse(uri)),
         retryIf: (e) => e is SocketException || e is TimeoutException,
@@ -83,7 +83,10 @@ class BrandsApi {
       }
     } catch (e) {
       log('Exception: ${e.toString()}');
-      onExceptionResponse(context: context, exception: e.toString());
+      onExceptionResponse(
+          context: context,
+          exception: e.toString()
+      );
       return null;
     }
   }

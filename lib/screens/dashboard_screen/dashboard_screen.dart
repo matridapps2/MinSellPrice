@@ -5,7 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
@@ -16,12 +15,7 @@ import 'package:minsellprice/screens/product_list_screen/brand_product_list_scre
 import 'package:sqflite/sqflite.dart';
 
 class DashboardScreenWidget extends StatefulWidget {
-  const DashboardScreenWidget({
-    super.key,
-    required this.database,
-  });
-
-  final Database database;
+  const DashboardScreenWidget({super.key});
 
   @override
   State<DashboardScreenWidget> createState() => _DashboardScreenWidgetState();
@@ -52,110 +46,141 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 5, top: 15),
-      child: Container(
-        color: const Color.fromARGB(255, 245, 245, 245),
-        width: w,
-        child: Column(
-          children: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Center(
-                  child: SizedBox(
-                    height: 45,
-                    width: w * .9,
+    return Container(
+      color: const Color.fromARGB(255, 245, 245, 245),
+      width: w,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.only(top: 1, bottom: 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Colors.grey[50]!],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Enhanced Search Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     child: TextFormField(
-                      //enabled: true,
                       controller: _searchController,
                       focusNode: _searchFocusNode,
                       textInputAction: TextInputAction.search,
-                      onFieldSubmitted: (value) {
-                        if (value.trim().isNotEmpty) {
-                          //  _searchBrand(value);
-                        }
-                      },
                       cursorColor: AppColors.primary,
                       onTap: () {
                         _searchFocusNode.unfocus();
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SearchScreen()));
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SearchScreen(),
+                          ),
+                        );
                       },
                       decoration: InputDecoration(
-                        hintText: 'Search brands by name...',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 10.0,
+                        hintText: 'Search brands...',
+                        hintStyle: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: w * .035,
                         ),
-                        suffixIconColor: AppColors.primary,
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.primary),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(5),
-                            topRight: Radius.circular(5),
-                            bottomRight: Radius.circular(5),
+                        prefixIcon: Container(
+                          margin: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
                           ),
+                          child: Icon(
+                            Icons.search,
+                            color: AppColors.primary,
+                            size: w * .06,
+                          ),
+                        ),
+                        suffixIcon: Container(
+                          margin: const EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.mic,
+                            color: Colors.grey[600],
+                            size: w * .06,
+                          ),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.primary),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(5),
-                            topRight: Radius.circular(5),
-                            bottomRight: Radius.circular(5),
-                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.primary),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(5),
-                            topRight: Radius.circular(5),
-                            bottomRight: Radius.circular(5),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
                           ),
                         ),
-                        disabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.primary),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(5),
-                            topRight: Radius.circular(5),
-                            bottomRight: Radius.circular(5),
-                          ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: Scrollbar(
+          ),
+          Expanded(
+            child: Scrollbar(
+              controller: _scrollController,
+              thickness: 4,
+              thumbVisibility: true,
+              trackVisibility: true,
+              interactive: true,
+              child: SingleChildScrollView(
                 controller: _scrollController,
-                thickness: 4,
-                thumbVisibility: true,
-                trackVisibility: true,
-                interactive: true,
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      const SizedBox(height: 15),
-                      Consumer<BrandsProvider>(
-                        builder: (context, brandsProvider, child) {
-                          return _buildBrandsSections(brandsProvider);
-                        },
-                      ),
-                      const SizedBox(height: 45),
-                    ],
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    const SizedBox(height: 15),
+                    Consumer<BrandsProvider>(
+                      builder: (context, brandsProvider, child) {
+                        return _buildBrandsSections(brandsProvider);
+                      },
+                    ),
+                    const SizedBox(height: 45),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -167,9 +192,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
     if (brandsProvider.state == BrandsState.loading ||
         brandsProvider.state == BrandsState.initial) {
-      return Column(
+      return const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           BrandsSectionShimmer(title: ''),
           SizedBox(height: 25),
           BrandsSectionShimmer(title: ''),
@@ -204,32 +229,32 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 20.0),
+          const Padding(
+            padding: EdgeInsets.only(left: 20.0),
             child: Text(
               'Home & Garden',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 27,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Segoe UI',
               ),
             ),
           ),
-          const SizedBox(height: 25),
+          const SizedBox(height: 15),
           _brandsGrid(brandsProvider.homeGardenBrands),
-          const SizedBox(height: 5),
-          Padding(
-            padding: const EdgeInsets.only(left: 20.0),
+          const SizedBox(height: 0),
+          const Padding(
+            padding: EdgeInsets.only(left: 20.0),
             child: Text(
               'Shoes & Apparels',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 27,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Segoe UI',
               ),
             ),
           ),
-          const SizedBox(height: 25),
+          const SizedBox(height: 15),
           _brandsGrid(brandsProvider.shoesApparels),
         ],
       );
@@ -242,11 +267,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.image,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.image, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'No brands available',
@@ -259,16 +280,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             const SizedBox(height: 8),
             Text(
               'Brands will appear here once loaded',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),
       );
     }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GridView.builder(
@@ -288,11 +305,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => BrandProductListScreen(
-                    brandId: brand['brand_id'],
-                    brandName: brand['brand_name'],
-                    dataList: const [],
-                  ),
+                  builder:
+                      (context) => BrandProductListScreen(
+                        brandId: brand['brand_id'],
+                        brandName: brand['brand_name'],
+                        dataList: const [],
+                      ),
                 ),
               );
             },
@@ -322,18 +340,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    // gradient: LinearGradient(
-                    //   begin: Alignment.topLeft,
-                    //   end: Alignment.bottomRight,
-                    //   colors: [
-                    //     Colors.white,
-                    //     Colors.grey[50]!,
-                    //   ],
-                    // ),
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 1,
-                    ),
+                    border: Border.all(color: Colors.white, width: 1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -371,9 +378,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                             horizontal: 16.0,
                             vertical: 12.0,
                           ),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Colors.white,
-                            borderRadius: const BorderRadius.only(
+                            borderRadius: BorderRadius.only(
                               bottomLeft: Radius.circular(16),
                               bottomRight: Radius.circular(16),
                             ),
@@ -392,19 +399,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                     fontFamily: 'Segoe UI',
                                     letterSpacing: 0.3,
                                   ),
-                                 // maxLines: 2,
+                                  // maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              // const SizedBox(height: 4),
-                              // Container(
-                              //   width: 24,
-                              //   height: 2,
-                              //   decoration: BoxDecoration(
-                              //     color: AppColors.primary.withOpacity(0.6),
-                              //     borderRadius: BorderRadius.circular(1),
-                              //   ),
-                              // ),
                             ],
                           ),
                         ),
@@ -435,8 +433,12 @@ class BrandImageWidget extends StatefulWidget {
   final double? width;
   final double? height;
 
-  const BrandImageWidget(
-      {super.key, required this.brand, this.width, this.height});
+  const BrandImageWidget({
+    super.key,
+    required this.brand,
+    this.width,
+    this.height,
+  });
 
   @override
   State<BrandImageWidget> createState() => _BrandImageWidgetState();
@@ -477,8 +479,12 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
 
       _currentUrl = _imageUrl1;
 
-      log('BrandImageWidget [ID:$brandId] - Brand: "$brandName", Key: "$brandKey"');
-      log('BrandImageWidget [ID:$brandId] - Processed Brand Name: "$processedBrandName"');
+      log(
+        'BrandImageWidget [ID:$brandId] - Brand: "$brandName", Key: "$brandKey"',
+      );
+      log(
+        'BrandImageWidget [ID:$brandId] - Processed Brand Name: "$processedBrandName"',
+      );
       log('BrandImageWidget [ID:$brandId] - URL 1: $_imageUrl1');
       log('BrandImageWidget [ID:$brandId] - URL 2: $_imageUrl2');
       log('BrandImageWidget [ID:$brandId] - Full brand data: ${widget.brand}');
@@ -513,22 +519,23 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
         borderRadius: BorderRadius.circular(12),
         // color: Colors.white,
       ),
-      child: _currentUrl.isEmpty
-          ? _buildPlaceholderWidget()
-          : CachedNetworkImage(
-              imageUrl: _currentUrl,
-              fit: BoxFit.contain,
-              placeholder: (context, url) => _buildLoadingWidget(),
-              errorWidget: (context, url, error) {
-                log('Image load error for URL: $url, Error: $error');
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    _onImageError();
-                  }
-                });
-                return _buildErrorWidget();
-              },
-            ),
+      child:
+          _currentUrl.isEmpty
+              ? _buildPlaceholderWidget()
+              : CachedNetworkImage(
+                imageUrl: _currentUrl,
+                fit: BoxFit.contain,
+                placeholder: (context, url) => _buildLoadingWidget(),
+                errorWidget: (context, url, error) {
+                  log('Image load error for URL: $url, Error: $error');
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      _onImageError();
+                    }
+                  });
+                  return _buildErrorWidget();
+                },
+              ),
     );
   }
 
@@ -540,10 +547,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.grey[100]!,
-            Colors.grey[200]!,
-          ],
+          colors: [Colors.grey[100]!, Colors.grey[200]!],
         ),
       ),
       child: Column(
@@ -563,11 +567,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
                 ),
               ],
             ),
-            child: Icon(
-              Icons.image,
-              color: Colors.grey[400],
-              size: 28,
-            ),
+            child: Icon(Icons.image, color: Colors.grey[400], size: 28),
           ),
         ],
       ),
@@ -581,10 +581,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.grey[50]!,
-            Colors.grey[100]!,
-          ],
+          colors: [Colors.grey[50]!, Colors.grey[100]!],
         ),
       ),
       child: Column(
@@ -606,7 +603,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
             ),
             child: SizedBox(
               width: 24,
-              height:  24,
+              height: 24,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -636,10 +633,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.red[50]!,
-            Colors.red[100]!,
-          ],
+          colors: [Colors.red[50]!, Colors.red[100]!],
         ),
       ),
       child: Column(

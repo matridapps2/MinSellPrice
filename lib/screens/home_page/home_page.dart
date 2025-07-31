@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
+import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 import 'package:minsellprice/screens/account_screen/account_screen.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
@@ -73,7 +74,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 return provider;
               },
               child: DashboardScreenWidget(
-                database: db,
               ),
             ),
             LikedProduct(database: db),
@@ -104,7 +104,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
                 return provider;
               },
               child: DashboardScreenWidget(
-                database: database,
               ),
             ),
             LikedProduct(database: database),
@@ -143,37 +142,185 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Auto
             key: scaffoldKey,
             extendBody: true,
             resizeToAvoidBottomInset: false,
+            // appBar: AppBar(
+            //   backgroundColor: Colors.white,
+            //   surfaceTintColor: Colors.transparent,
+            //   elevation: 0,
+            //   toolbarHeight: 80,
+            //   centerTitle: true,
+            //   automaticallyImplyLeading: false,
+            //   title:
+            //   Row(
+            //     mainAxisSize: MainAxisSize.min,
+            //     children: [
+            //       Icon(
+            //         Icons.show_chart,
+            //         color: AppColors.primary,
+            //         size: 24,
+            //       ),
+            //       const SizedBox(width: 8),
+            //       Text(
+            //         'MinSellPrice',
+            //         style: TextStyle(
+            //           color: AppColors.primary,
+            //           fontSize: 20,
+            //           fontWeight: FontWeight.bold,
+            //           fontFamily: 'Segoe UI',
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            //   actionsPadding: const EdgeInsets.only(right: 15),
+            //   actions: const [
+            //     Icon(Icons.shopping_cart, size: 35, color: AppColors.primary),
+            //   ],
+            // ),
             appBar: AppBar(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              toolbarHeight: 80,
-              centerTitle: true,
-              automaticallyImplyLeading: false,
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.show_chart,
-                    color: AppColors.primary,
-                    size: 24,
+                backgroundColor: Colors.white,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                toolbarHeight: 80,
+                centerTitle: true,
+                automaticallyImplyLeading: false,
+             title:  Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white,
+                      Colors.grey[50]!,
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'MinSellPrice',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Segoe UI',
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Header Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 20),
+                      child: Row(
+                        children: [
+                          // App Logo
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.3),
+                                        spreadRadius: 1,
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.shopping_bag,
+                                    color: Colors.white,
+                                    size: w * .06,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'MinSellPrice',
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontSize: w * .05,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Segoe UI',
+                                        ),
+                                      ),
+                                      Text(
+                                        'Find the best prices',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: w * .025,
+                                          fontWeight: FontWeight.w500,
+                                          fontFamily: 'Segoe UI',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Action Buttons
+                          Row(
+                            children: [
+                              // Notifications
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: () {
+                                      // TODO: Navigate to notifications
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Stack(
+                                        children: [
+                                          Icon(
+                                            Icons.notifications_outlined,
+                                            color: Colors.grey[700],
+                                            size: w * .07,
+                                          ),
+                                          Positioned(
+                                            right: 0,
+                                            top: 0,
+                                            child: Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              actionsPadding: const EdgeInsets.only(right: 15),
-              actions: const [
-                Icon(Icons.shopping_cart, size: 35, color: AppColors.primary),
-              ],
             ),
             bottomNavigationBar: MediaQuery.of(context).viewInsets.bottom != 0.0
                 ? const SizedBox()

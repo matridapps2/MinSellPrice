@@ -1,7 +1,6 @@
 import 'dart:developer';
 import 'dart:convert';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -9,6 +8,7 @@ import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
+import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/filter_preferences_db.dart';
@@ -19,13 +19,11 @@ class BrandProductListScreen extends StatefulWidget {
     super.key,
     required this.brandId,
     required this.brandName,
-    this.database,
     required this.dataList,
   });
 
   final int brandId;
   final String? brandName;
-  final Database? database;
   final List<Map<String, dynamic>> dataList;
 
   @override
@@ -46,6 +44,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   int itemsPerPage = 20;
   int endIndex = 0;
   int startIndex = 0;
+
+  // New variables for API pagination
+  int totalProductCount = 0;
+  int totalPages = 0;
+  int currentApiPage = 1;
+  List<VendorProduct> allProducts = [];
+  bool hasMoreData = true;
 
   bool filterSubmitted = true;
   bool _isLoading = false;
@@ -105,7 +110,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
     setState(() => _isLoading = true);
     try {
       final allProductsResponse = await BrandsApi.getProductListByBrandName(
-          widget.brandName.toString(), currentPage + 1, context);
+          widget.brandName.toString(), currentApiPage, context);
       final Map<String, dynamic> decoded =
           jsonDecode(allProductsResponse ?? '{}');
 
@@ -113,15 +118,23 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
       final List<VendorProduct> fetchedProducts =
           jsonList.map((e) => VendorProduct.fromJson(e)).toList();
 
-      int start = currentPage * itemsPerPage;
-      int end = (start + itemsPerPage > fetchedProducts.length)
-          ? fetchedProducts.length
-          : start + itemsPerPage;
+      // Get total product count from API response
+      totalProductCount = decoded['productCount'] ?? 0;
+      totalPages = (totalProductCount / itemsPerPage).ceil();
+
+      log('Total products from API: $totalProductCount');
+      log('Total pages calculated: $totalPages');
+
+      // Add fetched products to allProducts list
+      allProducts.addAll(fetchedProducts);
+
+      // Check if we have more data to load
+      hasMoreData = allProducts.length < totalProductCount;
 
       double calculatedMaxPrice = 1000.0;
-      if (fetchedProducts.isNotEmpty) {
-        final validPrices = fetchedProducts
-            .map((product) => double.tryParse(product.vendorpricePrice ?? '0'))
+      if (allProducts.isNotEmpty) {
+        final validPrices = allProducts
+            .map((product) => double.tryParse(product.vendorpricePrice))
             .where((price) => price != null && price > 0)
             .cast<double>()
             .toList();
@@ -134,18 +147,17 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
       }
 
       setState(() {
-        brandProducts = fetchedProducts;
-        //  uniqueVendors = tempList;
-        tempProductList = fetchedProducts;
+        brandProducts = List.from(allProducts);
+        tempProductList = List.from(allProducts);
         maxPriceFromAPI = calculatedMaxPrice;
 
         if (currentPriceRange.end == 1000.0) {
           currentPriceRange = RangeValues(0, maxPriceFromAPI);
         }
 
-        startIndex = start;
-        endIndex = end;
-        finalList = tempProductList.sublist(startIndex, endIndex);
+        // Calculate current page display
+        _updateCurrentPageDisplay();
+
         filterVendor = [];
         priceSorting = null;
         _isLoading = false;
@@ -157,6 +169,49 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
         _isError = true;
       });
       log('Error in fetching Brand Product list: $e');
+    }
+  }
+
+  void _updateCurrentPageDisplay() {
+    startIndex = currentPage * itemsPerPage;
+    endIndex = (startIndex + itemsPerPage > tempProductList.length)
+        ? tempProductList.length
+        : startIndex + itemsPerPage;
+    finalList = tempProductList.sublist(startIndex, endIndex);
+  }
+
+  Future<void> _loadMoreProducts() async {
+    if (!hasMoreData || _isLoading) return;
+
+    setState(() => _isLoading = true);
+    try {
+      currentApiPage++;
+      final allProductsResponse = await BrandsApi.getProductListByBrandName(
+          widget.brandName.toString(), currentApiPage, context);
+      final Map<String, dynamic> decoded =
+          jsonDecode(allProductsResponse ?? '{}');
+
+      final List<dynamic> jsonList = decoded['brand_product'] ?? [];
+      final List<VendorProduct> fetchedProducts =
+          jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+
+      // Add new products to the list
+      allProducts.addAll(fetchedProducts);
+
+      // Check if we have more data to load
+      hasMoreData = allProducts.length < totalProductCount;
+
+      setState(() {
+        brandProducts = List.from(allProducts);
+        tempProductList = List.from(allProducts);
+        _updateCurrentPageDisplay();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      log('Error loading more products: $e');
     }
   }
 
@@ -177,23 +232,41 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                   toolbarHeight: 80,
                   automaticallyImplyLeading: false,
                   centerTitle: false,
-                  title: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                    child: SizedBox(
-                      width: w * .54,
-                      child: AutoSizeText(
-                        '${widget.brandName}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: w * .04),
+                  title: Visibility(
+                    visible: !_isLoading,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                      child: SizedBox(
+                        width: w * .54,
+                        child: AutoSizeText(
+                          '${widget.brandName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: w * .04),
+                        ),
                       ),
                     ),
                   ),
                   actions: [
-                    Image.asset(
-                      'assets/minsellprice_app_icon.png',
-                      height: .23 * w,
-                      fit: BoxFit.fill,
+                    Visibility(
+                      visible: !_isLoading,
+                      child: GestureDetector(
+                        onTap: () {
+                          log('Working');
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                                builder: (context) => const HomePage()),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.asset(
+                            'assets/minsellprice_app_icon.png',
+                            height: .23 * w,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -231,10 +304,22 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                         ),
                       ),
                       actions: [
-                        Image.asset(
-                          'assets/minsellprice_app_icon.png',
-                          height: .23 * w,
-                          fit: BoxFit.fill,
+                        GestureDetector(
+                          onTap: () {
+                            log('Working');
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                  builder: (context) => const HomePage()),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Image.asset(
+                              'assets/minsellprice_app_icon.png',
+                              height: .23 * w,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -274,10 +359,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                       currentPriceRange: currentPriceRange,
                       currentInStockOnly: currentInStockOnly,
                       currentOnSaleOnly: currentOnSaleOnly,
-                      onFiltersApplied: (vendors, priceSorting, priceRange,
-                          inStockOnly, onSaleOnly) {
-                        _applyFilters(vendors, priceSorting, priceRange,
-                            inStockOnly, onSaleOnly);
+                      onFiltersApplied: (vendors, priceSorting, priceRange, inStockOnly, onSaleOnly) {
+                        _applyFilters(vendors, priceSorting, priceRange, inStockOnly, onSaleOnly);
                       },
                     ),
                     appBar: AppBar(
@@ -298,9 +381,22 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                         ),
                       ),
                       actions: [
-                        Image.asset(
-                          'assets/minsellprice_app_icon.png',
-                          fit: BoxFit.fill,
+                        GestureDetector(
+                          onTap: () {
+                            log('Working');
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                  builder: (context) => const HomePage()),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Image.asset(
+                              'assets/minsellprice_app_icon.png',
+                              height: .23 * w,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -312,53 +408,126 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 5),
-                              Row(
-                                mainAxisSize: MainAxisSize.max,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  InkWell(
-                                    onTap: () {
-                                      _scaffoldKey.currentState!
-                                          .openEndDrawer();
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16.0),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.filter_list_alt),
-                                          AutoSizeText(
-                                            'Filters',
-                                            style: TextStyle(
-                                              fontSize: .04 * w,
-                                              fontFamily: 'Futura BdCn BT Bold',
-                                              fontWeight: FontWeight.w300,
+                              Visibility(
+                                visible: totalProductCount > 0,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      // Filters Icon Button
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.primary
+                                                  .withOpacity(0.3),
+                                              spreadRadius: 1,
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
                                             ),
-                                          )
-                                        ],
+                                          ],
+                                        ),
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            onTap: () {
+                                              _scaffoldKey.currentState!
+                                                  .openEndDrawer();
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.all(12),
+                                              child: Icon(
+                                                Icons.filter_alt,
+                                                color: Colors.white,
+                                                size: w * .05,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0),
-                                    child: AutoSizeText(
-                                      '${tempProductList.length} Product(s)',
-                                      style: TextStyle(
-                                        fontSize: .06 * w,
-                                        fontFamily: 'Futura BdCn BT Bold',
-                                        fontWeight: FontWeight.w300,
+
+                                      const SizedBox(width: 12),
+
+                                      // Product Count Badge
+                                      Expanded(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[50],
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.grey[200]!,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(6),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary
+                                                      .withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: Icon(
+                                                  Icons.shopping_bag_outlined,
+                                                  color: AppColors.primary,
+                                                  size: w * .06,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Total Products',
+                                                      style: TextStyle(
+                                                        color: Colors.grey[600],
+                                                        fontSize: w * .045,
+                                                        fontFamily: 'Segoe UI',
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      '$totalProductCount items available',
+                                                      style: TextStyle(
+                                                        color:
+                                                            AppColors.primary,
+                                                        fontSize: w * .039,
+                                                        fontFamily: 'Segoe UI',
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                               const SizedBox(height: 5),
-                              tempProductList.isEmpty
+                              totalProductCount == 0
                                   ? SizedBox(
                                       width: w,
-                                      height: h * .6,
+                                      height: h / 1.3,
                                       child: Center(
                                         child: RichText(
                                           textAlign: TextAlign.center,
@@ -390,244 +559,303 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                         ),
                                       ),
                                     )
-                                  : Expanded(
-                                      child: Align(
-                                        alignment: Alignment.topCenter,
-                                        child: Scrollbar(
-                                          thickness: 4,
-                                          thumbVisibility: true,
-                                          trackVisibility: true,
-                                          interactive: true,
-                                          controller: _scrollController,
-                                          child: SingleChildScrollView(
-                                            controller: _scrollController,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
+                                  : totalProductCount > 0
+                                      ? Expanded(
+                                          child: Align(
+                                            alignment: Alignment.topCenter,
+                                            child: Scrollbar(
+                                              thickness: 4,
+                                              thumbVisibility: true,
+                                              trackVisibility: true,
+                                              interactive: true,
+                                              controller: _scrollController,
+                                              child: SingleChildScrollView(
+                                                controller: _scrollController,
+                                                child: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
                                                       horizontal: 10.0),
-                                              child: Wrap(
-                                                runSpacing: 10,
-                                                children: List.generate(
-                                                  finalList.length,
-                                                  (index) => Padding(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 4.0),
-                                                    child: GestureDetector(
-                                                      onTap: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (context) => ProductDetailsScreen(
-                                                                  productId: finalList[
-                                                                          index]
-                                                                      .productId,
-                                                                  brandName: widget
-                                                                          .brandName ??
-                                                                      'Unknown Brand',
-                                                                  productMPN: finalList[
-                                                                          index]
-                                                                      .productMpn,
-                                                                  productImage:
-                                                                      finalList[
-                                                                              index]
-                                                                          .productImage,
-                                                                  productPrice:
-                                                                      finalList[
-                                                                              index]
-                                                                          .vendorpricePrice)),
-                                                        );
-                                                      },
-                                                      child: Card(
-                                                        shape:
-                                                            const RoundedRectangleBorder(
-                                                          side: BorderSide(
-                                                            color: Colors.grey,
-                                                          ),
-                                                        ),
-                                                        child: Container(
-                                                          width: w * .42,
-                                                          color: Colors.white,
-                                                          child: Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              const SizedBox(
-                                                                  height: 5),
-                                                              Center(
-                                                                  child: Image
-                                                                      .network(
-                                                                _getProperImageUrl(
-                                                                    finalList[
-                                                                            index]
-                                                                        .productImage),
-                                                                height: w * .3,
-                                                                fit: BoxFit
-                                                                    .cover,
-                                                                errorBuilder:
-                                                                    (context,
-                                                                        error,
-                                                                        stackTrace) {
-                                                                  return Image
-                                                                      .asset(
-                                                                    'assets/no_image/no_image.jpg',
-                                                                    height:
-                                                                        w * .3,
-                                                                    fit: BoxFit
-                                                                        .cover,
-                                                                  );
-                                                                },
-                                                              )),
-                                                              const SizedBox(
-                                                                  height: 2),
-                                                              Container(
-                                                                constraints: BoxConstraints(
-                                                                    minHeight:
-                                                                        w * .15,
-                                                                    maxHeight:
-                                                                        w * .15),
-                                                                child: Padding(
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                          .only(
-                                                                          left:
-                                                                              8,
-                                                                          right:
-                                                                              10.0,
-                                                                          top:
-                                                                              8),
-                                                                  child: Text(
-                                                                    finalList[index]
-                                                                            .productName
-                                                                            .isEmpty
-                                                                        ? '--'
-                                                                        : finalList[index]
-                                                                            .productName,
-                                                                    maxLines: 3,
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                    style: TextStyle(
-                                                                        // color: '#222223'.toColor(),
-                                                                        fontFamily: 'Myriad Arabic',
-                                                                        fontSize: w * .06,
-                                                                        height: 1,
-                                                                        wordSpacing: 0,
-                                                                        letterSpacing: 0,
-                                                                        fontWeight: FontWeight.w900),
+                                                  child: Wrap(
+                                                    runSpacing: 10,
+                                                    children: List.generate(
+                                                      finalList.length,
+                                                      (index) => Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal:
+                                                                    4.0),
+                                                        child: GestureDetector(
+                                                          onTap: () {
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                  builder: (context) => ProductDetailsScreen(
+                                                                      productId:
+                                                                          finalList[index]
+                                                                              .productId,
+                                                                      brandName:
+                                                                          widget.brandName ??
+                                                                              'Unknown Brand',
+                                                                      productMPN:
+                                                                          finalList[index]
+                                                                              .productMpn,
+                                                                      productImage:
+                                                                          finalList[index]
+                                                                              .productImage,
+                                                                      productPrice:
+                                                                          finalList[index]
+                                                                              .vendorpricePrice)),
+                                                            );
+                                                          },
+                                                          child: Container(
+                                                            width: w * .45,
+                                                            height: h * .48,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color:
+                                                                  Colors.white,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          16),
+                                                              boxShadow: [
+                                                                BoxShadow(
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .withOpacity(
+                                                                          0.1),
+                                                                  spreadRadius:
+                                                                      2,
+                                                                  blurRadius: 8,
+                                                                  offset:
+                                                                      const Offset(
+                                                                          0, 4),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Container(
+                                                                  width: double
+                                                                      .infinity,
+                                                                  height:
+                                                                      w * .45,
+                                                                  decoration:
+                                                                      const BoxDecoration(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              16),
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              16),
+                                                                    ),
                                                                   ),
-                                                                ),
-                                                              ),
-                                                              Padding(
-                                                                padding: const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        8.0,
-                                                                    vertical:
-                                                                        8),
-                                                                child:
-                                                                    AutoSizeText(
-                                                                  'MPN# ${finalList[index].productMpn}',
-                                                                  maxLines: 1,
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .ellipsis,
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .black,
-                                                                      fontFamily:
-                                                                          'Segoe UI',
-                                                                      fontSize:
-                                                                          w *
-                                                                              .04,
-                                                                      wordSpacing:
-                                                                          0,
-                                                                      letterSpacing:
-                                                                          0,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w500
-
-                                                                      // fontWeight: FontWeight.w900
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                              Padding(
-                                                                padding: const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        8.0,
-                                                                    vertical:
-                                                                        5),
-                                                                child: RichText(
-                                                                  text:
-                                                                      TextSpan(
-                                                                    text:
-                                                                        '\$${finalList[index].vendorpricePrice}',
-                                                                    style:
-                                                                        TextStyle(
-                                                                      color: Colors
-                                                                          .black87,
-                                                                      fontFamily:
-                                                                          'MyriadPro-BoldCond',
-                                                                      fontSize:
-                                                                          w * .08,
-                                                                      wordSpacing:
-                                                                          .1,
-                                                                      letterSpacing:
-                                                                          0,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
+                                                                  child:
+                                                                      ClipRRect(
+                                                                    borderRadius:
+                                                                        const BorderRadius
+                                                                            .only(
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              0),
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              0),
+                                                                    ),
+                                                                    child: Image
+                                                                        .network(
+                                                                      _getProperImageUrl(
+                                                                          finalList[index]
+                                                                              .productImage),
+                                                                      fit: BoxFit
+                                                                          .contain,
+                                                                      errorBuilder: (context,
+                                                                          error,
+                                                                          stackTrace) {
+                                                                        return Container(
+                                                                          color:
+                                                                              Colors.grey[200],
+                                                                          child:
+                                                                              Icon(
+                                                                            Icons.image_not_supported_outlined,
+                                                                            size:
+                                                                                w * .08,
+                                                                            color:
+                                                                                Colors.grey[400],
+                                                                          ),
+                                                                        );
+                                                                      },
                                                                     ),
                                                                   ),
                                                                 ),
-                                                              ),
-                                                              Padding(
-                                                                padding: const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        8.0,
-                                                                    vertical:
-                                                                        8),
-                                                                child: Text(
-                                                                  'Show Prices (${finalList[index].vendorIdCount})',
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontSize:
-                                                                        22,
-                                                                    color: Colors
-                                                                        .blue,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
+
+                                                                // Product Details
+                                                                Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          16),
+                                                                  child: Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      // Product Name
+                                                                      SizedBox(
+                                                                        height:
+                                                                            w * .2,
+                                                                        child:
+                                                                            Text(
+                                                                          finalList[index].productName.isEmpty
+                                                                              ? 'Product Name Not Available'
+                                                                              : finalList[index].productName,
+                                                                          maxLines:
+                                                                              4,
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                          style:
+                                                                              TextStyle(
+                                                                            color:
+                                                                                Colors.grey[800],
+                                                                            fontFamily:
+                                                                                'Segoe UI',
+                                                                            fontSize:
+                                                                                18,
+                                                                            height:
+                                                                                1.2,
+                                                                            fontWeight:
+                                                                                FontWeight.w600,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                          height:
+                                                                              0),
+                                                                      // MPN
+                                                                      SizedBox(
+                                                                        height: h *
+                                                                            .05,
+                                                                        child:
+                                                                            Text(
+                                                                          'MPN: #${finalList[index].productMpn}',
+                                                                          style:
+                                                                              const TextStyle(
+                                                                            fontFamily:
+                                                                                'Segoe UI',
+                                                                            fontSize:
+                                                                                16,
+                                                                          ),
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                          maxLines:
+                                                                              2,
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                          height:
+                                                                              13),
+                                                                      // Price Section
+                                                                      Container(
+                                                                        height: h *
+                                                                            .09,
+                                                                        decoration:
+                                                                            BoxDecoration(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(10),
+                                                                        ),
+                                                                        child:
+                                                                            Column(
+                                                                          crossAxisAlignment:
+                                                                              CrossAxisAlignment.start,
+                                                                          children: [
+                                                                            // Price Row
+                                                                            Row(
+                                                                              mainAxisAlignment: MainAxisAlignment.start,
+                                                                              children: [
+                                                                                Text(
+                                                                                  '\$${finalList[index].vendorpricePrice}',
+                                                                                  style: const TextStyle(
+                                                                                    color: Colors.black,
+                                                                                    fontFamily: 'Segoe UI',
+                                                                                    fontSize: 20,
+                                                                                    fontWeight: FontWeight.bold,
+                                                                                  ),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                            const SizedBox(height: 10),
+                                                                            // Vendor Count Row
+                                                                            Row(
+                                                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                              children: [
+                                                                                Container(
+                                                                                  padding: EdgeInsets.symmetric(
+                                                                                    horizontal: w * .02,
+                                                                                    vertical: w * .015,
+                                                                                  ),
+                                                                                  decoration: BoxDecoration(
+                                                                                    gradient: LinearGradient(
+                                                                                      colors: [
+                                                                                        AppColors.primary,
+                                                                                        AppColors.primary.withOpacity(0.8),
+                                                                                      ],
+                                                                                    ),
+                                                                                    borderRadius: BorderRadius.circular(8),
+                                                                                    boxShadow: [
+                                                                                      BoxShadow(
+                                                                                        color: AppColors.primary.withOpacity(0.3),
+                                                                                        spreadRadius: 1,
+                                                                                        blurRadius: 3,
+                                                                                        offset: const Offset(0, 1),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                  child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    children: [
+                                                                                      Icon(
+                                                                                        Icons.storefront_outlined,
+                                                                                        color: Colors.white,
+                                                                                        size: 20,
+                                                                                      ),
+                                                                                      const SizedBox(width: 4),
+                                                                                      Text(
+                                                                                        '${finalList[index].vendorIdCount}',
+                                                                                        style: TextStyle(
+                                                                                          color: Colors.white,
+                                                                                          fontSize: 20,
+                                                                                          fontWeight: FontWeight.bold,
+                                                                                        ),
+                                                                                      ),
+                                                                                      const SizedBox(width: 2),
+                                                                                      Text(
+                                                                                        'vendors',
+                                                                                        style: TextStyle(
+                                                                                          color: Colors.white.withOpacity(0.9),
+                                                                                          fontSize: 20,
+                                                                                          fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                    ],
                                                                   ),
                                                                 ),
-                                                              ),
-                                                              // Center(
-                                                              //   child: InkWell(
-                                                              //     onTap: () async =>
-                                                              //         await MyInAppBrowser().openUrlRequest(
-                                                              //       urlRequest: URLRequest(
-                                                              //         url: WebUri(finalList[index].vendorUrl + '?utm_source=minsellprice..com&utm_medium=mobile-app',),
-                                                              //       ),
-                                                              //       options:
-                                                              //           InAppBrowserClassOptions(
-                                                              //         crossPlatform:
-                                                              //             InAppBrowserOptions(
-                                                              //           toolbarTopBackgroundColor:
-                                                              //                AppColors.primary,
-                                                              //         ),
-                                                              //       ),
-                                                              //     ),
-                                                              //     child: BuyAtButton(
-                                                              //         imageUrl: finalList[index].vendorName),
-                                                              //   ),
-                                                              // ),
-                                                              const SizedBox(
-                                                                  height: 15)
-                                                            ],
+                                                              ],
+                                                            ),
                                                           ),
                                                         ),
                                                       ),
@@ -637,18 +865,39 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
+                                        )
+                                      : const SizedBox(),
                               const SizedBox(height: 10),
-                              // Stylish Pagination Container
+                              // Loading indicator for more products
+                              if (_isLoading && allProducts.isNotEmpty)
+                                Container(
+                                  width: double.infinity,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: Column(
+                                      children: [
+                                        CircularProgressIndicator(
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  AppColors.primary),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          'Loading more products...',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: w * .035,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 15, horizontal: 16),
-                                // margin: EdgeInsets.only(
-                                //   bottom: MediaQuery.of(context).padding.bottom + 10,
-                                // ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
@@ -671,7 +920,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                     ),
                                   ],
                                 ),
-                                child: tempProductList.length > itemsPerPage
+                                child: totalProductCount > itemsPerPage
                                     ? Column(
                                         children: [
                                           // Page Counter
@@ -696,9 +945,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Text(
-                                                  'Page ${currentPage + 1} of ${(tempProductList.length / itemsPerPage).ceil()}',
+                                                  'Page ${currentPage + 1} of $totalPages',
                                                   style: TextStyle(
-                                                    fontSize: w * .035,
+                                                    fontSize: w * .039,
                                                     fontWeight: FontWeight.w700,
                                                     color: Colors.grey[800],
                                                     letterSpacing: 0.5,
@@ -718,9 +967,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                             12),
                                                   ),
                                                   child: Text(
-                                                    '${tempProductList.length} total',
+                                                    '$totalProductCount total',
                                                     style: TextStyle(
-                                                      fontSize: w * .03,
+                                                      fontSize: w * .039,
                                                       fontWeight:
                                                           FontWeight.w600,
                                                       color: AppColors.primary,
@@ -836,20 +1085,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         : () {
                                                             setState(() {
                                                               currentPage--;
-                                                              startIndex =
-                                                                  currentPage *
-                                                                      itemsPerPage;
-                                                              endIndex = (startIndex + itemsPerPage >
-                                                                      tempProductList
-                                                                          .length)
-                                                                  ? tempProductList
-                                                                      .length
-                                                                  : startIndex +
-                                                                      itemsPerPage;
-                                                              finalList = tempProductList
-                                                                  .sublist(
-                                                                      startIndex,
-                                                                      endIndex);
+                                                              _updateCurrentPageDisplay();
                                                             });
                                                           },
                                                     child: Row(
@@ -905,9 +1141,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                 .withOpacity(
                                                                     0.8);
                                                           }
-                                                          return endIndex ==
-                                                                  tempProductList
-                                                                      .length
+                                                          return (currentPage +
+                                                                      1) >=
+                                                                  totalPages
                                                               ? Colors
                                                                   .grey[300]!
                                                               : Colors.white;
@@ -919,9 +1155,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   Color>(
                                                         (Set<MaterialState>
                                                             states) {
-                                                          return endIndex ==
-                                                                  tempProductList
-                                                                      .length
+                                                          return (currentPage +
+                                                                      1) >=
+                                                                  totalPages
                                                               ? Colors
                                                                   .grey[500]!
                                                               : AppColors
@@ -934,9 +1170,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   BorderSide>(
                                                         (Set<MaterialState>
                                                             states) {
-                                                          return endIndex ==
-                                                                  tempProductList
-                                                                      .length
+                                                          return (currentPage +
+                                                                      1) >=
+                                                                  totalPages
                                                               ? BorderSide(
                                                                   color: Colors
                                                                           .grey[
@@ -968,9 +1204,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   .pressed)) {
                                                             return 2;
                                                           }
-                                                          return endIndex ==
-                                                                  tempProductList
-                                                                      .length
+                                                          return (currentPage +
+                                                                      1) >=
+                                                                  totalPages
                                                               ? 0
                                                               : 3;
                                                         },
@@ -982,37 +1218,33 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   .withOpacity(
                                                                       0.3)),
                                                     ),
-                                                    onPressed: endIndex ==
-                                                            tempProductList
-                                                                .length
-                                                        ? null
-                                                        : () {
-                                                            _scrollController.animateTo(
-                                                                0,
-                                                                duration:
-                                                                    const Duration(
+                                                    onPressed:
+                                                        (currentPage + 1) >=
+                                                                totalPages
+                                                            ? null
+                                                            : () async {
+                                                                _scrollController.animateTo(0,
+                                                                    duration: const Duration(
                                                                         milliseconds:
                                                                             500),
-                                                                curve: Curves
-                                                                    .easeInOut);
-                                                            setState(() {
-                                                              currentPage++;
-                                                              startIndex =
-                                                                  currentPage *
-                                                                      itemsPerPage;
-                                                              endIndex = (startIndex + itemsPerPage >
-                                                                      tempProductList
-                                                                          .length)
-                                                                  ? tempProductList
-                                                                      .length
-                                                                  : startIndex +
-                                                                      itemsPerPage;
-                                                              finalList = tempProductList
-                                                                  .sublist(
-                                                                      startIndex,
-                                                                      endIndex);
-                                                            });
-                                                          },
+                                                                    curve: Curves
+                                                                        .easeInOut);
+
+                                                                // Check if we need to load more data
+                                                                if ((currentPage +
+                                                                                1) *
+                                                                            itemsPerPage >=
+                                                                        allProducts
+                                                                            .length &&
+                                                                    hasMoreData) {
+                                                                  await _loadMoreProducts();
+                                                                }
+
+                                                                setState(() {
+                                                                  currentPage++;
+                                                                  _updateCurrentPageDisplay();
+                                                                });
+                                                              },
                                                     child: Row(
                                                       mainAxisAlignment:
                                                           MainAxisAlignment
@@ -1033,9 +1265,9 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           Icons
                                                               .arrow_forward_ios,
                                                           size: 18,
-                                                          color: endIndex ==
-                                                                  tempProductList
-                                                                      .length
+                                                          color: (currentPage +
+                                                                      1) >=
+                                                                  totalPages
                                                               ? Colors.grey[500]
                                                               : AppColors
                                                                   .primary,
@@ -1080,8 +1312,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                   ));
   }
 
-  void _applyFilters(List<String> vendors, int? priceSorting,
-      RangeValues priceRange, bool inStockOnly, bool onSaleOnly) {
+  void _applyFilters(List<String> vendors, int? priceSorting, RangeValues priceRange, bool inStockOnly, bool onSaleOnly) {
     setState(() {
       filterVendor = vendors;
       this.priceSorting = priceSorting;
@@ -1118,20 +1349,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
             return priceB.compareTo(priceA);
           });
         } else if (priceSorting == 3) {
-          tempProductList.sort(
-              (a, b) => (a.productName ?? '').compareTo(b.productName ?? ''));
+          tempProductList.sort((a, b) => (a.productName ?? '').compareTo(b.productName ?? ''));
         } else if (priceSorting == 4) {
-          tempProductList.sort(
-              (a, b) => (b.productName ?? '').compareTo(a.productName ?? ''));
+          tempProductList.sort((a, b) => (b.productName ?? '').compareTo(a.productName ?? ''));
         }
       }
-
       currentPage = 0;
-      startIndex = currentPage * itemsPerPage;
-      endIndex = (startIndex + itemsPerPage > tempProductList.length)
-          ? tempProductList.length
-          : startIndex + itemsPerPage;
-      finalList = tempProductList.sublist(startIndex, endIndex);
+      _updateCurrentPageDisplay();
     });
     _saveFilterPreferences();
   }
@@ -1153,23 +1377,18 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
     }
   }
 
-  // Helper method to fix image URLs from API
   String _getProperImageUrl(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
       return 'https://www.minsellprice.com/assets/no_image/no_image.jpg';
     }
 
-    // If URL starts with //, add https:
     if (imageUrl.startsWith('//')) {
       return 'https:$imageUrl';
     }
 
-    // If URL doesn't start with http/https, add https://
     if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
       return 'https://$imageUrl';
     }
-
-    // Return as is if it's already a proper URL
     return imageUrl;
   }
 }
@@ -1355,47 +1574,66 @@ class _FilterMenuState extends State<FilterMenu> {
                   ),
 
                   const SizedBox(height: 20),
-
                   // Vendor Section
                   _buildSectionTitle('Vendors'),
                   Card(
-                    child: Container(
-                      constraints: BoxConstraints(maxHeight: h * .25),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _getUniqueVendorsFromProducts().length,
-                        itemBuilder: (context, index) {
+                    child: Column(
+                      children: List.generate(
+                        _getUniqueVendorsFromProducts().length, (index) {
                           final vendor = _getUniqueVendorsFromProducts()[index];
-                          final productCount =
-                              _getProductCountForVendor(vendor);
-                          return CheckboxListTile(
-                            dense: true,
-                            activeColor: AppColors.primary,
-                            title: Text(
-                              vendor,
-                              style: const TextStyle(fontSize: 14),
+                          final productCount = _getProductCountForVendor(vendor);
+                          final isSelected = tempFilterVendor.contains(vendor);
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withOpacity(0.1)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            subtitle: Text(
-                              '$productCount products',
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.grey),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            child: CheckboxListTile(
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 2),
+                              activeColor: AppColors.primary,
+                              title: Text(
+                                vendor,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.black87,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '$productCount products',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSelected
+                                      ? AppColors.primary.withOpacity(0.8)
+                                      : Colors.grey,
+                                ),
+                              ),
+                              value: isSelected,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  if (value == true) {
+                                    tempFilterVendor.add(vendor);
+                                  } else {
+                                    tempFilterVendor.remove(vendor);
+                                  }
+                                });
+                              },
                             ),
-                            value: tempFilterVendor.contains(vendor),
-                            onChanged: (bool? value) {
-                              setState(() {
-                                if (value == true) {
-                                  tempFilterVendor.add(vendor);
-                                } else {
-                                  tempFilterVendor.remove(vendor);
-                                }
-                              });
-                            },
                           );
                         },
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
                 ],
               ),

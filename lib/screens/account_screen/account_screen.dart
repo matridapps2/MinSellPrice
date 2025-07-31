@@ -235,18 +235,18 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               _accountOption(Icons.account_circle_outlined, 'Contact Us'),
               const SizedBox(height: 24),
-              const Text(
-                'ORDERS & CART',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    letterSpacing: 1.2),
-              ),
-              _orderCartOption(Icons.local_shipping_outlined, 'Track My Order'),
-              _orderCartOption(Icons.location_on_outlined, 'Track Order'),
-              _orderCartOption(Icons.shopping_cart_outlined, 'View Cart'),
-              _orderCartOption(Icons.favorite_border, 'My Wishlist'),
-              const SizedBox(height: 24),
+              // const Text(
+              //   'ORDERS & CART',
+              //   style: TextStyle(
+              //       fontWeight: FontWeight.bold,
+              //       fontSize: 16,
+              //       letterSpacing: 1.2),
+              // ),
+              // _orderCartOption(Icons.local_shipping_outlined, 'Track My Order'),
+              // _orderCartOption(Icons.location_on_outlined, 'Track Order'),
+              // _orderCartOption(Icons.shopping_cart_outlined, 'View Cart'),
+              // _orderCartOption(Icons.favorite_border, 'My Wishlist'),
+              // const SizedBox(height: 24),
               const Text(
                 'SUPPORT & INFO',
                 style: TextStyle(

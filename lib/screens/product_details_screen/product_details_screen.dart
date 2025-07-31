@@ -67,12 +67,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   void _initCall() async {
-    log('_initCall started');
-    await _fetchProductDetails();
-    await _fetchBrandProducts();
-    await _checkIfLiked();
-    await _checkIfInComparison();
-    await _checkPriceAlertStatus();
+    await _fetchProductDetails().whenComplete(() async {
+      await _fetchBrandProducts();
+      await _checkIfLiked();
+      await _checkIfInComparison();
+      await _checkPriceAlertStatus();
+    });
   }
 
   Future<void> _checkIfLiked() async {
@@ -136,7 +136,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Future<void> _showPriceThresholdDialog() async {
     double threshold = _priceThreshold;
-
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -150,15 +149,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               TextField(
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Price Threshold',
+                  labelText: 'Email Id..',
                   prefixText: '\$',
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (value) {
-                  threshold = double.tryParse(value) ?? _priceThreshold;
+                 threshold = double.tryParse(value) ?? _priceThreshold;
                 },
                 controller: TextEditingController(
-                  text: threshold.toStringAsFixed(2),
+                 // text: threshold.toStringAsFixed(2),
                 ),
               ),
             ],
@@ -710,7 +709,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
 
-    return Stack(children: [
+    return Stack(
+      children: [
       SafeArea(
         bottom: true,
         child: SingleChildScrollView(
@@ -728,8 +728,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               const SizedBox(height: 16),
               _buildSubscribeButton(),
               const SizedBox(height: 24),
-              _buildSpecifications(),
-              const SizedBox(height: 16),
+              // _buildSpecifications(),
+              // const SizedBox(height: 16),
               _buildProductActionsBar(),
               _buildMoreName(),
               const SizedBox(height: 16),
@@ -757,7 +757,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           },
         ),
       ),
-    ]);
+    ]
+    );
   }
 
   Widget _buildProductHeader() {
@@ -820,7 +821,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     if (apiImages != null && apiImages.isNotEmpty) {
       return Column(
         children: [
-          // Main image carousel
           Container(
             height: 280,
             decoration: BoxDecoration(

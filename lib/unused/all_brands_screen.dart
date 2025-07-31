@@ -222,7 +222,6 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                 builder: (context) => BrandProductListScreen(
                   brandId: brand['brand_id'],
                   brandName: brand['brand_name'],
-                  database: widget.database,
                   dataList: const [],
                 ),
               ),
