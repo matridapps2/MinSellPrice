@@ -55,7 +55,7 @@ class _HomePageState extends State<HomePage>
   }
 
   void _initCall() async {
-    await _showExampleNotifications();
+    //await _showExampleNotifications();
     await _initializeDatabase();
   }
 
@@ -123,28 +123,15 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  // Example method to show static notifications
-  Future<void> _showExampleNotifications() async {
-    final notificationService = NotificationService();
-
-    // // Show welcome notification
-    // await notificationService.showWelcomeNotification();
-    //
-    // // Show feature announcement
-    // await notificationService.showFeatureAnnouncement(
-    //   featureName: 'Price Tracking',
-    //   description:
-    //       'Track your favorite products and get notified when prices drop!',
-    // );
-
-    // Show price drop notification (example)
-    await notificationService.showPriceDropNotification(
-      productName: 'Example Product',
-      oldPrice: 99.99,
-      newPrice: 79.99,
-      productId: 'example_product_123',
-    );
-  }
+  // Future<void> _showExampleNotifications() async {
+  //   final notificationService = NotificationService();
+  //   await notificationService.showPriceDropNotification(
+  //     productName: 'Example Product',
+  //     oldPrice: 99.99,
+  //     newPrice: 79.99,
+  //     productId: 'example_product_123',
+  //   );
+  // }
 
   @override
   void dispose() {

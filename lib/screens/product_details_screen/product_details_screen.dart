@@ -7,6 +7,7 @@ import 'package:minsellprice/InAppBrowser.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/app.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
+import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/model/product_details_model.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/screens/comparison_screen/comparison_screen.dart';
@@ -49,6 +50,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final ScrollController _scrollController = ScrollController();
   String loadingMessage = '';
   List<VendorProductData> vendorProductData = [];
+  String wProductName = '';
 
   bool isLiked = false;
   bool isInComparison = false;
@@ -103,8 +105,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  Future<void> _showPriceThresholdDialog() async {
-    double threshold = _priceThreshold;
+  Future<void> _priceAlertDialog() async {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -121,12 +122,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   // prefixText: '\$',
                   border: OutlineInputBorder(),
                 ),
-                onChanged: (value) {
-                 threshold = double.tryParse(value) ?? _priceThreshold;
-                },
                 controller: TextEditingController(
-                 // text: threshold.toStringAsFixed(2),
-                ),
+                    // text: threshold.toStringAsFixed(2),
+                    ),
               ),
             ],
           ),
@@ -135,12 +133,29 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.of(context).pop();
+            //     _subscribeToPriceAlert(context);
+            //   },
+            //   child: const Text('Set Alert'),
+            // ),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.of(context).pop();
+            //     _testNotificationWithImage(context);
+            //   },
+            //   style: ElevatedButton.styleFrom(
+            //     backgroundColor: Colors.orange,
+            //   ),
+            //   child: const Text('Test Notification'),
+            // ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _subscribeToPriceAlert(threshold);
+                _testNotificationTap(context);
               },
-              child: const Text('Set Alert'),
+              child: const Text('Test Tap'),
             ),
           ],
         );
@@ -148,83 +163,133 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Future<void> _subscribeToPriceAlert(double threshold) async {
-    setState(() {
-      _isLoadingPriceAlert = true;
-    });
-
+  Future<void> _subscribeToPriceAlert(BuildContext context) async {
     try {
-      // Get the real current price from API data
-      double currentPrice = widget.productPrice;
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
 
-      // If we have vendor product data, use the first vendor's price as current price
-      if (vendorProductData.isNotEmpty) {
-        final firstVendor = vendorProductData.first;
-        if (firstVendor.vendorpricePrice != null &&
-            firstVendor.vendorpricePrice!.isNotEmpty) {
-          currentPrice = double.tryParse(firstVendor.vendorpricePrice!) ??
-              widget.productPrice;
-        }
+      final notificationService = NotificationService();
+
+      // Ensure notification service is initialized
+      if (!notificationService.isInitialized) {
+        await notificationService.initialize();
       }
 
-       final success = true; // = await NotificationService().subscribeToPriceAlert(
-      //   productId: widget.productId.toString(),
-      //   priceThreshold: threshold,
-      //   currentPrice: currentPrice,
-      //   // Pass real current price
-      //   productName: widget.brandName,
-      //   productImage: widget.productImage?.toString() ?? '',
-      //   productMpn: widget.productMPN,
-      // );
+      // Get product image path - handle both asset and network images
+      String productImagePath = '';
+      if (widget.productImage != null) {
+        // Pass the product image directly - the notification service will handle all types
+        productImagePath = widget.productImage.toString();
+        log('Product image path: $productImagePath');
+      }
 
-      if (success) {
+      // Calculate a realistic new price (20% discount for demo)
+      final currentPrice =
+          double.tryParse(widget.productPrice.toString()) ?? 100.0;
+      final newPrice = currentPrice * 0.8; // 20% discount
+
+      await notificationService.showPriceDropNotification(
+        productName: productDetails?.data?.productName ?? 'Unknown Product',
+        oldPrice: widget.productPrice.toString(),
+        newPrice: newPrice,
+        productId: widget.productId,
+        productImage: productImagePath,
+      );
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Show success message
+      CommonToasts.centeredMobile(
+          context: context,
+          msg:
+              'Price Alert Set Successfully! You\'ll be notified when the price drops.');
+
+      // Update UI state
+      if (mounted) {
         setState(() {
           _isSubscribedToPriceAlert = true;
-          _priceThreshold = threshold;
         });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text('Price alert set for \$${threshold.toStringAsFixed(2)}'),
-                ],
-              ),
-              backgroundColor: AppColors.primary,
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to set price alert. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
       }
     } catch (e) {
-      log('Error subscribing to price alert: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error setting price alert. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Show error message
+      CommonToasts.centeredMobile(
+          context: context,
+          msg: 'Failed to set price alert. Please try again.');
+
+      log('Error setting price alert: $e');
+    }
+  }
+
+  Future<void> _testNotificationWithImage(BuildContext context) async {
+    try {
+      final notificationService = NotificationService();
+
+      if (!notificationService.isInitialized) {
+        await notificationService.initialize();
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingPriceAlert = false;
-        });
+
+      final testImages = [
+        widget.productImage?.toString() ?? 'assets/images/no_image.png',
+      ];
+      await notificationService.showPriceDropNotification(
+        productName: productDetails?.data?.productName ??
+            'Unknown Product',
+        oldPrice: widget.productPrice,
+        newPrice: 100.0,
+        productId: widget.productId,
+        productImage: testImages[0],
+      );
+
+      await Future.delayed(const Duration(seconds: 2));
+
+      CommonToasts.centeredMobile(
+          context: context,
+          msg:
+              'Test notification sent! Tap on it to see detailed view with image.');
+    } catch (e) {
+      CommonToasts.centeredMobile(
+          context: context, msg: 'Error sending test notifications: $e');
+      log('Error in test notification: $e');
+    }
+  }
+
+  // Test notification tap functionality
+  Future<void> _testNotificationTap(BuildContext context) async {
+    try {
+      final notificationService = NotificationService();
+
+      if (!notificationService.isInitialized) {
+        await notificationService.initialize();
       }
+
+      await notificationService.showPriceDropNotification(
+        productName: productDetails?.data?.productName ?? 'Test Product',
+        oldPrice: widget.productPrice.toString(),
+        newPrice: 79.99,
+        productId: widget.productId,
+        productImage: widget.productImage?.toString() ?? '',
+      );
+
+      CommonToasts.centeredMobile(
+          context: context,
+          msg:
+              'Notification sent! Now tap on it to navigate to notification screen with product details.');
+    } catch (e) {
+      CommonToasts.centeredMobile(
+          context: context, msg: 'Error testing notification tap: $e');
+      log('Error in notification tap test: $e');
     }
   }
 
@@ -617,8 +682,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
 
-    return Stack(
-      children: [
+    return Stack(children: [
       SafeArea(
         bottom: true,
         child: SingleChildScrollView(
@@ -665,8 +729,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           },
         ),
       ),
-    ]
-    );
+    ]);
   }
 
   Widget _buildProductHeader() {
@@ -1139,6 +1202,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          onTap: () {
+            _priceAlertDialog();
+          },
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -1801,7 +1867,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-
   Widget _buildShippingInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1990,6 +2055,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ],
     );
   }
+
   Widget _buildSpecifications() {
     final List<Map<String, String>> specifications = [
       {'label': 'Brand', 'value': widget.brandName},
@@ -2136,6 +2202,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ],
     );
   }
+
   Widget _buildPriceAndRating() {
     final data = widget.productPrice;
     return Column(
@@ -2153,8 +2220,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           children: [
             ...List.generate(
                 4,
-                    (index) =>
-                const Icon(Icons.star, color: Colors.amber, size: 20)),
+                (index) =>
+                    const Icon(Icons.star, color: Colors.amber, size: 20)),
             const Icon(Icons.star_border, color: Colors.amber, size: 20),
             const SizedBox(width: 8),
             Text(
