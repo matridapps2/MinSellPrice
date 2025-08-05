@@ -16,6 +16,7 @@ import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/comparison_db.dart';
 import 'package:minsellprice/service_new/liked_preference_db.dart';
 import 'package:minsellprice/services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final int productId;
@@ -39,28 +40,32 @@ class ProductDetailsScreen extends StatefulWidget {
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   ProductDetailsModel? productDetails;
+
+  final ScrollController _scrollController = ScrollController();
+
   bool isLoading = true;
-  String? errorMessage;
+  bool isLiked = false;
+  bool isInComparison = false;
+  bool _isSubscribedToPriceAlert = false;
+  bool _isLoadingPriceAlert = false;
+  double _priceThreshold = 0;
+
   List<String> filterVendor = [];
   List<String> uniqueVendors = [];
   List<VendorProduct> brandProducts = [];
   List<VendorProduct> tempProductList = [];
   List<VendorProduct> finalList = [];
   List<ProductListModelNew> brandDetails = [];
-  final ScrollController _scrollController = ScrollController();
-  String loadingMessage = '';
   List<VendorProductData> vendorProductData = [];
-  String wProductName = '';
 
-  bool isLiked = false;
-  bool isInComparison = false;
+  String loadingMessage = '';
+  String wProductName = '';
+  String? errorMessage;
+
   int comparisonCount = 0;
   int vendorId = AppInfo.kVendorId;
 
-  // Price alert state variables
-  bool _isSubscribedToPriceAlert = false;
-  bool _isLoadingPriceAlert = false;
-  double _priceThreshold = 0;
+  TextEditingController _emailController = TextEditingController();
 
   @override
   void initState() {
@@ -122,9 +127,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   // prefixText: '\$',
                   border: OutlineInputBorder(),
                 ),
-                controller: TextEditingController(
-                    // text: threshold.toStringAsFixed(2),
-                    ),
+                controller: _emailController,
               ),
             ],
           ),
@@ -133,27 +136,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     Navigator.of(context).pop();
-            //     _subscribeToPriceAlert(context);
-            //   },
-            //   child: const Text('Set Alert'),
-            // ),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     Navigator.of(context).pop();
-            //     _testNotificationWithImage(context);
-            //   },
-            //   style: ElevatedButton.styleFrom(
-            //     backgroundColor: Colors.orange,
-            //   ),
-            //   child: const Text('Test Notification'),
-            // ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async{
+                await  _testNotificationTap(context).whenComplete(() async{
+                 await saveProductData(context, _emailController.text, widget.productPrice, widget.productId);
+               });
                 Navigator.of(context).pop();
-                _testNotificationTap(context);
               },
               child: const Text('Test Tap'),
             ),
@@ -163,109 +151,29 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Future<void> _subscribeToPriceAlert(BuildContext context) async {
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      );
+  Future<void> saveProductData(BuildContext context, String emailId, String price, int productId) async{
+    log('saveProductData method running');
+    log('emailId $emailId');
+    log('price $price');
+    log('productId $productId');
 
-      final notificationService = NotificationService();
-
-      // Ensure notification service is initialized
-      if (!notificationService.isInitialized) {
-        await notificationService.initialize();
+  await BrandsApi.savePriceAlert(
+      context: context,
+      emailId: emailId,
+      price: price,
+      productId: productId
+  ).then((response) async{
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+      if(response != 'error') {
+          log('Data Successfully Saved');
+          preferences.setString('email_id', emailId);
+          preferences.setString('productId', productId.toString());
+      }else{
+        log('Error');
       }
-
-      // Get product image path - handle both asset and network images
-      String productImagePath = '';
-      if (widget.productImage != null) {
-        // Pass the product image directly - the notification service will handle all types
-        productImagePath = widget.productImage.toString();
-        log('Product image path: $productImagePath');
-      }
-
-      // Calculate a realistic new price (20% discount for demo)
-      final currentPrice =
-          double.tryParse(widget.productPrice.toString()) ?? 100.0;
-      final newPrice = currentPrice * 0.8; // 20% discount
-
-      await notificationService.showPriceDropNotification(
-        productName: productDetails?.data?.productName ?? 'Unknown Product',
-        oldPrice: widget.productPrice.toString(),
-        newPrice: newPrice,
-        productId: widget.productId,
-        productImage: productImagePath,
-      );
-
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      // Show success message
-      CommonToasts.centeredMobile(
-          context: context,
-          msg:
-              'Price Alert Set Successfully! You\'ll be notified when the price drops.');
-
-      // Update UI state
-      if (mounted) {
-        setState(() {
-          _isSubscribedToPriceAlert = true;
-        });
-      }
-    } catch (e) {
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      // Show error message
-      CommonToasts.centeredMobile(
-          context: context,
-          msg: 'Failed to set price alert. Please try again.');
-
-      log('Error setting price alert: $e');
-    }
+  });
   }
 
-  Future<void> _testNotificationWithImage(BuildContext context) async {
-    try {
-      final notificationService = NotificationService();
-
-      if (!notificationService.isInitialized) {
-        await notificationService.initialize();
-      }
-
-      final testImages = [
-        widget.productImage?.toString() ?? 'assets/images/no_image.png',
-      ];
-      await notificationService.showPriceDropNotification(
-        productName: productDetails?.data?.productName ??
-            'Unknown Product',
-        oldPrice: widget.productPrice,
-        newPrice: 100.0,
-        productId: widget.productId,
-        productImage: testImages[0],
-      );
-
-      await Future.delayed(const Duration(seconds: 2));
-
-      CommonToasts.centeredMobile(
-          context: context,
-          msg:
-              'Test notification sent! Tap on it to see detailed view with image.');
-    } catch (e) {
-      CommonToasts.centeredMobile(
-          context: context, msg: 'Error sending test notifications: $e');
-      log('Error in test notification: $e');
-    }
-  }
-
-  // Test notification tap functionality
   Future<void> _testNotificationTap(BuildContext context) async {
     try {
       final notificationService = NotificationService();
@@ -275,9 +183,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       }
 
       await notificationService.showPriceDropNotification(
-        productName: productDetails?.data?.productName ?? 'Test Product',
+        productName: productDetails?.data?.productName ?? '---',
         oldPrice: widget.productPrice.toString(),
-        newPrice: 79.99,
+        newPrice: 00.00,
         productId: widget.productId,
         productImage: widget.productImage?.toString() ?? '',
       );

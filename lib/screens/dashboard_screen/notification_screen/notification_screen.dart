@@ -1,6 +1,10 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationScreen extends StatefulWidget {
   final Map<String, dynamic>? notificationData;
@@ -21,39 +25,26 @@ class _NotificationScreenState extends State<NotificationScreen> {
       'timestamp': DateTime.now(),
       'isRead': false,
     },
-    // {
-    //   'id': '2',
-    //   'title': 'Price Drop Alert! 🎉',
-    //   'body':
-    //       'Weber Spirit II E-310 Gas Grill price dropped from \$449.99 to \$399.99',
-    //   'type': 'price_drop',
-    //   'timestamp': DateTime.now().subtract(const Duration(hours: 1)),
-    //   'isRead': false,
-    // },
-    // {
-    //   'id': '3',
-    //   'title': 'New Feature: Smart Price Alerts 🆕',
-    //   'body': 'Get intelligent price drop predictions and early alerts!',
-    //   'type': 'feature',
-    //   'timestamp': DateTime.now().subtract(const Duration(minutes: 30)),
-    //   'isRead': true,
-    // },
-    // {
-    //   'id': '4',
-    //   'title': 'Special Offer! 🎁',
-    //   'body': 'Limited time: 25% off on all outdoor grills. Hurry up!',
-    //   'type': 'offer',
-    //   'timestamp': DateTime.now().subtract(const Duration(minutes: 15)),
-    //   'isRead': true,
-    // },
   ];
 
   @override
   void initState() {
     super.initState();
-    // Add the notification data if provided
+    _initCall();
+  }
+
+  void _initCall() async{
+    SharedPreferences preferences = await SharedPreferences.getInstance();
     if (widget.notificationData != null) {
+      log('notificationData is not empty');
       notifications.insert(0, widget.notificationData!);
+    } else {
+      log('notificationData is empty');
+    String emailId = await preferences.getString('email_id') ?? 'null';
+    String productId = await  preferences.getString('productId') ?? 'null';
+      log('emailId: $emailId');
+      log('productId: $productId');
+     // await _getProductData();
     }
   }
 
@@ -668,10 +659,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
           ),
+          Spacer(),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
@@ -732,10 +729,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ListTile(
               leading: const Icon(Icons.delete),
               title: const Text('Delete notification'),
-              onTap: () {
-                setState(() {
-                  notifications.removeAt(index);
-                });
+              onTap: () async{
+                // setState(() {
+                //   notifications.removeAt(index);
+                // });
+                await _deleteNotifications();
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -749,5 +747,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _deleteNotifications() async{
+    await BrandsApi.deleteSavedProductData(
+        emailId: '',
+        productId: '',
+        context: context
+    ).then((response) {
+      if(response != 'error'){
+        log('Notification Deleted');
+      }else{
+        log('Error Notification Delete');
+      }
+    });
   }
 }

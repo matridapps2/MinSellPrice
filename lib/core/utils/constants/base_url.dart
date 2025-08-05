@@ -1,6 +1,7 @@
 //############################## ALL BASE URLS ###############################//
 
 const brandUrl = 'https://www.minsellprice.com/api';
+const growthMatridUrl = 'https://growth.matridtech.net/api';
 
 //#################### FOR CASES IN ALL API METHODS ##########################//
 

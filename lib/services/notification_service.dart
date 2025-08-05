@@ -12,7 +12,9 @@ import 'package:minsellprice/screens/dashboard_screen/notification_screen/notifi
 class NotificationService {
   // Singleton pattern - ensures only one instance exists
   static final NotificationService _instance = NotificationService._internal();
+
   factory NotificationService() => _instance;
+
   NotificationService._internal();
 
   // Track if notification service has been initialized
@@ -361,15 +363,13 @@ class NotificationService {
 
       // Create rich notification content
       final richBody = '''
-🔥 PRICE DROP ALERT! 🔥
-
+PRICE DROP ALERT!
 Product: $productName
 Old Price: \$${oldPrice}
 New Price: \$${newPrice.toStringAsFixed(2)}
 You Save: \$${savings.toStringAsFixed(2)} (${savingsPercentage}% off!)
-
 Don't miss this amazing deal! Tap to view product details.
-      ''';
+''';
 
       // Android notification with big picture style
       final AndroidNotificationDetails androidDetails =
@@ -397,7 +397,8 @@ Don't miss this amazing deal! Tap to view product details.
         ),
         category: AndroidNotificationCategory.promo,
         visibility: NotificationVisibility.public,
-        color: const Color(0xFF2196F3), // Blue color for price alerts
+        color: const Color(0xFF2196F3),
+        // Blue color for price alerts
         ledColor: const Color(0xFF2196F3),
         ledOnMs: 1000,
         ledOffMs: 500,
@@ -455,48 +456,5 @@ Don't miss this amazing deal! Tap to view product details.
         payload: 'product:$productId',
       );
     }
-  }
-
-  // Display welcome notification for new users
-  Future<void> showWelcomeNotification() async {
-    await showStaticNotification(
-      title: 'Welcome to MinSellPrice! 👋',
-      body: 'Start tracking prices and never miss a deal again!',
-      payload: 'welcome',
-    );
-  }
-
-  // Announce new app features to users
-  Future<void> showFeatureAnnouncement({
-    required String featureName,
-    required String description,
-  }) async {
-    await showStaticNotification(
-      title: 'New Feature: $featureName 🆕',
-      body: description,
-      payload: 'feature:$featureName',
-    );
-  }
-
-  // Show reminder notifications for user engagement
-  Future<void> showReminderNotification({
-    required String title,
-    required String message,
-  }) async {
-    await showStaticNotification(
-      title: title,
-      body: message,
-      payload: 'reminder',
-    );
-  }
-
-  // Remove all active notifications from the system
-  Future<void> cancelAllNotifications() async {
-    await _localNotifications.cancelAll();
-  }
-
-  // Remove a specific notification by its ID
-  Future<void> cancelNotification(int id) async {
-    await _localNotifications.cancel(id);
   }
 }

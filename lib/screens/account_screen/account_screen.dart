@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:minsellprice/core/utils/firebase/auth_provider.dart' as my_auth;
 import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 
-
 class AccountScreen extends StatefulWidget {
   const AccountScreen({
     super.key,
@@ -37,12 +36,11 @@ class _AccountScreenState extends State<AccountScreen> {
     super.dispose();
   }
 
-  void _initCall() async{
+  void _initCall() async {
     await _checkLoginStatus();
   }
 
   Future<void> _checkLoginStatus() async {
-
     try {
       final firebaseUser = FirebaseAuth.instance.currentUser;
       bool firebaseLoggedIn = firebaseUser != null;
@@ -223,9 +221,9 @@ class _AccountScreenState extends State<AccountScreen> {
                     await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => LoginPage(
-                          onLoginSuccess: () async{
+                          onLoginSuccess: () async {
                             authProvider.login();
-                           await _checkLoginStatus();
+                            await _checkLoginStatus();
                           },
                         ),
                       ),

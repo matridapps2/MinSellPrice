@@ -83,10 +83,7 @@ class BrandsApi {
       }
     } catch (e) {
       log('Exception: ${e.toString()}');
-      onExceptionResponse(
-          context: context,
-          exception: e.toString()
-      );
+      onExceptionResponse(context: context, exception: e.toString());
       return null;
     }
   }
@@ -135,6 +132,98 @@ class BrandsApi {
       log('Error in getProductDetails: $e');
       onExceptionResponse(context: context, exception: e.toString());
       throw Exception('Error fetching product details: $e');
+    }
+  }
+
+  static Future<String> savePriceAlert({
+      required BuildContext context,
+      required String emailId,
+      required String price,
+      required int productId
+  }) async {
+    try {
+      final url =
+          '$growthMatridUrl/save-product-data?email=$emailId&product_id=$productId&price=$price';
+
+      log('SavePriceAlert API: $url');
+      final response = await http.post(
+        Uri.parse(url),
+      );
+      log('API Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('API Successfully Run');
+        log(response.body);
+
+        return response.body;
+      } else {
+        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+        return 'error';
+      }
+    } catch (e) {
+      log('Exception in SavePriceAlert API: ${e.toString()}');
+      onExceptionResponse(context: context, exception: e.toString());
+      return e.toString();
+    }
+  }
+
+  static Future<String> fetchSavedProductData({
+    required String emailId,
+    required String productId,
+    required BuildContext context,
+}) async{
+    try {
+      final url =
+          '$growthMatridUrl/fetch-product-data?email=$emailId&product_id=$productId';
+
+      log('GetPriceAlert API: $url');
+      final response = await http.post(
+        Uri.parse(url),
+      );
+      log('API Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('API Successfully Run');
+        log(response.body);
+        return response.body;
+      } else {
+        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+        return 'error';
+      }
+    } catch (e) {
+      log('Exception in GetPriceAlert API: ${e.toString()}');
+      onExceptionResponse(context: context, exception: e.toString());
+      return e.toString();
+    }
+  }
+
+  static Future<String> deleteSavedProductData({
+    required String emailId,
+    required String productId,
+    required BuildContext context,
+}) async{
+    try {
+      final url =
+          '$growthMatridUrl/delete-product-data?email=$emailId&product_id=$productId';
+
+      log('Delete ProductData API: $url');
+      final response = await http.post(
+        Uri.parse(url),
+      );
+      log('API Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('API Successfully Run');
+        log(response.body);
+        return response.body;
+      } else {
+        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+        return 'error';
+      }
+    } catch (e) {
+      log('Exception Delete ProductData API: ${e.toString()}');
+      onExceptionResponse(context: context, exception: e.toString());
+      return e.toString();
     }
   }
 }

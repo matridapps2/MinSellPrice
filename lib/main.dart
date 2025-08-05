@@ -14,20 +14,14 @@ import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:minsellprice/services/background_service.dart';
 import 'package:minsellprice/services/notification_service.dart';
+import 'package:minsellprice/services/notification_permission_service.dart';
 import 'package:minsellprice/services/navigation_service.dart';
 import 'package:minsellprice/core/utils/firebase/firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'core/utils/firebase/auth_provider.dart' as my_auth;
-
 import 'core/utils/constants/colors.dart';
 
 const Color primaryColor = AppColors.primary;
-
-Future<void> permission() async {
-  if (await Permission.scheduleExactAlarm.isDenied) {
-    await Permission.scheduleExactAlarm.request();
-  }
-}
 
 // Firebase messaging background handler
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -119,6 +113,9 @@ void main() async {
 
   // Initialize everything in background after app is running
   _initializeEverythingInBackground();
+
+  // Request notification permission after app is running
+  _requestNotificationPermission();
 }
 
 // Initialize everything in background
@@ -137,6 +134,18 @@ Future<void> _initializeEverythingInBackground() async {
 
     // Setup Firebase messaging background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Get device token after Firebase is initialized
+    try {
+      String? deviceToken = await FirebaseMessaging.instance.getToken();
+      if (deviceToken != null) {
+        //  log('Device Token: $deviceToken');
+      } else {
+        log('Failed to get device token');
+      }
+    } catch (e) {
+      log('Error getting device token: $e');
+    }
 
     // Initialize notification service
     await NotificationService().initialize();
@@ -176,6 +185,30 @@ Future<void> _initializeEverythingInBackground() async {
     log('All services initialized successfully in background');
   } catch (e) {
     log('Background service initialization error: $e');
+  }
+}
+
+// Request notification permission
+Future<void> _requestNotificationPermission() async {
+  try {
+    // Wait a bit for the app to fully load
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Check and request notification permission
+    final permissionService = NotificationPermissionService();
+
+    // For testing: uncomment the next line to reset permission status
+    // await permissionService.resetPermissionStatus();
+
+    final granted = await permissionService.checkAndRequestPermission();
+
+    if (granted) {
+      log('Notification permission granted');
+    } else {
+      log('Notification permission denied or not requested');
+    }
+  } catch (e) {
+    log('Error requesting notification permission: $e');
   }
 }
 
