@@ -119,14 +119,14 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                             size: w * .06,
                           ),
                         ),
-                        suffixIcon: Container(
-                          margin: const EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.mic,
-                            color: Colors.grey[600],
-                            size: w * .06,
-                          ),
-                        ),
+                        // suffixIcon: Container(
+                        //   margin: const EdgeInsets.all(8),
+                        //   child: Icon(
+                        //     Icons.mic,
+                        //     color: Colors.grey[600],
+                        //     size: w * .06,
+                        //   ),
+                        // ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
@@ -229,32 +229,94 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 20.0),
-            child: Text(
-              'Home & Garden',
-              style: TextStyle(
-                fontSize: 27,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Segoe UI',
-              ),
+          // Home & Garden Section
+          Container(
+            margin: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Home & Garden',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${brandsProvider.homeGardenBrands.length} brands available',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 20),
           _brandsGrid(brandsProvider.homeGardenBrands),
-          const SizedBox(height: 0),
-          const Padding(
-            padding: EdgeInsets.only(left: 20.0),
-            child: Text(
-              'Shoes & Apparels',
-              style: TextStyle(
-                fontSize: 27,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Segoe UI',
-              ),
+          const SizedBox(height: 30),
+          // Shoes & Apparels Section
+          Container(
+            margin: const EdgeInsets.only(left: 20.0, right: 20.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Shoes & Apparels',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${brandsProvider.shoesApparels.length} brands available',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 20),
           _brandsGrid(brandsProvider.shoesApparels),
         ],
       );
@@ -533,7 +595,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
                 });
                 return _buildErrorWidget();
               },
-            ),
+          ),
     );
   }
 

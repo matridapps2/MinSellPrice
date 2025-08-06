@@ -16,6 +16,7 @@ import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/comparison_db.dart';
 import 'package:minsellprice/service_new/liked_preference_db.dart';
 import 'package:minsellprice/services/notification_service.dart';
+import 'package:minsellprice/widgets/stylish_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -537,19 +538,32 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Widget _buildBody() {
     if (isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(
-              loadingMessage,
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
+      return const Center(
+        child: Center(
+          child: StylishLoader(
+            type: LoaderType.wave,
+            size: 80.0,
+            primaryColor: AppColors.primary,
+            text: "Loading Product..",
+            textStyle: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppColors.primary,
             ),
-          ],
-        ),
+          ),
+        )
+        // Column(
+        //   mainAxisAlignment: MainAxisAlignment.center,
+        //   children: [
+        //     const CircularProgressIndicator(),
+        //     const SizedBox(height: 16),
+        //     Text(
+        //       loadingMessage,
+        //       style: Theme.of(context).textTheme.bodyMedium,
+        //       textAlign: TextAlign.center,
+        //     ),
+        //   ],
+        // ),
       );
     }
 

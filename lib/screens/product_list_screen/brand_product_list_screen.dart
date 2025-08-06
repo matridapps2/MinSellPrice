@@ -12,6 +12,7 @@ import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/filter_preferences_db.dart';
+import 'package:minsellprice/widgets/stylish_loader.dart';
 import 'package:sqflite/sqflite.dart';
 
 class BrandProductListScreen extends StatefulWidget {
@@ -71,10 +72,10 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   @override
   void initState() {
     super.initState();
-    _initState();
+    _initCall();
   }
 
-  void _initState() async {
+  void _initCall() async {
     log('Brand Name: ${widget.brandName}');
     await _fetchBrandProducts().whenComplete(() async {
       await _loadFilterPreferences();
@@ -270,20 +271,39 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                     ),
                   ],
                 ),
-                body: Align(
-                  alignment: Alignment.center,
-                  child: BrandImageWidget(
-                    brand: {
-                      'brand_name': widget.brandName,
-                      'brand_key':
-                          widget.brandName, // Use original brand name as key
-                      'brand_id': widget.brandId,
-                    },
-                    width: 150,
-                    height: 115,
+            // pulse,
+            // spin,
+            // bounce,
+            // wave,
+            // dots,
+            // ripple,
+                body: Center(
+                  child: StylishLoader(
+                    type: LoaderType.wave,
+                    size: 80.0,
+                    primaryColor: AppColors.primary,
+                    text: "Loading ${widget.brandName} products...",
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primary,
+                    ),
                   ),
-                ),
-              )
+                )
+                // Align(
+                //   alignment: Alignment.center,
+                //   child: BrandImageWidget(
+                //     brand: {
+                //       'brand_name': widget.brandName,
+                //       'brand_key':
+                //           widget.brandName, // Use original brand name as key
+                //       'brand_id': widget.brandId,
+                //     },
+                //     width: 150,
+                //     height: 115,
+                //   ),
+                // ),
+                )
             : _isError
                 ? Scaffold(
                     appBar: AppBar(
@@ -359,8 +379,10 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                       currentPriceRange: currentPriceRange,
                       currentInStockOnly: currentInStockOnly,
                       currentOnSaleOnly: currentOnSaleOnly,
-                      onFiltersApplied: (vendors, priceSorting, priceRange, inStockOnly, onSaleOnly) {
-                        _applyFilters(vendors, priceSorting, priceRange, inStockOnly, onSaleOnly);
+                      onFiltersApplied: (vendors, priceSorting, priceRange,
+                          inStockOnly, onSaleOnly) {
+                        _applyFilters(vendors, priceSorting, priceRange,
+                            inStockOnly, onSaleOnly);
                       },
                     ),
                     appBar: AppBar(
@@ -1312,7 +1334,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                   ));
   }
 
-  void _applyFilters(List<String> vendors, int? priceSorting, RangeValues priceRange, bool inStockOnly, bool onSaleOnly) {
+  void _applyFilters(List<String> vendors, int? priceSorting,
+      RangeValues priceRange, bool inStockOnly, bool onSaleOnly) {
     setState(() {
       filterVendor = vendors;
       this.priceSorting = priceSorting;
@@ -1349,9 +1372,11 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
             return priceB.compareTo(priceA);
           });
         } else if (priceSorting == 3) {
-          tempProductList.sort((a, b) => (a.productName ?? '').compareTo(b.productName ?? ''));
+          tempProductList.sort(
+              (a, b) => (a.productName ?? '').compareTo(b.productName ?? ''));
         } else if (priceSorting == 4) {
-          tempProductList.sort((a, b) => (b.productName ?? '').compareTo(a.productName ?? ''));
+          tempProductList.sort(
+              (a, b) => (b.productName ?? '').compareTo(a.productName ?? ''));
         }
       }
       currentPage = 0;
@@ -1579,9 +1604,11 @@ class _FilterMenuState extends State<FilterMenu> {
                   Card(
                     child: Column(
                       children: List.generate(
-                        _getUniqueVendorsFromProducts().length, (index) {
+                        _getUniqueVendorsFromProducts().length,
+                        (index) {
                           final vendor = _getUniqueVendorsFromProducts()[index];
-                          final productCount = _getProductCountForVendor(vendor);
+                          final productCount =
+                              _getProductCountForVendor(vendor);
                           final isSelected = tempFilterVendor.contains(vendor);
                           return Container(
                             decoration: BoxDecoration(
