@@ -169,12 +169,11 @@ class BrandsApi {
 
   static Future<String> fetchSavedProductData({
     required String emailId,
-    required String productId,
     required BuildContext context,
 }) async{
     try {
       final url =
-          '$growthMatridUrl/fetch-product-data?email=$emailId&product_id=$productId';
+          '$growthMatridUrl/fetch-product-data?email=$emailId';
 
       log('GetPriceAlert API: $url');
       final response = await http.post(
@@ -199,7 +198,7 @@ class BrandsApi {
 
   static Future<String> deleteSavedProductData({
     required String emailId,
-    required String productId,
+    required int productId,
     required BuildContext context,
 }) async{
     try {

@@ -517,7 +517,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
     _initCall();
   }
 
-  Future<void> _initCall() async {
+  void _initCall() async {
     await _initializeImageUrls();
   }
 
@@ -595,7 +595,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
                 });
                 return _buildErrorWidget();
               },
-          ),
+            ),
     );
   }
 

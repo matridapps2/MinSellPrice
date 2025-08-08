@@ -168,7 +168,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       if(response != 'error') {
           log('Data Successfully Saved');
           preferences.setString('email_id', emailId);
-          preferences.setString('productId', productId.toString());
+          preferences.setString('brand_name', widget.brandName);
       }else{
         log('Error');
       }

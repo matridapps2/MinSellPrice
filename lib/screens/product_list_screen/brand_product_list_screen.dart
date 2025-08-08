@@ -271,12 +271,12 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                     ),
                   ],
                 ),
-            // pulse,
-            // spin,
-            // bounce,
-            // wave,
-            // dots,
-            // ripple,
+                // pulse,
+                // spin,
+                // bounce,
+                // wave,
+                // dots,
+                // ripple,
                 body: Center(
                   child: StylishLoader(
                     type: LoaderType.wave,
@@ -547,37 +547,122 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                               ),
                               const SizedBox(height: 5),
                               totalProductCount == 0
-                                  ? SizedBox(
-                                      width: w,
-                                      height: h / 1.3,
-                                      child: Center(
-                                        child: RichText(
-                                          textAlign: TextAlign.center,
-                                          text: TextSpan(
-                                              text: 'No Product(s) found.\n',
+                                  ? Flexible(
+                                      child: Container(
+                                        width: w,
+                                        height: h / 1.1,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 20),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            // Illustration/Icon
+                                            Container(
+                                              width: w * 0.3,
+                                              height: w * 0.3,
+                                              decoration: BoxDecoration(
+                                                color: AppColors.background,
+                                                shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.grey
+                                                        .withOpacity(0.1),
+                                                    spreadRadius: 2,
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Icon(
+                                                Icons.search_off_rounded,
+                                                size: w * 0.15,
+                                                color: AppColors.primary
+                                                    .withOpacity(0.7),
+                                              ),
+                                            ),
+                                            SizedBox(height: h * 0.03),
+
+                                            // Main Title
+                                            Text(
+                                              'No Products Found',
                                               style: TextStyle(
-                                                  fontSize: .06 * w,
-                                                  fontFamily:
-                                                      'Futura BdCn BT Bold',
-                                                  fontWeight: FontWeight.w300,
-                                                  color: Colors.black),
-                                              children: [
-                                                TextSpan(
-                                                  text: 'Return Back',
-                                                  recognizer:
-                                                      TapGestureRecognizer()
-                                                        ..onTap = () =>
-                                                            Navigator.pop(
-                                                                context),
-                                                  style: TextStyle(
-                                                      fontSize: .06 * w,
-                                                      fontFamily:
-                                                          'Futura BdCn BT Bold',
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                      color: AppColors.primary),
-                                                )
-                                              ]),
+                                                fontSize: w * 0.06,
+                                                fontFamily:
+                                                    'Futura BdCn BT Bold',
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.text,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            SizedBox(height: h * 0.015),
+
+                                            // Subtitle
+                                            Text(
+                                              'We couldn\'t find any products for this brand.\nPlease try a different search or browse other categories.',
+                                              style: TextStyle(
+                                                fontSize: w * 0.035,
+                                                fontFamily:
+                                                    'Futura BdCn BT Bold',
+                                                fontWeight: FontWeight.w300,
+                                                color: Colors.grey[600],
+                                                height: 1.4,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            SizedBox(height: h * 0.04),
+
+                                            // Action Button
+                                            GestureDetector(
+                                              onTap: () =>
+                                                  Navigator.pop(context),
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: w * 0.06,
+                                                  vertical: h * 0.018,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary,
+                                                  borderRadius:
+                                                      BorderRadius.circular(25),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: AppColors.primary
+                                                          .withOpacity(0.3),
+                                                      spreadRadius: 1,
+                                                      blurRadius: 8,
+                                                      offset:
+                                                          const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .arrow_back_ios_rounded,
+                                                      size: w * 0.035,
+                                                      color: Colors.white,
+                                                    ),
+                                                    SizedBox(width: w * 0.015),
+                                                    Text(
+                                                      'Go Back',
+                                                      style: TextStyle(
+                                                        fontSize: w * 0.035,
+                                                        fontFamily:
+                                                            'Futura BdCn BT Bold',
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     )
@@ -632,7 +717,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           },
                                                           child: Container(
                                                             width: w * .45,
-                                                            height: h * .48,
+                                                           // height: h * .48,
                                                             decoration:
                                                                 BoxDecoration(
                                                               color:
@@ -731,8 +816,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                     children: [
                                                                       // Product Name
                                                                       SizedBox(
-                                                                        height:
-                                                                            w * .2,
+                                                                    height: w * .25,
                                                                         child:
                                                                             Text(
                                                                           finalList[index].productName.isEmpty
@@ -763,7 +847,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                       // MPN
                                                                       SizedBox(
                                                                         height: h *
-                                                                            .05,
+                                                                            .06,
                                                                         child:
                                                                             Text(
                                                                           'MPN: #${finalList[index].productMpn}',
@@ -785,8 +869,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                               13),
                                                                       // Price Section
                                                                       Container(
-                                                                        height: h *
-                                                                            .09,
+                                                                        //height: h * .09,
                                                                         decoration:
                                                                             BoxDecoration(
                                                                           borderRadius:
@@ -845,14 +928,14 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                                       Icon(
                                                                                         Icons.storefront_outlined,
                                                                                         color: Colors.white,
-                                                                                        size: 20,
+                                                                                        size: 18,
                                                                                       ),
-                                                                                      const SizedBox(width: 4),
+                                                                                      const SizedBox(width: 2),
                                                                                       Text(
                                                                                         '${finalList[index].vendorIdCount}',
                                                                                         style: TextStyle(
                                                                                           color: Colors.white,
-                                                                                          fontSize: 20,
+                                                                                          fontSize: 19,
                                                                                           fontWeight: FontWeight.bold,
                                                                                         ),
                                                                                       ),
@@ -864,6 +947,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                                           fontSize: 20,
                                                                                           fontWeight: FontWeight.w500,
                                                                                         ),
+                                                                                        maxLines: 1,
+                                                                                        overflow: TextOverflow.ellipsis,
                                                                                       ),
                                                                                     ],
                                                                                   ),

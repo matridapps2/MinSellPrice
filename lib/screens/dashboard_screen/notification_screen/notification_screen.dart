@@ -1,9 +1,11 @@
 import 'dart:developer';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/model/saved_product_model.dart';
+import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -16,16 +18,11 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  List<Map<String, dynamic>> notifications = [
-    {
-      'id': '1',
-      'title': 'Welcome to MinSellPrice',
-      'body': 'Start tracking prices and never miss a deal again!',
-      'type': 'welcome',
-      'timestamp': DateTime.now(),
-      'isRead': false,
-    },
-  ];
+  List<Map<String, dynamic>> notifications = [];
+
+  List<SavedProductModel> savedProducts = [];
+  bool isLoading = false;
+  String emailId = '';
 
   @override
   void initState() {
@@ -33,19 +30,83 @@ class _NotificationScreenState extends State<NotificationScreen> {
     _initCall();
   }
 
-  void _initCall() async{
+  void _initCall() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    if (widget.notificationData != null) {
-      log('notificationData is not empty');
-      notifications.insert(0, widget.notificationData!);
-    } else {
-      log('notificationData is empty');
-    String emailId = await preferences.getString('email_id') ?? 'null';
-    String productId = await  preferences.getString('productId') ?? 'null';
-      log('emailId: $emailId');
-      log('productId: $productId');
-     // await _getProductData();
+    log('notificationData is empty');
+    emailId = await preferences.getString('email_id') ??
+        'rabhinav.matrid98765@gmail.com';
+    log('emailId: $emailId');
+    await _getProductData(emailId);
+  }
+
+  Future<void> _getProductData(String emailId) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await BrandsApi.fetchSavedProductData(
+          emailId: emailId, context: context);
+
+      if (response != 'error') {
+        log('API Response: $response');
+
+        final List<dynamic> jsonData = json.decode(response);
+        log('Parsed JSON data: $jsonData');
+
+        final List<SavedProductModel> products =
+            jsonData.map((item) => SavedProductModel.fromJson(item)).toList();
+
+        setState(() {
+          savedProducts = products;
+          isLoading = false;
+        });
+
+        log('Loaded ${products.length} saved products');
+
+        _convertSavedProductsToNotifications();
+      } else {
+        log('API returned error');
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      log('Error fetching saved product data: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
+  }
+
+  void _convertSavedProductsToNotifications() {
+    final List<Map<String, dynamic>> priceDropNotifications =
+        savedProducts.map((product) {
+      return {
+        'title': 'Price Drop Alert!',
+        'body': '${product.productName} price has dropped!',
+        'type': 'price_drop',
+        'timestamp': _parseDataNTime(product.DataNTime),
+        'isRead': product.isRead,
+        'productId': product.productId,
+        'productName': product.productName,
+        'productImage': product.productImage,
+        'oldPrice': product.oldPrice,
+        'newPrice': product.newPrice,
+        'savings': product.formattedSavings,
+        'savingsPercentage': product.formattedSavingsPercentage,
+        'brand_key': product.brandKey,
+        'product_mpn': product.productMPN,
+        'emailId': product.email,
+        'dataNTime': product.DataNTime,
+      };
+    }).toList();
+
+    setState(() {
+      notifications.addAll(priceDropNotifications);
+    });
+
+    log('Added ${priceDropNotifications.length} price drop notifications');
   }
 
   @override
@@ -53,127 +114,208 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 245, 245, 245),
       appBar: AppBar(
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        toolbarHeight: h * 0.12,
         backgroundColor: AppColors.primary,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
+        leading: Container(
+          margin: const EdgeInsets.only(left: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Notifications',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+            if (!isLoading)
+              Text(
+                '${notifications.where((n) => !n['isRead']).length} unread',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.8),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+          ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.clear_all, color: Colors.white),
-            onPressed: () {
-              setState(() {
-                notifications.clear();
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All notifications cleared'),
-                  backgroundColor: Colors.grey,
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Stack(
+              children: [
+                const Icon(
+                  Icons.notifications_rounded,
+                  color: Colors.white,
+                  size: 24,
                 ),
-              );
-            },
+                if (notifications.where((n) => !n['isRead']).isNotEmpty)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
       body: Column(
         children: [
           // Header with stats
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${notifications.where((n) => !n['isRead']).length}',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const Text(
-                        'Unread notifications',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.notifications_active,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Container(
+          //   padding: const EdgeInsets.all(20),
+          //   decoration: const BoxDecoration(
+          //     color: AppColors.primary,
+          //     borderRadius: BorderRadius.only(
+          //       bottomLeft: Radius.circular(20),
+          //       bottomRight: Radius.circular(20),
+          //     ),
+          //   ),
+          //   child: Row(
+          //     children: [
+          //       // Visibility(
+          //       //   visible: !isLoading,
+          //       //   child: Expanded(
+          //       //     child: Column(
+          //       //       crossAxisAlignment: CrossAxisAlignment.start,
+          //       //       children: [
+          //       //         Text(
+          //       //           '${notifications.where((n) => !n['isRead']).length}',
+          //       //           style: const TextStyle(
+          //       //             fontSize: 32,
+          //       //             fontWeight: FontWeight.bold,
+          //       //             color: Colors.white,
+          //       //           ),
+          //       //         ),
+          //       //         const Text(
+          //       //           'Unread notifications',
+          //       //           style: TextStyle(
+          //       //             color: Colors.white70,
+          //       //             fontSize: 16,
+          //       //           ),
+          //       //         ),
+          //       //       ],
+          //       //     ),
+          //       //   ),
+          //       // ),
+          //       Spacer(),
+          //       Container(
+          //         padding: const EdgeInsets.all(12),
+          //         decoration: BoxDecoration(
+          //           color: Colors.white.withOpacity(0.2),
+          //           borderRadius: BorderRadius.circular(12),
+          //         ),
+          //         child: const Icon(
+          //           Icons.notifications_active,
+          //           color: Colors.white,
+          //           size: 32,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
 
           // Notifications list
           Expanded(
-            child: notifications.isEmpty
+            child: isLoading
                 ? const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.notifications_none,
-                          size: 64,
-                          color: Colors.grey,
+                        CircularProgressIndicator(
+                          color: AppColors.primary,
                         ),
                         SizedBox(height: 16),
                         Text(
-                          'No notifications yet',
+                          'Loading your saved products...',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             color: Colors.grey,
                             fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'You\'ll see your notifications here',
-                          style: TextStyle(
-                            color: Colors.grey,
                           ),
                         ),
                       ],
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = notifications[index];
-                      return _buildNotificationCard(notification, index);
-                    },
-                  ),
+                : notifications.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notifications_none,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'No notifications yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'You\'ll see your notifications here',
+                              style: TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: notifications.length,
+                        itemBuilder: (context, index) {
+                          final notification = notifications[index];
+                          return _buildNotificationCard(notification, index);
+                        },
+                      ),
           ),
         ],
       ),
@@ -205,10 +347,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
-            setState(() {
-              notification['isRead'] = true;
-            });
-            _handleNotificationTap(notification);
+            // setState(() {
+            //   notification['isRead'] = true;
+            // });
+            // // _handleNotificationTap(notification);
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -276,12 +418,34 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            _formatTimestamp(timestamp),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 12,
+                                color: Colors.grey[500],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatTimestamp(timestamp),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                              if (notification.containsKey('dataNTime') &&
+                                  notification['dataNTime'] != null)
+                                Expanded(
+                                  child: Text(
+                                    ' • ${notification['dataNTime']}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[400],
+                                    ),
+                                    textAlign: TextAlign.end,
+                                  ),
+                                ),
+                            ],
                           ),
                         ],
                       ),
@@ -454,46 +618,28 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
           const SizedBox(height: 12),
 
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigate to product details
-                    _navigateToProductDetails(notification);
-                  },
-                  icon: const Icon(Icons.visibility, size: 16),
-                  label: const Text('View Product'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
+          // Action button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  notification['isRead'] = true;
+                });
+                _handleNotificationTap(notification);
+              },
+              icon: const Icon(Icons.visibility, size: 16),
+              label: const Text('View Product'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                elevation: 2,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    // Set price alert
-                    _setPriceAlert(notification);
-                  },
-                  icon: const Icon(Icons.notifications, size: 16),
-                  label: const Text('Set Alert'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -527,6 +673,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
         return Icons.local_offer;
       default:
         return Icons.notifications;
+    }
+  }
+
+  DateTime _parseDataNTime(String dataNTime) {
+    try {
+      // Try to parse the DataNTime string to DateTime
+      // Assuming the format is something like "2024-01-15 10:30:00" or similar
+      return DateTime.parse(dataNTime);
+    } catch (e) {
+      log('Error parsing DataNTime: $dataNTime, Error: $e');
+      // Return current time if parsing fails
+      return DateTime.now();
     }
   }
 
@@ -683,28 +841,34 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   void _navigateToProductDetails(Map<String, dynamic> notification) {
     final productId = notification['productId'];
+    final productImage = notification['productImage'] as String?;
+    final newPrice = notification['newPrice'] as String?;
+    final mpn = notification['product_mpn'].toString();
+    final brandKey = notification['brand_key'].toString();
+    log('mpn $mpn');
+    log('brandKey $brandKey');
+
     if (productId != null) {
       // Navigate to product details screen
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Navigate to product ID: $productId'),
-          backgroundColor: Colors.green,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductDetailsScreen(
+            productId: productId,
+            brandName: brandKey,
+            productMPN: mpn,
+            productImage: productImage ?? '',
+            productPrice: newPrice ?? '0.00',
+          ),
         ),
       );
-      // TODO: Implement actual navigation to product details
-    }
-  }
-
-  void _setPriceAlert(Map<String, dynamic> notification) {
-    final productId = notification['productId'];
-    if (productId != null) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Price alert set for product ID: $productId'),
-          backgroundColor: Colors.blue,
+        const SnackBar(
+          content: Text('Product details not available'),
+          backgroundColor: Colors.red,
         ),
       );
-      // TODO: Implement actual price alert setting
     }
   }
 
@@ -717,30 +881,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.mark_email_read),
-              title: const Text('Mark as read'),
-              onTap: () {
-                setState(() {
-                  notification['isRead'] = false;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.delete),
               title: const Text('Delete notification'),
-              onTap: () async{
-                // setState(() {
-                //   notifications.removeAt(index);
-                // });
-                await _deleteNotifications();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Notification deleted'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+              onTap: () async {
+                setState(() {
+                  Navigator.pop(context);
+                });
+
+                await _deleteNotifications(
+                    emailId: notification['emailId'],
+                    productId: notification['productId']);
               },
             ),
           ],
@@ -749,17 +899,29 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Future<void> _deleteNotifications() async{
+  Future<void> _deleteNotifications(
+      {required String emailId, required int productId}) async {
+    setState(() {
+      isLoading = true;
+    });
+    log('EmailId $emailId');
+    log('productId $productId');
+
     await BrandsApi.deleteSavedProductData(
-        emailId: '',
-        productId: '',
-        context: context
-    ).then((response) {
-      if(response != 'error'){
-        log('Notification Deleted');
-      }else{
-        log('Error Notification Delete');
+            emailId: emailId, productId: productId, context: context)
+        .then((response) async {
+      if (response != 'error') {
+        log('Product $productId deleted successfully');
+        await _getProductData(emailId);
+        savedProducts = [];
+        notifications = [];
+      } else {
+        log('Error deleting product $productId');
       }
     });
+  setState(() {
+    isLoading = false;
+  });
   }
+
 }
