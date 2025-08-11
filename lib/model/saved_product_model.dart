@@ -7,7 +7,7 @@ class SavedProductModel {
   final String newPrice;
   final String productMPN;
   final String brandKey;
-  final bool isRead;
+  final int isRead;
   final String DataNTime;
 
   SavedProductModel({
@@ -33,7 +33,7 @@ class SavedProductModel {
       newPrice: json['NewPrice'] ?? '0.00',
       productMPN: json['product_mpn'] ?? '',
       brandKey: json['brand_key'] ?? '',
-      isRead: json['isRead'] ?? 'false',
+      isRead: json['isRead'] ?? 0,
       DataNTime: json['DataNTime'] ?? '',
     );
   }

@@ -717,7 +717,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                           },
                                                           child: Container(
                                                             width: w * .45,
-                                                           // height: h * .48,
+                                                            // height: h * .48,
                                                             decoration:
                                                                 BoxDecoration(
                                                               color:
@@ -816,7 +816,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                     children: [
                                                                       // Product Name
                                                                       SizedBox(
-                                                                    height: w * .25,
+                                                                        height: w *
+                                                                            .25,
                                                                         child:
                                                                             Text(
                                                                           finalList[index].productName.isEmpty
@@ -1074,7 +1075,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                             12),
                                                   ),
                                                   child: Text(
-                                                    '$totalProductCount total',
+                                                    '$totalPages total',
                                                     style: TextStyle(
                                                       fontSize: w * .039,
                                                       fontWeight:
@@ -1464,7 +1465,14 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
               (a, b) => (b.productName ?? '').compareTo(a.productName ?? ''));
         }
       }
+
+      // Update total product count and pagination for filtered results
+      totalProductCount = tempProductList.length;
+      totalPages = (totalProductCount / itemsPerPage).ceil();
+
+      // Reset to first page when filters are applied
       currentPage = 0;
+
       _updateCurrentPageDisplay();
     });
     _saveFilterPreferences();

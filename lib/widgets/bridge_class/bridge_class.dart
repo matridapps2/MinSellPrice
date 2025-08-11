@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:minsellprice/screens/spalsh_screen/splash_screen.dart';
+import 'package:minsellprice/screens/splash_screen/splash_screen.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 
 class BridgeClass extends StatefulWidget {

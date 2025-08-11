@@ -225,4 +225,32 @@ class BrandsApi {
       return e.toString();
     }
   }
+
+  static Future<String> updateReadStatus({
+    required String emailId,
+    required int productId,
+  }) async {
+    try {
+      final url =
+          '$growthMatridUrl/read-product-data?email=$emailId&product_id=$productId';
+
+      log('Update Read Status API: $url');
+      final response = await http.post(
+        Uri.parse(url),
+      );
+      log('API Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('Read status updated successfully');
+        log(response.body);
+        return response.body;
+      } else {
+        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+        return 'error';
+      }
+    } catch (e) {
+      log('Exception Update Read Status API: ${e.toString()}');
+      return e.toString();
+    }
+  }
 }

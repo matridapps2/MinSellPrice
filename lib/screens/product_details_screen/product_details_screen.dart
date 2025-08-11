@@ -114,39 +114,179 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Future<void> _priceAlertDialog() async {
     await showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Set Price Alert'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Get notified when ${widget.brandName} drops below:'),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Email Id..',
-                  // prefixText: '\$',
-                  border: OutlineInputBorder(),
-                ),
-                controller: _emailController,
-              ),
-            ],
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+          elevation: 8,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  Colors.grey.shade50,
+                ],
+              ),
             ),
-            ElevatedButton(
-              onPressed: () async{
-                await  _testNotificationTap(context).whenComplete(() async{
-                 await saveProductData(context, _emailController.text, widget.productPrice, widget.productId);
-               });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Test Tap'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header with icon
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.notifications_active,
+                    size: 32,
+                    color: AppColors.primary,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Title
+                Text(
+                  'Set Price Alert',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 12),
+
+                // Subtitle
+                Text(
+                  'Get notified when ${widget.brandName} drops below your target price',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Email input field
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: 'Enter your email address',
+                      prefixIcon: Icon(
+                        Icons.email_outlined,
+                        color: AppColors.primary,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey.shade400),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          await _testNotificationTap(context).whenComplete(() async {
+                            await saveProductData(
+                              context,
+                              _emailController.text,
+                              widget.productPrice,
+                              widget.productId,
+                            );
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Set Alert',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -1149,10 +1289,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(
-                      _isSubscribedToPriceAlert
-                          ? Icons.notifications_active
-                          : Icons.notifications_none,
+                    child: const Icon(
+                      // _isSubscribedToPriceAlert
+                      //     ?
+                      Icons.notifications_active,
+                         // : Icons.notifications_none,
                       color: Colors.white,
                       size: 24,
                     ),
@@ -1162,11 +1303,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _isSubscribedToPriceAlert
-                          ? 'Price Alert Active'
-                          : 'Get Price Alerts',
-                      style: const TextStyle(
+                    const Text(
+                     // _isSubscribedToPriceAlert
+                        'Price Alert Active',
+                        //  : 'Get Price Alerts',
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -1186,19 +1327,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                   ],
                 ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    _isSubscribedToPriceAlert ? Icons.remove : Icons.add,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
+               const Spacer(),
+                // Container(
+                //   padding: const EdgeInsets.all(6),
+                //   decoration: BoxDecoration(
+                //     color: Colors.white.withOpacity(0.2),
+                //     borderRadius: BorderRadius.circular(8),
+                //   ),
+                //   child: Icon(
+                //     _isSubscribedToPriceAlert ? Icons.remove : Icons.add,
+                //     color: Colors.white,
+                //     size: 16,
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -1557,33 +1698,33 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           const SizedBox(height: 4),
                           Padding(
                             padding:
-                                const EdgeInsets.symmetric(horizontal: 10.0),
-                            child: Row(
+                                const EdgeInsets.symmetric(horizontal: 3.0),
+                            child: Row(mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  '\$${product.vendorpricePrice ?? '--'}',
+                                  '\$${product.vendorpricePrice ?? '--'} ',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14),
+                                      fontSize: 23),
                                 ),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  '+',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.local_shipping_outlined,
-                                  size: 20,
-                                  color: Colors.grey,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: _buildShippingText(
-                                      product.vendorpriceShipping),
-                                ),
+                                // const SizedBox(width: 0),
+                                // const Text(
+                                //   '+',
+                                //   style: TextStyle(
+                                //       fontWeight: FontWeight.bold,
+                                //       fontSize: 22),
+                                // ),
+                                // const SizedBox(width: 0),
+                                // const Icon(
+                                //   Icons.local_shipping_outlined,
+                                //   size: 20,
+                                //   color: Colors.grey,
+                                // ),
+                                // const SizedBox(width: 0),
+                                // Expanded(
+                                //   child: _buildShippingText(
+                                //       product.vendorpriceShipping),
+                                // ),
                               ],
                             ),
                           ),
@@ -1591,7 +1732,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           Text(
                             '${product.vendorpriceDate ?? '--'}',
                             style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14),
+                                color: Colors.grey, fontSize: 16),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
@@ -1624,16 +1765,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           'FREE',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 15,
+            fontSize: 22,
           ),
         ),
       );
     } else {
       return Text(
-        '\$${shippingValue ?? '--'}',
+       ' \$${shippingValue ?? '--'}',
         style: const TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 14,
+          fontSize: 22,
         ),
         overflow: TextOverflow.ellipsis,
       );

@@ -154,6 +154,7 @@ flutter:
     - assets/social/
     - assets/shopping_mega_mart_logo.png
     - assets/minsellprice_logo.png
+    - assets/dashboard_icon.svg
 
     - assets/images/background.jpeg
     - assets/images/no_image.png

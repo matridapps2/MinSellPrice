@@ -82,115 +82,115 @@ class _AccountScreenState extends State<AccountScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            margin: const EdgeInsets.only(bottom: 24.0),
-            decoration: BoxDecoration(
-              color: Colors.blue[600],
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.email_outlined,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'SUBSCRIBE TO OUR NEWSLETTER',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Get all the latest information on Events, Sales and Offers.',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          hintText: 'Your E-mail Address',
-                          hintStyle: TextStyle(color: Colors.grey[400]),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[800],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'SUBSCRIBE',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, size: 18),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          // Container(
+          //   padding: const EdgeInsets.all(16.0),
+          //   margin: const EdgeInsets.only(bottom: 24.0),
+          //   decoration: BoxDecoration(
+          //     color: Colors.blue[600],
+          //     borderRadius: BorderRadius.circular(12),
+          //     boxShadow: [
+          //       BoxShadow(
+          //         color: Colors.grey.withOpacity(0.3),
+          //         spreadRadius: 2,
+          //         blurRadius: 5,
+          //         offset: const Offset(0, 3),
+          //       ),
+          //     ],
+          //   ),
+          //   child: Column(
+          //     crossAxisAlignment: CrossAxisAlignment.start,
+          //     children: [
+          //       Row(
+          //         children: [
+          //           const Icon(
+          //             Icons.email_outlined,
+          //             color: Colors.white,
+          //             size: 28,
+          //           ),
+          //           const SizedBox(width: 12),
+          //           Expanded(
+          //             child: Column(
+          //               crossAxisAlignment: CrossAxisAlignment.start,
+          //               children: [
+          //                 const Text(
+          //                   'SUBSCRIBE TO OUR NEWSLETTER',
+          //                   style: TextStyle(
+          //                     color: Colors.white,
+          //                     fontWeight: FontWeight.bold,
+          //                     fontSize: 16,
+          //                     letterSpacing: 1.2,
+          //                   ),
+          //                 ),
+          //                 const SizedBox(height: 4),
+          //                 const Text(
+          //                   'Get all the latest information on Events, Sales and Offers.',
+          //                   style: TextStyle(
+          //                     color: Colors.white70,
+          //                     fontSize: 14,
+          //                   ),
+          //                 ),
+          //               ],
+          //             ),
+          //           ),
+          //         ],
+          //       ),
+          //       const SizedBox(height: 16),
+          //       Row(
+          //         children: [
+          //           Expanded(
+          //             child: TextField(
+          //               controller: _emailController,
+          //               decoration: InputDecoration(
+          //                 hintText: 'Your E-mail Address',
+          //                 hintStyle: TextStyle(color: Colors.grey[400]),
+          //                 filled: true,
+          //                 fillColor: Colors.white,
+          //                 border: OutlineInputBorder(
+          //                   borderRadius: BorderRadius.circular(8),
+          //                   borderSide: BorderSide.none,
+          //                 ),
+          //                 contentPadding: const EdgeInsets.symmetric(
+          //                   horizontal: 16,
+          //                   vertical: 12,
+          //                 ),
+          //               ),
+          //               keyboardType: TextInputType.emailAddress,
+          //             ),
+          //           ),
+          //           const SizedBox(width: 12),
+          //           ElevatedButton(
+          //             onPressed: () {},
+          //             style: ElevatedButton.styleFrom(
+          //               backgroundColor: Colors.grey[800],
+          //               foregroundColor: Colors.white,
+          //               padding: const EdgeInsets.symmetric(
+          //                 horizontal: 20,
+          //                 vertical: 12,
+          //               ),
+          //               shape: RoundedRectangleBorder(
+          //                 borderRadius: BorderRadius.circular(8),
+          //               ),
+          //             ),
+          //             child: const Row(
+          //               mainAxisSize: MainAxisSize.min,
+          //               children: [
+          //                 Text(
+          //                   'SUBSCRIBE',
+          //                   style: TextStyle(
+          //                     fontWeight: FontWeight.bold,
+          //                     letterSpacing: 1.2,
+          //                   ),
+          //                 ),
+          //                 SizedBox(width: 8),
+          //                 Icon(Icons.arrow_forward, size: 18),
+          //               ],
+          //             ),
+          //           ),
+          //         ],
+          //       ),
+          //     ],
+          //   ),
+          // ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

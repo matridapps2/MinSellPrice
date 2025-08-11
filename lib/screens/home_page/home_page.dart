@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/model/saved_product_model.dart';
 import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 import 'package:minsellprice/screens/account_screen/account_screen.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
@@ -11,10 +14,9 @@ import 'package:minsellprice/screens/categories_screen/categories_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/notification_screen/notification_screen.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_screen.dart';
-import 'package:minsellprice/services/notification_service.dart';
-import 'package:minsellprice/services/navigation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
 class HomePage extends StatefulWidget {
@@ -36,6 +38,9 @@ class _HomePageState extends State<HomePage>
   Map<String, dynamic> userData = {};
 
   String vendorName = '';
+  String emailId = '';
+
+  bool hasUnreadNotifications = false;
 
   late Database database;
 
@@ -56,7 +61,39 @@ class _HomePageState extends State<HomePage>
 
   void _initCall() async {
     //await _showExampleNotifications();
+    await _checkNotificationStatus();
     await _initializeDatabase();
+  }
+
+  Future<void> _checkNotificationStatus() async {
+    try {
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      emailId = await preferences.getString('email_id') ??
+          'rabhinav.matrid98765@gmail.com';
+
+      final response = await BrandsApi.fetchSavedProductData(
+        emailId: emailId,
+        context: context,
+      );
+
+      if (response != 'error') {
+        final List<dynamic> jsonData = json.decode(response);
+        final List<SavedProductModel> products =
+            jsonData.map((item) => SavedProductModel.fromJson(item)).toList();
+
+        final hasUnread = products.any((product) => product.isRead == 0);
+
+        if (mounted) {
+          setState(() {
+            hasUnreadNotifications = hasUnread;
+          });
+        }
+
+        log('Notification status: ${hasUnread ? 'Has unread' : 'All read'}');
+      }
+    } catch (e) {
+      log('Error checking notification status: $e');
+    }
   }
 
   Future<void> _initializeDatabase() async {
@@ -297,7 +334,7 @@ class _HomePageState extends State<HomePage>
                                   color: Colors.transparent,
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(12),
-                                    onTap: () {
+                                    onTap: () async {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -305,6 +342,7 @@ class _HomePageState extends State<HomePage>
                                               const NotificationScreen(),
                                         ),
                                       );
+                                      await _checkNotificationStatus();
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(10),
@@ -315,18 +353,19 @@ class _HomePageState extends State<HomePage>
                                             color: Colors.grey[700],
                                             size: w * .07,
                                           ),
-                                          Positioned(
-                                            right: 0,
-                                            top: 0,
-                                            child: Container(
-                                              width: 8,
-                                              height: 8,
-                                              decoration: BoxDecoration(
-                                                color: Colors.red,
-                                                shape: BoxShape.circle,
+                                          if (hasUnreadNotifications)
+                                            Positioned(
+                                              right: 0,
+                                              top: 0,
+                                              child: Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red,
+                                                  shape: BoxShape.circle,
+                                                ),
                                               ),
                                             ),
-                                          ),
                                         ],
                                       ),
                                     ),
@@ -350,8 +389,8 @@ class _HomePageState extends State<HomePage>
                     onTap: (i) => setState(() => _activeIndex = i),
                     items: [
                       SalomonBottomBarItem(
-                        icon: const Icon(Icons.home),
-                        title: const Text("Home"),
+                        icon: const Icon(Icons.space_dashboard),
+                        title: const Text("Dashboard"),
                         selectedColor: AppColors.primary,
                       ),
                       SalomonBottomBarItem(

@@ -5,6 +5,8 @@ import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/model/saved_product_model.dart';
+import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
+import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,6 +59,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         final List<SavedProductModel> products =
             jsonData.map((item) => SavedProductModel.fromJson(item)).toList();
 
+        savedProducts = [];
+        notifications = [];
+
         setState(() {
           savedProducts = products;
           isLoading = false;
@@ -84,10 +89,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
         savedProducts.map((product) {
       return {
         'title': 'Price Drop Alert!',
-        'body': '${product.productName} price has dropped!',
         'type': 'price_drop',
         'timestamp': _parseDataNTime(product.DataNTime),
-        'isRead': product.isRead,
+        'isRead': product.isRead == 1, // Convert to bool (false or true)
+        'isReadInt': product.isRead, // Keep original int for API calls
         'productId': product.productId,
         'productName': product.productName,
         'productImage': product.productImage,
@@ -101,6 +106,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
         'dataNTime': product.DataNTime,
       };
     }).toList();
+
+    priceDropNotifications.sort((a, b) {
+      final dateA = _parseDataNTime(a['dataNTime'] as String);
+      final dateB = _parseDataNTime(b['dataNTime'] as String);
+      return dateB.compareTo(dateA);
+    });
 
     setState(() {
       notifications.addAll(priceDropNotifications);
@@ -129,13 +140,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
+              icon: const Icon(
+                Icons.arrow_back_ios_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              onPressed: () => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HomePage(),
+                  ))),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,9 +337,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Widget _buildNotificationCard(Map<String, dynamic> notification, int index) {
-    final isUnread = !notification['isRead'];
+    final isUnread =
+        !(notification['isRead'] as bool);
     final type = notification['type'] as String;
-    final timestamp = notification['timestamp'] as DateTime;
     final hasProductDetails = notification.containsKey('productImage');
 
     return Container(
@@ -375,7 +389,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                     const SizedBox(width: 12),
 
-                    // Notification content
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,7 +422,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            notification['body'],
+                            notification['productName'],
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -426,24 +439,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 color: Colors.grey[500],
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                _formatTimestamp(timestamp),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
+                              // Text(
+                              //   _formatTimestamp(timestamp),
+                              //   style: TextStyle(
+                              //     fontSize: 12,
+                              //     color: Colors.grey[500],
+                              //   ),
+                              // ),
                               if (notification.containsKey('dataNTime') &&
                                   notification['dataNTime'] != null)
-                                Expanded(
-                                  child: Text(
-                                    ' • ${notification['dataNTime']}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[400],
-                                    ),
-                                    textAlign: TextAlign.end,
+                                Text(
+                                  ' ${notification['dataNTime']}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[400],
                                   ),
+                                  textAlign: TextAlign.end,
                                 ),
                             ],
                           ),
@@ -479,8 +490,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final productName = notification['productName'] as String?;
     final oldPrice = notification['oldPrice'] as String?;
     final newPrice = notification['newPrice'] as String?;
-    final savings = notification['savings'] as String?;
-    final savingsPercentage = notification['savingsPercentage'] as String?;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -599,17 +608,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           ),
                       ],
                     ),
-                    if (savings != null && savingsPercentage != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Save \$$savings (${savingsPercentage}% off)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -622,12 +620,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  notification['isRead'] = true;
-                });
-                _handleNotificationTap(notification);
-              },
+              onPressed: () async {
+                if(notification['isReadInt'] == 1){
+                  log('isRead: ${notification['isReadInt']}');
+                  _handleNotificationTap(notification);
+                }
+                else{
+                  setState(() {
+                    notification['isRead'] = true;
+                    notification['isReadInt'] = 1;
+                  });
+                  await _isReadStatusUpdate(emailId, notification['productId']);
+                  _handleNotificationTap(notification);
+                }
+                },
               icon: const Icon(Icons.visibility, size: 16),
               label: const Text('View Product'),
               style: ElevatedButton.styleFrom(
@@ -806,14 +812,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (savings != null && savingsPercentage != null)
-              Text(
-                'You Save: \$$savings (${savingsPercentage}% off)',
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
           ],
         ),
         actions: [
@@ -913,15 +911,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
       if (response != 'error') {
         log('Product $productId deleted successfully');
         await _getProductData(emailId);
-        savedProducts = [];
-        notifications = [];
       } else {
         log('Error deleting product $productId');
       }
     });
-  setState(() {
-    isLoading = false;
-  });
+
+  }
+
+  Future<void> _isReadStatusUpdate(String emailId, int productId) async{
+    setState(() {
+      isLoading = true;
+    });
+    log('EmailId $emailId');
+    log('productId $productId');
+    await BrandsApi.updateReadStatus(
+        emailId: emailId, productId: productId)
+        .then((response) async {
+      if (response != 'error') {
+        log('Product $productId count update successfully');
+      } else {
+        log('Error deleting product $productId');
+      }
+    });
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
 }

@@ -74,26 +74,32 @@ class _LikedProductState extends State<LikedProduct>
                 snapshot.data == null ||
                 snapshot.data!.isEmpty) {
               return const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'No favourites yet!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Segoe UI',
-                        fontSize: 16,
-                      ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10.0),
+                  child: SizedBox(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'No favourites yet!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontFamily: 'Segoe UI',
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Tap the heart icon on products you love to add them here',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Segoe UI',
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Tap the heart icon on products you love to add them here',
-                      style: TextStyle(
-                        fontFamily: 'Segoe UI',
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               );
             }
