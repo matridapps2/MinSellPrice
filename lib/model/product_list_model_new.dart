@@ -63,6 +63,7 @@ class VendorProduct {
   //**************************************************************************//
   final int productId;
   final String vendorpricePrice;
+  final String brandName;
   final String vendorName;
   final int vendorIdCount;
   final String vendorpriceDate;
@@ -88,6 +89,8 @@ class VendorProduct {
     this.productImage,
     this.imageName,
     required this.totalCount,
+    required this.brandName,
+
   });
 
   factory VendorProduct.fromJson(Map<String, dynamic> json) => VendorProduct(
@@ -100,6 +103,7 @@ class VendorProduct {
         vendorName: json["vendor_name"] ?? '--',
         vendorIdCount: json["vendorIdCount"] ?? 0,
         vendorpriceDate: json["vendorprice_date"] ?? '--',
+        brandName: json["brand_name"] ?? '--',
         vendorUrl: json["vendor_url"] ?? '--',
         productMpn: json["product_mpn"] ?? '--',
         productName: json["product_name"] ?? '--',
@@ -115,6 +119,7 @@ class VendorProduct {
       "vendor_name": vendorName,
       "vendorIdCount": vendorIdCount,
       "vendorprice_date": vendorpriceDate,
+      "brand_name": brandName,
       "vendor_url": vendorUrl,
       "product_mpn": productMpn,
       "product_name": productName,

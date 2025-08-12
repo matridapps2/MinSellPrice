@@ -1,13 +1,17 @@
 import 'dart:developer';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/model/saved_product_model.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/home_page/home_page.dart';
+import 'package:minsellprice/screens/loging_page/loging_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
+import 'package:minsellprice/screens/register_page/register_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -24,21 +28,187 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   List<SavedProductModel> savedProducts = [];
   bool isLoading = false;
+  bool isLoggedIn = false;
   String emailId = '';
 
   @override
   void initState() {
     super.initState();
     _initCall();
+
+    // Listen to Firebase Auth state changes
+    _authStateSubscription =
+        FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (mounted) {
+        if (user != null && user.email != null) {
+          setState(() {
+            isLoggedIn = true;
+            emailId = user.email!;
+          });
+          log('User Logged ?');
+          _getProductData(emailId);
+        } else {
+          setState(() {
+            isLoggedIn = false;
+            emailId = '';
+          });
+        }
+      }
+    });
+  }
+
+  StreamSubscription<User?>? _authStateSubscription;
+
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
   }
 
   void _initCall() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    log('notificationData is empty');
-    emailId = await preferences.getString('email_id') ??
-        'rabhinav.matrid98765@gmail.com';
-    log('emailId: $emailId');
-    await _getProductData(emailId);
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+
+      if (currentUser != null && currentUser.email != null) {
+        emailId = currentUser.email!;
+        isLoggedIn = true;
+        log('Email from Firebase Auth: $emailId');
+        await _getProductData(emailId);
+      } else {
+        // No user logged in
+        isLoggedIn = false;
+        emailId = '';
+        log('No Firebase user found - user not logged in');
+        setState(() {});
+      }
+    } catch (e) {
+      log('Error getting email: $e');
+      isLoggedIn = false;
+      emailId = '';
+      setState(() {});
+    }
+  }
+
+  Widget _noLogin() {
+    return Container(
+      height: h * 0.8,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+
+          Text(
+            'Login Required',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Description
+          Text(
+            'Please log in to view your notifications and saved products',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Login Button
+          Container(
+            width: double.infinity,
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  spreadRadius: 1,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => LoginPage(
+                      onLoginSuccess: () {},
+                    ),
+                  ));
+                },
+                child: const Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.login_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Go to Login',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Alternative text
+          Text(
+            'Don\'t have an account?',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Register link
+          GestureDetector(
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const RegisterPage(),
+                ),
+              );
+            },
+            child: const Text(
+              'Create Account',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _getProductData(String emailId) async {
@@ -163,9 +333,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 letterSpacing: 0.5,
               ),
             ),
-            if (!isLoading)
+            if (!isLoading && isLoggedIn)
               Text(
                 '${notifications.where((n) => !n['isRead']).length} unread',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.8),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            if (!isLoggedIn)
+              Text(
+                'Login to view notifications',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withOpacity(0.8),
@@ -188,12 +367,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
             child: Stack(
               children: [
-                const Icon(
+                Icon(
                   Icons.notifications_rounded,
+
                   color: Colors.white,
                   size: 24,
                 ),
-                if (notifications.where((n) => !n['isRead']).isNotEmpty)
+                if (isLoggedIn &&
+                    notifications.where((n) => !n['isRead']).isNotEmpty)
                   Positioned(
                     right: 0,
                     top: 0,
@@ -273,63 +454,66 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
           // Notifications list
           Expanded(
-            child: isLoading
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Loading your saved products...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : notifications.isEmpty
+            child: !isLoggedIn
+                ? _noLogin()
+                : isLoading
                     ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.notifications_none,
-                              size: 64,
-                              color: Colors.grey,
+                            CircularProgressIndicator(
+                              color: AppColors.primary,
                             ),
                             SizedBox(height: 16),
                             Text(
-                              'No notifications yet',
+                              'Loading your saved products...',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 16,
                                 color: Colors.grey,
                                 fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'You\'ll see your notifications here',
-                              style: TextStyle(
-                                color: Colors.grey,
                               ),
                             ),
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: notifications.length,
-                        itemBuilder: (context, index) {
-                          final notification = notifications[index];
-                          return _buildNotificationCard(notification, index);
-                        },
-                      ),
+                    : notifications.isEmpty
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.notifications_none,
+                                  size: 64,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No notifications yet',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'You\'ll see your notifications here',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: notifications.length,
+                            itemBuilder: (context, index) {
+                              final notification = notifications[index];
+                              return _buildNotificationCard(
+                                  notification, index);
+                            },
+                          ),
           ),
         ],
       ),
@@ -337,8 +521,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Widget _buildNotificationCard(Map<String, dynamic> notification, int index) {
-    final isUnread =
-        !(notification['isRead'] as bool);
+    final isUnread = !(notification['isRead'] as bool);
     final type = notification['type'] as String;
     final hasProductDetails = notification.containsKey('productImage');
 
@@ -621,11 +804,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () async {
-                if(notification['isReadInt'] == 1){
+                if (notification['isReadInt'] == 1) {
                   log('isRead: ${notification['isReadInt']}');
                   _handleNotificationTap(notification);
-                }
-                else{
+                } else {
                   setState(() {
                     notification['isRead'] = true;
                     notification['isReadInt'] = 1;
@@ -633,7 +815,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   await _isReadStatusUpdate(emailId, notification['productId']);
                   _handleNotificationTap(notification);
                 }
-                },
+              },
               icon: const Icon(Icons.visibility, size: 16),
               label: const Text('View Product'),
               style: ElevatedButton.styleFrom(
@@ -915,17 +1097,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
         log('Error deleting product $productId');
       }
     });
-
   }
 
-  Future<void> _isReadStatusUpdate(String emailId, int productId) async{
+  Future<void> _isReadStatusUpdate(String emailId, int productId) async {
     setState(() {
       isLoading = true;
     });
     log('EmailId $emailId');
     log('productId $productId');
-    await BrandsApi.updateReadStatus(
-        emailId: emailId, productId: productId)
+    await BrandsApi.updateReadStatus(emailId: emailId, productId: productId)
         .then((response) async {
       if (response != 'error') {
         log('Product $productId count update successfully');
@@ -938,5 +1118,4 @@ class _NotificationScreenState extends State<NotificationScreen> {
       isLoading = false;
     });
   }
-
 }

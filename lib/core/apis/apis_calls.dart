@@ -10,6 +10,7 @@ import 'package:minsellprice/model/product_details_model.dart';
 import 'package:retry/retry.dart';
 
 import 'api_utility_methods.dart';
+import 'api_utility_constants.dart';
 
 class BrandsApi {
   BrandsApi._();
@@ -19,7 +20,7 @@ class BrandsApi {
     try {
       log('Fetching brands from API');
       final response = await http.get(
-        Uri.parse('$brandUrl/minsell-brand'),
+        Uri.parse('$brandUrl$kMinSellBrands'),
       );
       log('Fetching brands from API2');
       log('Brand API: $brandUrl/minsell-brand');
@@ -143,7 +144,7 @@ class BrandsApi {
   }) async {
     try {
       final url =
-          '$growthMatridUrl/save-product-data?email=$emailId&product_id=$productId&price=$price';
+          '$growthMatridUrl$kSaveProductData$kEmail$emailId&product_id=$productId&price=$price';
 
       log('SavePriceAlert API: $url');
       final response = await http.post(
@@ -173,7 +174,7 @@ class BrandsApi {
 }) async{
     try {
       final url =
-          '$growthMatridUrl/fetch-product-data?email=$emailId';
+          '$growthMatridUrl$kFetchProductData$kEmail$emailId';
 
       log('GetPriceAlert API: $url');
       final response = await http.post(
@@ -203,7 +204,7 @@ class BrandsApi {
 }) async{
     try {
       final url =
-          '$growthMatridUrl/delete-product-data?email=$emailId&product_id=$productId';
+          '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
 
       log('Delete ProductData API: $url');
       final response = await http.post(
@@ -232,7 +233,7 @@ class BrandsApi {
   }) async {
     try {
       final url =
-          '$growthMatridUrl/read-product-data?email=$emailId&product_id=$productId';
+          '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId';
 
       log('Update Read Status API: $url');
       final response = await http.post(
@@ -250,6 +251,63 @@ class BrandsApi {
       }
     } catch (e) {
       log('Exception Update Read Status API: ${e.toString()}');
+      return e.toString();
+    }
+  }
+
+  static Future<String> saveLikedProduct({
+    required String emailId,
+    required int productId,
+    required int status,
+  }) async {
+    try {
+      final url =
+          '$growthMatridUrl$kSaveLikedProduct$kEmail$emailId&product_id=$productId';
+
+      log('Saved Liked Product API: $url');
+      final response = await http.post(
+        Uri.parse(url),
+      );
+      log('API Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('Liked Product Updated Successfully');
+        log(response.body);
+        return response.body;
+      } else {
+        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+        return 'error';
+      }
+    } catch (e) {
+      log('Exception Saved Liked Product API: ${e.toString()}');
+      return e.toString();
+    }
+  }
+
+  static Future<String> getLikedProduct({
+    required String emailId,
+    required BuildContext context,
+  }) async {
+    try {
+      final url =
+          '$brandUrl$kLikedProduct$kEmail$emailId';
+
+      log('Get Liked Product API: $url');
+      final response = await http.get(
+        Uri.parse(url),
+      );
+      log('API Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('API Successfully');
+        log(response.body);
+        return response.body;
+      } else {
+        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+        return 'error';
+      }
+    } catch (e) {
+      log('Exception GET Liked Product API: ${e.toString()}');
       return e.toString();
     }
   }

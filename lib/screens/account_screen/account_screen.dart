@@ -203,13 +203,16 @@ class _AccountScreenState extends State<AccountScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _accountOption(Icons.person_add, 'Register', onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const RegisterPage(),
-                  ),
-                );
-              }),
+              Visibility(
+                visible: !authProvider.isLoggedIn,
+                child: _accountOption(Icons.person_add, 'Register', onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const RegisterPage(),
+                    ),
+                  );
+                }),
+              ),
               _accountOption(
                 authProvider.isLoggedIn ? Icons.logout : Icons.login,
                 authProvider.isLoggedIn ? 'Logout' : 'Login',

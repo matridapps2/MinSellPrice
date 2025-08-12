@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -13,6 +15,7 @@ import 'package:minsellprice/screens/categories_provider/categories_provider_fil
 import 'package:minsellprice/screens/categories_screen/categories_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/notification_screen/notification_screen.dart';
+import 'package:minsellprice/screens/liked_product_screen/liked_product_api.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
@@ -46,6 +49,10 @@ class _HomePageState extends State<HomePage>
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  StreamSubscription<User?>? _authStateSubscription;
+
+  bool isLoggedIn = false;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -60,17 +67,32 @@ class _HomePageState extends State<HomePage>
   }
 
   void _initCall() async {
-    //await _showExampleNotifications();
-    await _checkNotificationStatus();
     await _initializeDatabase();
+
+    _authStateSubscription =
+        FirebaseAuth.instance.authStateChanges().listen((User? user) {
+          if (mounted) {
+            if (user != null && user.email != null) {
+              setState(() {
+                isLoggedIn = true;
+                emailId = user.email!;
+              });
+              log('Home Screen');
+              log('User Logged ?');
+              _checkNotificationStatus(emailId);
+            } else {
+              setState(() {
+                isLoggedIn = false;
+                emailId = '';
+              });
+              log('User Not Login');
+            }
+          }
+        });
   }
 
-  Future<void> _checkNotificationStatus() async {
+  Future<void> _checkNotificationStatus(String emailId) async {
     try {
-      SharedPreferences preferences = await SharedPreferences.getInstance();
-      emailId = await preferences.getString('email_id') ??
-          'rabhinav.matrid98765@gmail.com';
-
       final response = await BrandsApi.fetchSavedProductData(
         emailId: emailId,
         context: context,
@@ -115,7 +137,8 @@ class _HomePageState extends State<HomePage>
               },
               child: DashboardScreenWidget(),
             ),
-            LikedProduct(database: db),
+         //   LikedProduct(database: db),
+            LikedProductScreen(),
             ChangeNotifierProvider(
               create: (context) {
                 final provider = BrandsProvider();
@@ -144,7 +167,8 @@ class _HomePageState extends State<HomePage>
               },
               child: DashboardScreenWidget(),
             ),
-            LikedProduct(database: database),
+            //LikedProduct(database: database),
+            LikedProductScreen(),
             ChangeNotifierProvider(
               create: (context) {
                 final provider = BrandsProvider();
@@ -342,7 +366,7 @@ class _HomePageState extends State<HomePage>
                                               const NotificationScreen(),
                                         ),
                                       );
-                                      await _checkNotificationStatus();
+                                     await _checkNotificationStatus(emailId);
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(10),

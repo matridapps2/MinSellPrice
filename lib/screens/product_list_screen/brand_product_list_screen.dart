@@ -1417,7 +1417,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                         ),
                       ],
                     ),
-                  ));
+                  )
+    );
   }
 
   void _applyFilters(List<String> vendors, int? priceSorting,
