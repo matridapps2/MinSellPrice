@@ -8,6 +8,7 @@ import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
+import 'package:minsellprice/screens/product_list_screen/product_list.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
@@ -340,7 +341,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  BrandProductListScreen(
+                                                  ProductList(
                                                 brandId:
                                                     subcategory['brand_id'],
                                                 brandName: subcategory['name'],

@@ -5,6 +5,7 @@ import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
+import 'package:minsellprice/screens/product_list_screen/product_list.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -147,7 +148,7 @@ class _SearchScreenState extends State<SearchScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BrandProductListScreen(
+        builder: (context) => ProductList(
           brandId: brand['brand_id'] ?? 0,
           brandName: brand['brand_name'] ?? '',
           dataList: const [],

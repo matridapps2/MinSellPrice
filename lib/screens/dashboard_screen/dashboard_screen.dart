@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
+import 'package:minsellprice/screens/product_list_screen/product_list.dart';
 import 'package:minsellprice/screens/search_screen/search_screen.dart';
 import 'package:minsellprice/widgets/category_shimmer.dart';
 import 'package:provider/provider.dart';
@@ -367,7 +368,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => BrandProductListScreen(
+                  builder: (context) => ProductList(
                     brandId: brand['brand_id'],
                     brandName: brand['brand_name'],
                     dataList: const [],

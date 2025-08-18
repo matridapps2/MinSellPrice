@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
+import 'package:minsellprice/screens/product_list_screen/product_list.dart';
 import 'package:sqflite/sqflite.dart';
 
 class BrandSearchScreen extends StatefulWidget {
@@ -219,7 +220,7 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => BrandProductListScreen(
+                builder: (context) => ProductList(
                   brandId: brand['brand_id'],
                   brandName: brand['brand_name'],
                   dataList: const [],

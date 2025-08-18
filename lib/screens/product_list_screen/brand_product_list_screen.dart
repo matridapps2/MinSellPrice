@@ -32,6 +32,7 @@ class BrandProductListScreen extends StatefulWidget {
 }
 
 class _BrandProductListScreen extends State<BrandProductListScreen> {
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final ScrollController _scrollController = ScrollController();
@@ -45,18 +46,18 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   int itemsPerPage = 20;
   int endIndex = 0;
   int startIndex = 0;
-
-  // New variables for API pagination
   int totalProductCount = 0;
   int totalPages = 0;
   int currentApiPage = 1;
-  List<VendorProduct> allProducts = [];
-  bool hasMoreData = true;
 
+  bool currentInStockOnly = false;
+  bool currentOnSaleOnly = false;
+  bool hasMoreData = true;
   bool filterSubmitted = true;
   bool _isLoading = false;
   bool _isError = false;
 
+  List<VendorProduct> allProducts = [];
   List<String> filterVendor = [];
   List<String> uniqueVendors = [];
   List<VendorProduct> brandProducts = [];
@@ -65,8 +66,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   List<ProductListModelNew> brandDetails = [];
 
   RangeValues currentPriceRange = const RangeValues(0, 1000);
-  bool currentInStockOnly = false;
-  bool currentOnSaleOnly = false;
+
   double maxPriceFromAPI = 1000.0;
 
   @override
@@ -112,8 +112,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
     try {
       final allProductsResponse = await BrandsApi.getProductListByBrandName(
           widget.brandName.toString(), currentApiPage, context);
-      final Map<String, dynamic> decoded =
-          jsonDecode(allProductsResponse ?? '{}');
+
+      final Map<String, dynamic> decoded = jsonDecode(allProductsResponse ?? '{}');
 
       final List<dynamic> jsonList = decoded['brand_product'] ?? [];
       final List<VendorProduct> fetchedProducts =
