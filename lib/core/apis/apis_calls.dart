@@ -89,6 +89,47 @@ class BrandsApi {
     }
   }
 
+  static Future<Map<String, dynamic>?> fetchSearchProduct(
+      BuildContext context, String searchQuery) async {
+    try {
+      // Build the search URL with proper encoding
+      final encodedQuery = Uri.encodeComponent(searchQuery.trim());
+      String uri = '$brandUrl$kSearchProduct$encodedQuery';
+
+      log('Fetching Search Product API');
+      log('Search URL: $uri');
+
+      final response = await retry(
+        () async => await http.get(Uri.parse(uri)),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        log('Search API status code: ${response.statusCode}');
+        log('Search API response: ${response.body}');
+
+        // Parse the JSON response
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        return jsonData;
+      } else {
+        log('Error Search Product API: ${response.statusCode}');
+        log('Error response body: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      log("Exception In Search Product API: ${e.toString()}");
+      onExceptionResponse(context: context, exception: e.toString());
+      return null;
+    }
+  }
+
   static Future<ProductDetailsModel> getProductDetails(
       {required String brandName,
       required String productMPN,
@@ -136,12 +177,11 @@ class BrandsApi {
     }
   }
 
-  static Future<String> savePriceAlert({
-      required BuildContext context,
+  static Future<String> savePriceAlert(
+      {required BuildContext context,
       required String emailId,
       required String price,
-      required int productId
-  }) async {
+      required int productId}) async {
     try {
       final url =
           '$growthMatridUrl$kSaveProductData$kEmail$emailId&product_id=$productId&price=$price';
@@ -171,10 +211,9 @@ class BrandsApi {
   static Future<String> fetchSavedProductData({
     required String emailId,
     required BuildContext context,
-}) async{
+  }) async {
     try {
-      final url =
-          '$growthMatridUrl$kFetchProductData$kEmail$emailId';
+      final url = '$growthMatridUrl$kFetchProductData$kEmail$emailId';
 
       log('GetPriceAlert API: $url');
       final response = await http.post(
@@ -201,7 +240,7 @@ class BrandsApi {
     required String emailId,
     required int productId,
     required BuildContext context,
-}) async{
+  }) async {
     try {
       final url =
           '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
@@ -289,8 +328,7 @@ class BrandsApi {
     required BuildContext context,
   }) async {
     try {
-      final url =
-          '$brandUrl$kLikedProduct$kEmail$emailId';
+      final url = '$brandUrl$kLikedProduct$kEmail$emailId';
 
       log('Get Liked Product API: $url');
       final response = await http.get(

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:convert';
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +8,10 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
-import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
-import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/filter_preferences_db.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
-import 'package:sqflite/sqflite.dart';
 
 class LikedProductScreen extends StatefulWidget {
   const LikedProductScreen({

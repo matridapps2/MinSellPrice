@@ -9,7 +9,8 @@ import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
 import 'package:minsellprice/screens/product_list_screen/product_list.dart';
-import 'package:minsellprice/screens/search_screen/search_screen.dart';
+import 'package:minsellprice/screens/search_screen/brand_search_screen.dart';
+import 'package:minsellprice/screens/search_screen/product_search_screen.dart';
 import 'package:minsellprice/widgets/category_shimmer.dart';
 import 'package:provider/provider.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
@@ -25,8 +26,12 @@ class DashboardScreenWidget extends StatefulWidget {
 class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     with KeepAliveParentDataMixin {
   List<Map<String, dynamic>> databaseData = [];
-  final _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
+
+  final _brandSearchController = TextEditingController();
+  final _productSearchController = TextEditingController();
+
+  final FocusNode _brandSearchFocusNode = FocusNode();
+  final FocusNode _productSearchFocusNode = FocusNode();
 
   final _scrollController = ScrollController();
 
@@ -34,14 +39,17 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocusNode.unfocus();
+      _brandSearchFocusNode.unfocus();
+      _productSearchFocusNode.unfocus();
     });
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
-    _searchFocusNode.dispose();
+    _brandSearchController.dispose();
+    _productSearchController.dispose();
+    _brandSearchFocusNode.dispose();
+    _productSearchFocusNode.dispose();
     super.dispose();
   }
 
@@ -52,6 +60,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       width: w,
       child: Column(
         children: [
+          /// TEXT FIELD CONTROLLER
           Container(
             padding: const EdgeInsets.only(top: 1, bottom: 20),
             decoration: BoxDecoration(
@@ -88,16 +97,112 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       ],
                     ),
                     child: TextFormField(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
+                      controller: _productSearchController,
+                      focusNode: _productSearchFocusNode,
                       textInputAction: TextInputAction.search,
                       cursorColor: AppColors.primary,
                       onTap: () {
-                        _searchFocusNode.unfocus();
+                        _productSearchFocusNode.unfocus();
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const SearchScreen(),
+                            builder: (context) => const ProductSearchScreen(),
+                          ),
+                        );
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search products...',
+                        hintStyle: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: w * .035,
+                        ),
+                        prefixIcon: Container(
+                          margin: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.search,
+                            color: AppColors.primary,
+                            size: w * .06,
+                          ),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.only(top: 1, bottom: 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Colors.grey[50]!],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Enhanced Search Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextFormField(
+                      controller: _brandSearchController,
+                      focusNode: _brandSearchFocusNode,
+                      textInputAction: TextInputAction.search,
+                      cursorColor: AppColors.primary,
+                      onTap: () {
+                        _brandSearchFocusNode.unfocus();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BrandSearchScreen(),
                           ),
                         );
                       },
@@ -156,6 +261,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ],
             ),
           ),
+          /// ALL BRANDS
           Expanded(
             child: Scrollbar(
               controller: _scrollController,

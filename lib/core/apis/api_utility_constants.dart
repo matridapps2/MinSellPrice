@@ -8,3 +8,4 @@ const kReadProductData = '/read-product-data?';
 const kEmail = 'email=';
 const kSaveLikedProduct = '/save-liked-product?';
 const kLikedProduct = '/liked-products?';
+const kSearchProduct = '/search?q=';

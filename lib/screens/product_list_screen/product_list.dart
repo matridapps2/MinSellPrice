@@ -116,7 +116,6 @@ class _ProductList extends State<ProductList> {
 
   @override
   void dispose() {
-    // Remove scroll listener properly
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     _focusNode.dispose();
@@ -494,44 +493,42 @@ class _ProductList extends State<ProductList> {
                                   child: Row(
                                     children: [
                                       // Filters Icon Button
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: AppColors.primary
-                                                  .withOpacity(0.3),
-                                              spreadRadius: 1,
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            onTap: () {
-                                              _scaffoldKey.currentState!
-                                                  .openEndDrawer();
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.all(12),
-                                              child: Icon(
-                                                Icons.filter_alt,
-                                                color: Colors.white,
-                                                size: w * .05,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
+                                      // Container(
+                                      //   decoration: BoxDecoration(
+                                      //     color: AppColors.primary,
+                                      //     borderRadius:
+                                      //         BorderRadius.circular(12),
+                                      //     boxShadow: [
+                                      //       BoxShadow(
+                                      //         color: AppColors.primary
+                                      //             .withOpacity(0.3),
+                                      //         spreadRadius: 1,
+                                      //         blurRadius: 4,
+                                      //         offset: const Offset(0, 2),
+                                      //       ),
+                                      //     ],
+                                      //   ),
+                                      //   child: Material(
+                                      //     color: Colors.transparent,
+                                      //     child: InkWell(
+                                      //       borderRadius:
+                                      //           BorderRadius.circular(12),
+                                      //       onTap: () {
+                                      //         // _scaffoldKey.currentState!
+                                      //         //     .openEndDrawer();
+                                      //       },
+                                      //       child: Container(
+                                      //         padding: const EdgeInsets.all(12),
+                                      //         // child: Icon(
+                                      //         //   Icons.filter_alt,
+                                      //         //   color: Colors.white,
+                                      //         //   size: w * .05,
+                                      //         // ),
+                                      //       ),
+                                      //     ),
+                                      //   ),
+                                      // ),
                                       const SizedBox(width: 12),
-
                                       // Product Count Badge
                                       Expanded(
                                         child: Container(

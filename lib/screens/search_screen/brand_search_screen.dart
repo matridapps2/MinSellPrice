@@ -8,16 +8,16 @@ import 'package:minsellprice/screens/product_list_screen/brand_product_list_scre
 import 'package:minsellprice/screens/product_list_screen/product_list.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SearchScreen extends StatefulWidget {
-  const SearchScreen({
+class BrandSearchScreen extends StatefulWidget {
+  const BrandSearchScreen({
     super.key,
   });
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  State<BrandSearchScreen> createState() => _BrandSearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _BrandSearchScreenState extends State<BrandSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   final FocusNode _searchFocusNode = FocusNode();
