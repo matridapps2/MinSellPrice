@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:minsellprice/InAppBrowser.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/app.dart';
@@ -44,6 +46,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   final ScrollController _scrollController = ScrollController();
 
+  TextEditingController _emailController = TextEditingController();
+
   bool isLoading = true;
   bool isLiked = false;
   bool isInComparison = false;
@@ -66,12 +70,47 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int comparisonCount = 0;
   int vendorId = AppInfo.kVendorId;
 
-  TextEditingController _emailController = TextEditingController();
+  StreamSubscription<User?>? _authStateSubscription;
 
   @override
   void initState() {
     super.initState();
     _initCall();
+    _setupAuthStateListener();
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// Setup Firebase Auth state listener to handle login/logout events
+  void _setupAuthStateListener() {
+    _authStateSubscription =
+        FirebaseAuth.instance.authStateChanges().listen((User? user) async {
+      if (mounted) {
+        setState(() {
+          // Update UI based on authentication state
+          // This will trigger a rebuild when user logs in/out
+        });
+        log('Firebase Auth state changed: ${user?.email ?? 'No user'}');
+
+        // If user logged in, refresh liked status
+        if (user != null && user.email != null && user.email!.isNotEmpty) {
+          log('User logged in, refreshing liked status');
+          await _checkIfLiked();
+        } else if (user == null) {
+          log('User logged out, clearing liked status');
+          // Clear liked status when user logs out
+          if (mounted) {
+            setState(() {
+              isLiked = false;
+            });
+          }
+        }
+      }
+    });
   }
 
   void _initCall() async {
@@ -95,17 +134,78 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
       actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
 
-      final isProductLiked = await LikedPreferencesDB.isProductLiked(
+      // First check local database for quick UI response
+      final localIsLiked = await LikedPreferencesDB.isProductLiked(
         vendorProductId: actualVendorProductId,
       );
 
+      log('Local DB liked status: $localIsLiked for vendor_product_id: $actualVendorProductId');
+
+      // Update UI immediately with local status
       if (mounted) {
         setState(() {
-          isLiked = isProductLiked;
+          isLiked = localIsLiked;
         });
+        log('UI updated with local liked status: $localIsLiked');
       }
 
-      log('Product liked status: $isLiked for vendor_product_id: $actualVendorProductId');
+      // Then check server-side status if user is authenticated
+      final userEmail = await _getUserEmail();
+      if (userEmail != null && userEmail.isNotEmpty) {
+        try {
+          // Get liked products from server to check current product status
+          final serverResponse = await BrandsApi.getLikedProduct(
+            emailId: userEmail,
+            context: context,
+          );
+
+          if (serverResponse != 'error' && serverResponse.isNotEmpty) {
+            final serverLikedProducts = json.decode(serverResponse);
+            log('Server response structure: ${serverLikedProducts.keys.toList()}');
+
+            // Check both possible response structures
+            List<dynamic> likedProducts = [];
+            if (serverLikedProducts.containsKey('liked_products')) {
+              likedProducts = serverLikedProducts['liked_products'] ?? [];
+              log('Using liked_products array: ${likedProducts.length} items');
+            } else if (serverLikedProducts.containsKey('brand_product')) {
+              likedProducts = serverLikedProducts['brand_product'] ?? [];
+              log('Using brand_product array: ${likedProducts.length} items');
+            }
+
+            // Check if current product is in server liked list
+            bool serverIsLiked = false;
+            if (likedProducts.isNotEmpty) {
+              // Log first few products for debugging
+              log('First 3 products from server: ${likedProducts.take(3).map((p) => {
+                    'product_id': p['product_id'],
+                    'product_name': p['product_name'] ?? 'Unknown'
+                  }).toList()}');
+
+              serverIsLiked = likedProducts.any((product) {
+                final productId = product['product_id'];
+                final isMatch = productId == widget.productId;
+                log('Checking product $productId against current ${widget.productId}: $isMatch');
+                return isMatch;
+              });
+            }
+
+            log('Server liked status: $serverIsLiked for product ${widget.productId}');
+
+            // If server status differs from local, handle the conflict
+            if (serverIsLiked != localIsLiked) {
+              log('Status conflict detected: Local=$localIsLiked, Server=$serverIsLiked');
+              await _handleLikedStatusConflict(
+                  localIsLiked, serverIsLiked, actualVendorProductId);
+            }
+          }
+        } catch (e) {
+          log('Error checking server-side liked status: $e');
+          // Keep local status if server check fails
+        }
+      }
+
+      log('Final product liked status: $isLiked for vendor_product_id: $actualVendorProductId');
     } catch (e) {
       log('Error checking if product is liked: $e');
     }
@@ -211,7 +311,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.primary, width: 2),
+                        borderSide:
+                            BorderSide(color: AppColors.primary, width: 2),
                       ),
                       filled: true,
                       fillColor: Colors.white,
@@ -248,14 +349,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 16),
-
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
                           Navigator.of(context).pop();
-                          await _testNotificationTap(context).whenComplete(() async {
+                          await _testNotificationTap(context)
+                              .whenComplete(() async {
                             await saveProductData(
                               context,
                               _emailController.text,
@@ -292,27 +392,28 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Future<void> saveProductData(BuildContext context, String emailId, String price, int productId) async{
+  Future<void> saveProductData(
+      BuildContext context, String emailId, String price, int productId) async {
     log('saveProductData method running');
     log('emailId $emailId');
     log('price $price');
     log('productId $productId');
 
-  await BrandsApi.savePriceAlert(
-      context: context,
-      emailId: emailId,
-      price: price,
-      productId: productId
-  ).then((response) async{
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-      if(response != 'error') {
-          log('Data Successfully Saved');
-          preferences.setString('email_id', emailId);
-          preferences.setString('brand_name', widget.brandName);
-      }else{
+    await BrandsApi.savePriceAlert(
+            context: context,
+            emailId: emailId,
+            price: price,
+            productId: productId)
+        .then((response) async {
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      if (response != 'error') {
+        log('Data Successfully Saved');
+        preferences.setString('email_id', emailId);
+        preferences.setString('brand_name', widget.brandName);
+      } else {
         log('Error');
       }
-  });
+    });
   }
 
   Future<void> _testNotificationTap(BuildContext context) async {
@@ -450,6 +551,269 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+  /// Get user email from Firebase Auth
+  Future<String?> _getUserEmail() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && user.email != null && user.email!.isNotEmpty) {
+        return user.email;
+      }
+      log('No authenticated user found or user email is empty');
+      return null;
+    } catch (e) {
+      log('Error getting user email from Firebase Auth: $e');
+      return null;
+    }
+  }
+
+  /// Check if user is authenticated with Firebase
+  bool _isUserAuthenticated() {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      return user != null && user.email != null && user.email!.isNotEmpty;
+    } catch (e) {
+      log('Error checking Firebase authentication: $e');
+      return false;
+    }
+  }
+
+  /// Get current Firebase user info for debugging
+  Map<String, dynamic> _getCurrentUserInfo() {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        return {
+          'uid': user.uid,
+          'email': user.email,
+          'displayName': user.displayName,
+          'providerData': user.providerData.map((p) => p.providerId).toList(),
+        };
+      }
+      return {};
+    } catch (e) {
+      log('Error getting current user info: $e');
+      return {};
+    }
+  }
+
+  /// Show authentication error message with helpful guidance
+  void _showAuthErrorSnackBar() {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Authentication Required',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'Please login with Firebase to save favorites',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Login',
+          textColor: Colors.white,
+          onPressed: () {
+            // Navigate to login screen or show login dialog
+            log('User requested to go to login screen');
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Check if a product is liked on the server
+  Future<bool?> _checkServerLikedStatus(
+      String userEmail, int vendorProductId) async {
+    try {
+      final serverResponse = await BrandsApi.getLikedProduct(
+        emailId: userEmail,
+        context: context,
+      );
+
+      if (serverResponse != 'error' && serverResponse.isNotEmpty) {
+        final serverLikedProducts = json.decode(serverResponse);
+        log('Server response structure in _checkServerLikedStatus: ${serverLikedProducts.keys.toList()}');
+
+        // Check both possible response structures
+        List<dynamic> likedProducts = [];
+        if (serverLikedProducts.containsKey('liked_products')) {
+          likedProducts = serverLikedProducts['liked_products'] ?? [];
+          log('Using liked_products array: ${likedProducts.length} items');
+        } else if (serverLikedProducts.containsKey('brand_product')) {
+          likedProducts = serverLikedProducts['brand_product'] ?? [];
+          log('Using brand_product array: ${likedProducts.length} items');
+        }
+
+        // Check if current product is in server liked list
+        bool serverIsLiked = false;
+        if (likedProducts.isNotEmpty) {
+          serverIsLiked = likedProducts.any((product) {
+            final productId = product['product_id'];
+            final isMatch = productId == widget.productId;
+            log('Checking product $productId against current ${widget.productId}: $isMatch');
+            return isMatch;
+          });
+        }
+
+        log('Server liked status check: $serverIsLiked for product ${widget.productId}');
+        return serverIsLiked;
+      }
+
+      log('Server response error or empty, cannot determine liked status');
+      return null;
+    } catch (e) {
+      log('Error checking server liked status: $e');
+      return null;
+    }
+  }
+
+  /// Handle conflicts between local and server liked status
+  Future<void> _handleLikedStatusConflict(
+      bool localStatus, bool serverStatus, int vendorProductId) async {
+    try {
+      log('Handling liked status conflict: Local=$localStatus, Server=$serverStatus');
+
+      // Show user notification about the conflict
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.sync, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Syncing favorites with server...',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      // Sync local DB with server status
+      await _updateLocalDatabase(serverStatus, vendorProductId);
+
+      // Update UI
+      if (mounted) {
+        setState(() {
+          isLiked = serverStatus;
+        });
+        log('UI updated in conflict handler with server status: $serverStatus');
+      }
+
+      log('Successfully synced liked status conflict. Now using server status: $serverStatus');
+    } catch (e) {
+      log('Error handling liked status conflict: $e');
+    }
+  }
+
+  /// Show appropriate message when user tries to like/unlike with current status
+  void _showStatusMessage(bool currentStatus) {
+    if (!mounted) return;
+
+    final message = currentStatus
+        ? 'Product is already in your favorites!'
+        : 'Product is not in your favorites';
+
+    final icon = currentStatus ? Icons.favorite : Icons.favorite_border;
+
+    final color = currentStatus ? Colors.red : Colors.grey;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            SizedBox(width: 8),
+            Text(message),
+          ],
+        ),
+        backgroundColor: color,
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Parse API response to check if it was successful
+  bool _isApiResponseSuccessful(String response) {
+    try {
+      if (response.isEmpty || response == 'error') return false;
+
+      // Try to parse JSON response
+      final jsonResponse = json.decode(response);
+      return jsonResponse['success'] == 1;
+    } catch (e) {
+      log('Error parsing API response: $e');
+      return false;
+    }
+  }
+
+  /// Update local database based on like status
+  Future<void> _updateLocalDatabase(bool isLiked, int vendorProductId) async {
+    try {
+      if (isLiked) {
+        await LikedPreferencesDB.addLikedProduct(
+          productId: widget.productId,
+          vendorProductId: vendorProductId,
+          productName: productDetails?.data?.productName ?? 'Unknown Product',
+          productImage: widget.productImage?.toString() ?? '',
+          brandName: widget.brandName,
+          productMpn: widget.productMPN,
+          productPrice: widget.productPrice?.toString() ?? '0',
+        );
+        log('Product added to local favorites: $vendorProductId');
+      } else {
+        await LikedPreferencesDB.removeLikedProduct(
+          vendorProductId: vendorProductId,
+        );
+        log('Product removed from local favorites: $vendorProductId');
+      }
+    } catch (e) {
+      log('Error updating local database: $e');
+      // Don't throw here as the API call was successful
+    }
+  }
+
+  /// Show success snack bar for like/unlike action
+  void _showSuccessSnackBar(bool isLiked) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isLiked ? Icons.favorite : Icons.favorite_border,
+              color: Colors.white,
+            ),
+            SizedBox(width: 8),
+            Text(isLiked ? 'Added to favorites!' : 'Removed from favorites!'),
+          ],
+        ),
+        backgroundColor: isLiked ? Colors.red : Colors.grey,
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _toggleLiked() async {
     try {
       int? actualVendorProductId;
@@ -463,41 +827,82 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
       actualVendorProductId ??= int.parse('$vendorId${widget.productId}');
 
-      final nowLiked = await LikedPreferencesDB.toggleLikeProduct(
-        productId: widget.productId,
-        vendorProductId: actualVendorProductId,
-        productName: productDetails?.data?.productName ?? 'Unknown Product',
-        productImage: widget.productImage?.toString() ?? '',
-        brandName: widget.brandName,
-        productMpn: widget.productMPN,
-        productPrice: widget.productPrice?.toString() ?? '0',
-      );
+      // Get user email from Firebase Auth
+      final String? userEmail = await _getUserEmail();
 
-      if (mounted) {
-        setState(() {
-          isLiked = nowLiked;
-        });
+      if (userEmail == null || userEmail.isEmpty) {
+        // Log current user info for debugging
+        final userInfo = _getCurrentUserInfo();
+        log('No user email found. Current user info: $userInfo');
+
+        _showAuthErrorSnackBar();
+        return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                isLiked ? Icons.favorite : Icons.favorite_border,
-                color: Colors.white,
-              ),
-              SizedBox(width: 8),
-              Text(isLiked ? 'Added to favorites!' : 'Removed from favorites!'),
-            ],
-          ),
-          backgroundColor: isLiked ? Colors.red : Colors.grey,
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
+      log('Using Firebase user email: $userEmail');
+
+      // Check current like status from both local and server
+      final localIsLiked = await LikedPreferencesDB.isProductLiked(
+        vendorProductId: actualVendorProductId,
       );
 
-      log('Product ${isLiked ? 'added to' : 'removed from'} favorites with vendor_product_id: $actualVendorProductId');
+      // Double-check server status to ensure consistency
+      final serverIsLiked =
+          await _checkServerLikedStatus(userEmail, actualVendorProductId);
+
+      // Use server status as source of truth, fallback to local if server check fails
+      final isCurrentlyLiked = serverIsLiked ?? localIsLiked;
+
+      // If there's a mismatch, sync local DB with server
+      if (serverIsLiked != null && serverIsLiked != localIsLiked) {
+        await _updateLocalDatabase(serverIsLiked, actualVendorProductId);
+        log('Synced local DB with server status: $serverIsLiked');
+      }
+
+      // Determine the action to take
+      final action = isCurrentlyLiked ? 'unlike' : 'like';
+      final status = isCurrentlyLiked ? 0 : 1; // 0 = unlike, 1 = like
+
+      log('Attempting to $action product. Current status: $isCurrentlyLiked, Action: $action');
+
+      // Show current status message for user awareness
+      _showStatusMessage(isCurrentlyLiked);
+
+      // Call API to save/remove liked product
+      final apiResponse = await BrandsApi.saveLikedProduct(
+        emailId: userEmail,
+        productId: widget.productId,
+        status: status,
+      );
+
+      if (_isApiResponseSuccessful(apiResponse)) {
+        // API call successful, update local state
+        final nowLiked = !isCurrentlyLiked;
+
+        if (mounted) {
+          setState(() {
+            isLiked = nowLiked;
+          });
+        }
+
+        // Update local DB for offline functionality
+        await _updateLocalDatabase(nowLiked, actualVendorProductId);
+
+        // Show success message
+        _showSuccessSnackBar(nowLiked);
+
+        log('Product successfully ${nowLiked ? 'added to' : 'removed from'} favorites via API with vendor_product_id: $actualVendorProductId');
+      } else {
+        // API call failed, show error
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Failed to update favorite status. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        log('API call failed for product: ${widget.productId}');
+      }
     } catch (e) {
       log('Error toggling liked state: $e');
 
@@ -679,32 +1084,32 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Widget _buildBody() {
     if (isLoading) {
       return const Center(
-        child: Center(
-          child: StylishLoader(
-            type: LoaderType.wave,
-            size: 80.0,
-            primaryColor: AppColors.primary,
-            text: "Loading Product..",
-            textStyle: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AppColors.primary,
-            ),
+          child: Center(
+        child: StylishLoader(
+          type: LoaderType.wave,
+          size: 80.0,
+          primaryColor: AppColors.primary,
+          text: "Loading Product..",
+          textStyle: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: AppColors.primary,
           ),
-        )
-        // Column(
-        //   mainAxisAlignment: MainAxisAlignment.center,
-        //   children: [
-        //     const CircularProgressIndicator(),
-        //     const SizedBox(height: 16),
-        //     Text(
-        //       loadingMessage,
-        //       style: Theme.of(context).textTheme.bodyMedium,
-        //       textAlign: TextAlign.center,
-        //     ),
-        //   ],
-        // ),
-      );
+        ),
+      )
+          // Column(
+          //   mainAxisAlignment: MainAxisAlignment.center,
+          //   children: [
+          //     const CircularProgressIndicator(),
+          //     const SizedBox(height: 16),
+          //     Text(
+          //       loadingMessage,
+          //       style: Theme.of(context).textTheme.bodyMedium,
+          //       textAlign: TextAlign.center,
+          //     ),
+          //   ],
+          // ),
+          );
     }
 
     if (errorMessage != null) {
@@ -762,8 +1167,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               const SizedBox(height: 16),
               _buildSubscribeButton(),
               const SizedBox(height: 24),
-              // _buildSpecifications(),
-              // const SizedBox(height: 16),
               _buildProductActionsBar(),
               _buildMoreName(),
               const SizedBox(height: 16),
@@ -1293,7 +1696,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       // _isSubscribedToPriceAlert
                       //     ?
                       Icons.notifications_active,
-                         // : Icons.notifications_none,
+                      // : Icons.notifications_none,
                       color: Colors.white,
                       size: 24,
                     ),
@@ -1304,9 +1707,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                     // _isSubscribedToPriceAlert
-                        'Price Alert Active',
-                        //  : 'Get Price Alerts',
+                      // _isSubscribedToPriceAlert
+                      'Price Alert Active',
+                      //  : 'Get Price Alerts',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -1327,7 +1730,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                   ],
                 ),
-               const Spacer(),
+                const Spacer(),
                 // Container(
                 //   padding: const EdgeInsets.all(6),
                 //   decoration: BoxDecoration(
@@ -1349,6 +1752,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   Widget _buildProductActionsBar() {
+    // Debug logging for like button state
+    log('Building product actions bar - isLiked: $isLiked');
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -1440,57 +1846,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildShippingOption(
-      IconData icon, String title, String subtitle, String price, Color color) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-        ),
-        Text(
-          price,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: price == 'FREE' ? Colors.green : Colors.black87,
-          ),
-        ),
-      ],
     );
   }
 
@@ -1699,7 +2054,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 3.0),
-                            child: Row(mainAxisAlignment: MainAxisAlignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   '\$${product.vendorpricePrice ?? '--'} ',
@@ -1746,39 +2102,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
       ],
     );
-  }
-
-  Widget _buildShippingText(String? shippingValue) {
-    bool isFree = false;
-    if (shippingValue != null) {
-      final doubleValue = double.tryParse(shippingValue);
-      isFree = doubleValue == 0.0;
-    }
-
-    if (isFree) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: const Text(
-          'FREE',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-      );
-    } else {
-      return Text(
-       ' \$${shippingValue ?? '--'}',
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 22,
-        ),
-        overflow: TextOverflow.ellipsis,
-      );
-    }
   }
 
   Widget _buildVendorLogo(String vendorName) {
@@ -1929,374 +2252,494 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
   }
+}
 
-  Widget _buildShippingInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.local_shipping,
-                color: Colors.green,
-                size: 20,
-              ),
+/// UNUSED CODE
+Widget _buildShippingInfo() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 12),
-            const Text(
-              'Shipping & Returns',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 2,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: Colors.grey.withOpacity(0.2),
-              width: 1,
+            child: Icon(
+              Icons.local_shipping,
+              color: Colors.green,
+              size: 20,
             ),
           ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.05),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
+          const SizedBox(width: 12),
+          const Text(
+            'Shipping & Returns',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.05),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.local_shipping,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.local_shipping,
+                        color: Colors.green,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Free Shipping',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                           color: Colors.green,
-                          size: 24,
                         ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Free Shipping',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Colors.green,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'FREE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'On orders over \$75. Delivery in 3-5 business days.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Delivery Options
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildShippingOption(
-                      Icons.flash_on,
-                      'Express Delivery',
-                      '1-2 business days',
-                      '\$15.99',
-                      Colors.orange,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildShippingOption(
-                      Icons.schedule,
-                      'Standard Delivery',
-                      '3-5 business days',
-                      'FREE',
-                      Colors.blue,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildShippingOption(
-                      Icons.store,
-                      'Store Pickup',
-                      'Ready in 2 hours',
-                      'FREE',
-                      Colors.purple,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Returns Section
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.05),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'FREE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.assignment_return,
-                          color: Colors.blue,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Easy Returns',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 8),
+                  const Text(
+                    'On orders over \$75. Delivery in 3-5 business days.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '• 30-day return policy\n• Free return shipping\n• Full refund or exchange\n• No restocking fees',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+            ),
 
-  Widget _buildSpecifications() {
-    final List<Map<String, String>> specifications = [
-      {'label': 'Brand', 'value': widget.brandName},
-      {'label': 'Model', 'value': widget.productMPN},
-      {'label': 'Material', 'value': 'Stainless Steel'},
-      {'label': 'Dimensions', 'value': '24" W x 18" D x 36" H'},
-      {'label': 'Weight', 'value': '45 lbs'},
-      {'label': 'Color', 'value': 'Matte Black'},
-      {'label': 'Warranty', 'value': '2 Year Limited'},
-      {'label': 'Country of Origin', 'value': 'USA'},
-      {'label': 'Certifications', 'value': 'UL Listed, CSA Approved'},
-      {'label': 'Features', 'value': 'Smart Controls, LED Display'},
-    ];
+            // Delivery Options
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildShippingOption(
+                    Icons.flash_on,
+                    'Express Delivery',
+                    '1-2 business days',
+                    '\$15.99',
+                    Colors.orange,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildShippingOption(
+                    Icons.schedule,
+                    'Standard Delivery',
+                    '3-5 business days',
+                    'FREE',
+                    Colors.blue,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildShippingOption(
+                    Icons.store,
+                    'Store Pickup',
+                    'Ready in 2 hours',
+                    'FREE',
+                    Colors.purple,
+                  ),
+                ],
+              ),
+            ),
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
+            // Returns Section
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.blue.withOpacity(0.05),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
               ),
-              child: Icon(
-                Icons.info_outline,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Product Specifications',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.assignment_return,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Easy Returns',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '• 30-day return policy\n• Free return shipping\n• Full refund or exchange\n• No restocking fees',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 2,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: Colors.grey.withOpacity(0.2),
-              width: 1,
+      ),
+    ],
+  );
+}
+
+Widget _buildSpecifications() {
+  final List<Map<String, String>> specifications = [
+    {'label': 'Brand', 'value': 'widget.brandName'},
+    {'label': 'Model', 'value': 'widget.productMPN'},
+    {'label': 'Material', 'value': 'Stainless Steel'},
+    {'label': 'Dimensions', 'value': '24" W x 18" D x 36" H'},
+    {'label': 'Weight', 'value': '45 lbs'},
+    {'label': 'Color', 'value': 'Matte Black'},
+    {'label': 'Warranty', 'value': '2 Year Limited'},
+    {'label': 'Country of Origin', 'value': 'USA'},
+    {'label': 'Certifications', 'value': 'UL Listed, CSA Approved'},
+    {'label': 'Features', 'value': 'Smart Controls, LED Display'},
+  ];
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.info_outline,
+              color: AppColors.primary,
+              size: 20,
             ),
           ),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.list_alt,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Technical Details',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              /// Creates a fixed-length scrollable linear array of list "items" separated
-              /// by list item "separators".
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                itemCount: specifications.length,
-                separatorBuilder: (context, index) => const Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  color: Colors.grey,
-                ),
-                itemBuilder: (context, index) {
-                  final spec = specifications[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            spec['label']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            spec['value']!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black54,
-                              height: 1.3,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
+          const SizedBox(width: 12),
+          const Text(
+            'Product Specifications',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.2),
+            width: 1,
           ),
         ),
-      ],
-    );
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.05),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.list_alt,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Technical Details',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            /// Creates a fixed-length scrollable linear array of list "items" separated
+            /// by list item "separators".
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              itemCount: specifications.length,
+              separatorBuilder: (context, index) => const Divider(
+                height: 1,
+                thickness: 0.5,
+                color: Colors.grey,
+              ),
+              itemBuilder: (context, index) {
+                final spec = specifications[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          spec['label']!,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          spec['value']!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildPriceAndRating() {
+  final data = ' widget.productPrice';
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        '\$${data ?? '--'}',
+        style: const TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          ...List.generate(4,
+              (index) => const Icon(Icons.star, color: Colors.amber, size: 20)),
+          const Icon(Icons.star_border, color: Colors.amber, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            '(1 Reviews)', // You can use data.reviewCount if available
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+Widget _buildShippingText(String? shippingValue) {
+  bool isFree = false;
+  if (shippingValue != null) {
+    final doubleValue = double.tryParse(shippingValue);
+    isFree = doubleValue == 0.0;
   }
 
-  Widget _buildPriceAndRating() {
-    final data = widget.productPrice;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '\$${data ?? '--'}',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+  if (isFree) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        'FREE',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 22,
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            ...List.generate(
-                4,
-                (index) =>
-                    const Icon(Icons.star, color: Colors.amber, size: 20)),
-            const Icon(Icons.star_border, color: Colors.amber, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              '(1 Reviews)', // You can use data.reviewCount if available
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ],
+      ),
+    );
+  } else {
+    return Text(
+      ' \$${shippingValue ?? '--'}',
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 22,
+      ),
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
+
+Widget _buildShippingOption(
+    IconData icon, String title, String subtitle, String price, Color color) {
+  return Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: 20,
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Text(
+        price,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          color: price == 'FREE' ? Colors.green : Colors.black87,
+        ),
+      ),
+    ],
+  );
+}
+
+// COMMENTED OUT LOCAL DB ONLY CODE:
+// final nowLiked = await LikedPreferencesDB.toggleLikeProduct(
+//   productId: widget.productId,
+//   vendorProductId: actualVendorProductId,
+//   productName: productDetails?.data?.productName ?? 'Unknown Product',
+//   productImage: widget.productImage?.toString() ?? '',
+//   brandName: widget.brandName,
+//   productMpn: widget.productMPN,
+//   productPrice: widget.productPrice?.toString() ?? '0',
+// );
+
+// if (mounted) {
+//   setState(() {
+//     isLiked = nowLiked;
+//   });
+// }
+
+// ScaffoldMessenger.of(context).showSnackBar(
+//   SnackBar(
+//     content: Row(
+//       children: [
+//         Icon(
+//           isLiked ? Icons.favorite : Icons.favorite_border,
+//           color: Colors.white,
+//         ),
+//         SizedBox(width: 8),
+//         Text(isLiked ? 'Added to favorites!' : 'Removed from favorites!'),
+//       ],
+//     ),
+//     backgroundColor: isLiked ? Colors.red : Colors.grey,
+//     duration: Duration(seconds: 2),
+//     behavior: SnackBarBehavior.floating,
+//   ),
+// );
+
+// log('Product ${isLiked ? 'added to' : 'removed from'} favorites with vendor_product_id: $actualVendorProductId');

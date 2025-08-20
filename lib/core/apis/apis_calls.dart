@@ -299,9 +299,10 @@ class BrandsApi {
     required int productId,
     required int status,
   }) async {
+    log('Product ID: $productId');
     try {
       final url =
-          '$growthMatridUrl$kSaveLikedProduct$kEmail$emailId&product_id=$productId';
+          '$brandUrl$kSaveLikedProduct$kEmail$emailId&product_id=$productId&status=$status';
 
       log('Saved Liked Product API: $url');
       final response = await http.post(
