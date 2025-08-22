@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/screens/forgot_password/forgot_password.dart';
+import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/register_page/register_page.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,14 +67,20 @@ class _LoginPageState extends State<LoginPage> {
         email: email,
         password: password,
       );
-      _showToast('Login successful!');
       if (_isRememberChecked) {
         await _storeEmailPassword(email, password);
       } else {
         await _removeEmailPassword();
       }
       widget.onLoginSuccess();
-      Navigator.of(context).pop(true);
+
+      CommonToasts.centeredMobile(msg: 'Login successfully', context: context);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) =>
+          HomePage(),
+        )
+      );
+
     } on FirebaseAuthException catch (e) {
       String errorMsg = 'Login failed';
       if (e.code == 'user-not-found') {

@@ -225,7 +225,9 @@ class _AccountScreenState extends State<AccountScreen> {
                       MaterialPageRoute(
                         builder: (context) => LoginPage(
                           onLoginSuccess: () async {
-                            authProvider.login();
+                            // Force refresh the auth provider state
+                            await authProvider.checkLoginStatus();
+                            // Also update local state
                             await _checkLoginStatus();
                           },
                         ),

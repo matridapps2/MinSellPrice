@@ -10,14 +10,16 @@ import 'colors.dart';
 class Constants {
   Constants._();
 
- static Widget noLoginDesign(BuildContext context, String text) {
+  static Widget noLoginDesign(
+    BuildContext context,
+    String text,
+  ) {
     return Container(
       height: h * 0.8,
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-
           Text(
             'Login Required',
             style: TextStyle(
@@ -27,8 +29,6 @@ class Constants {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Description
           Text(
             'Please log in to view $text',
             textAlign: TextAlign.center,
@@ -39,8 +39,6 @@ class Constants {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Login Button
           Container(
             width: double.infinity,
             height: 50,
@@ -64,23 +62,20 @@ class Constants {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                onTap: () {
-                  Navigator.of(context).pushReplacement(
+                onTap: () async {
+                  await Navigator.of(context).push(
                     MaterialPageRoute(
-                    builder: (context) => LoginPage(
-                      onLoginSuccess: () {},
+                      builder: (context) => LoginPage(
+                        onLoginSuccess: () {},
+                      ),
                     ),
-                  ));
+                  );
                 },
                 child: const Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.login_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                      Icon(Icons.login_rounded, color: Colors.white, size: 20),
                       SizedBox(width: 12),
                       Text(
                         'Go to Login',
@@ -97,8 +92,6 @@ class Constants {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Alternative text
           Text(
             'Don\'t have an account?',
             style: TextStyle(
@@ -107,8 +100,6 @@ class Constants {
             ),
           ),
           const SizedBox(height: 8),
-
-          // Register link
           GestureDetector(
             onTap: () {
               Navigator.pushReplacement(

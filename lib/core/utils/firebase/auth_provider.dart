@@ -8,6 +8,11 @@ class AuthProvider extends ChangeNotifier {
 
   AuthProvider() {
     checkLoginStatus();
+    // Listen to Firebase auth state changes
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      _isLoggedIn = user != null;
+      notifyListeners();
+    });
   }
 
   Future<void> checkLoginStatus() async {

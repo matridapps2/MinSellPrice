@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
+import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/loging_page/loging_page.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -34,11 +35,9 @@ class _RegisterPageState extends State<RegisterPage> {
         email: email,
         password: password,
       );
-      CommonToasts.centeredMobile(
-          msg: 'Registration successful!', context: context);
+      CommonToasts.centeredMobile(msg: 'successful!', context: context);
     } on FirebaseAuthException catch (e) {
-      CommonToasts.centeredMobile(
-          msg: e.message ?? 'Registration failed', context: context);
+      CommonToasts.centeredMobile(msg: e.message ?? 'failed', context: context);
     } catch (e) {
       CommonToasts.centeredMobile(
           msg: 'An unknown error occurred', context: context);
@@ -174,12 +173,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:   const Color.fromARGB(255, 51, 102, 153),
+                        backgroundColor:
+                            const Color.fromARGB(255, 51, 102, 153),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      onPressed: () {
-                        registerInFirebase();
-                        Navigator.of(context).pop();
+                      onPressed: () async {
+                        await registerInFirebase();
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (context) => HomePage()));
                       },
                       child: const Text('Register',
                           style: TextStyle(
@@ -196,8 +197,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           MaterialPageRoute(
                             builder: (context) => LoginPage(
                               onLoginSuccess: () {
-                                // Call your drawer refresh logic here, or pop with result
-                                Navigator.of(context).pop(true);
+                                // The login success will handle navigation to home page
+                                // and the auth state will be updated automatically
                               },
                             ),
                           ),
@@ -208,7 +209,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         child: Text(
                           "Already have an account? Log in",
                           style: TextStyle(
-                            color: Color.fromARGB(255,0, 35, 77),
+                            color: Color.fromARGB(255, 0, 35, 77),
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             fontFamily: 'Segoe UI',

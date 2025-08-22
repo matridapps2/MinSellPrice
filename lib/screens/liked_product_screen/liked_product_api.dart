@@ -44,18 +44,18 @@ class _LikedProductScreen extends State<LikedProductScreen> {
   int totalProductCount = 0;
   int totalPages = 0;
   int currentApiPage = 1;
-  List<VendorProduct> allProducts = [];
-  bool hasMoreData = true;
 
+  bool hasMoreData = true;
   bool filterSubmitted = true;
   bool _isLoading = false;
   bool _isError = false;
   bool isLoggedIn = false;
   bool _isCheckingAuth = true; // Track if we're still checking auth state
+  bool _hasInitialDataLoaded = false; // Track if initial data has been loaded
   Set<int> _unlikingProducts = {}; // Track products being unliked
 
   List<String> filterVendor = [];
-  List<VendorProduct> brandProducts = [];
+  List<VendorProduct> allProducts = [];
   List<VendorProduct> tempProductList = [];
   List<VendorProduct> finalList = [];
 
@@ -77,24 +77,30 @@ class _LikedProductScreen extends State<LikedProductScreen> {
     // Listen to Firebase Auth state changes
     _authStateSubscription =
         FirebaseAuth.instance.authStateChanges().listen((User? user) {
-          if (mounted) {
-            if (user != null && user.email != null) {
-              setState(() {
-                isLoggedIn = true;
-                emailId = user.email!;
-                _isCheckingAuth = false;
-              });
-              log('Liked User Logged ? $emailId');
-              _fetchBrandProducts(emailId);
-            } else {
-              setState(() {
-                isLoggedIn = false;
-                emailId = '';
-                _isCheckingAuth = false;
-              });
-            }
+      if (mounted) {
+        if (user != null && user.email != null) {
+          setState(() {
+            isLoggedIn = true;
+            emailId = user.email!;
+            _isCheckingAuth = false;
+          });
+          log('Liked User Logged ? $emailId');
+          // Only fetch products if this is a new login (not the initial check)
+          if (!_hasInitialDataLoaded) {
+            _fetchBrandProducts(user.email!);
+            _hasInitialDataLoaded = true;
           }
-        });
+        } else {
+          setState(() {
+            isLoggedIn = false;
+            emailId = '';
+            _isCheckingAuth = false;
+            _hasInitialDataLoaded = false; // Reset flag when user logs out
+          });
+          log('Liked User NOT Logged ? $emailId');
+        }
+      }
+    });
   }
 
   /// Check current Firebase Auth state immediately without waiting for listener
@@ -108,9 +114,14 @@ class _LikedProductScreen extends State<LikedProductScreen> {
       });
       log('Initial auth check - User already logged in: $emailId');
       _fetchBrandProducts(currentUser.email!);
+      _hasInitialDataLoaded = true; // Mark that initial data has been loaded
     } else {
       setState(() {
+        isLoggedIn = false;
+        emailId = '';
         _isCheckingAuth = false;
+        _isLoading = false; // Ensure loading is false
+        _isError = false;
       });
       log('Initial auth check - No user logged in');
     }
@@ -123,17 +134,22 @@ class _LikedProductScreen extends State<LikedProductScreen> {
   }
 
   Future<void> _fetchBrandProducts(String emailId) async {
-    setState(() => _isLoading = true);
-    allProducts = [];
+    setState(() {
+      _isLoading = true;
+      allProducts = [];
+      tempProductList = [];
+      finalList = [];
+    });
+
     try {
       final allProductsResponse =
-      await BrandsApi.getLikedProduct(emailId: emailId, context: context);
+          await BrandsApi.getLikedProduct(emailId: emailId, context: context);
       final Map<String, dynamic> decoded =
-      jsonDecode(allProductsResponse ?? '{}');
+          jsonDecode(allProductsResponse ?? '{}');
 
       final List<dynamic> jsonList = decoded['brand_product'] ?? [];
       final List<VendorProduct> fetchedProducts =
-      jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+          jsonList.map((e) => VendorProduct.fromJson(e)).toList();
 
       // Get total product count from API response
       totalProductCount = decoded['productCount'] ?? 0;
@@ -164,7 +180,6 @@ class _LikedProductScreen extends State<LikedProductScreen> {
       }
 
       setState(() {
-        brandProducts = List.from(allProducts);
         tempProductList = List.from(allProducts);
         maxPriceFromAPI = calculatedMaxPrice;
 
@@ -280,504 +295,199 @@ class _LikedProductScreen extends State<LikedProductScreen> {
         },
         child: _isCheckingAuth
             ? Scaffold(
-            appBar: AppBar(),
-            body: const Center(
-              child: StylishLoader(
-                type: LoaderType.wave,
-                size: 80.0,
-                primaryColor: AppColors.primary,
-                text: "Checking authentication...",
-                textStyle: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.primary,
-                ),
-              ),
-            ))
+                appBar: AppBar(),
+                body: const Center(
+                  child: StylishLoader(
+                    type: LoaderType.wave,
+                    size: 80.0,
+                    primaryColor: AppColors.primary,
+                    text: "Checking authentication...",
+                    textStyle: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ))
             : _isLoading
-            ? Scaffold(
-            appBar: AppBar(),
-            body: const Center(
-              child: StylishLoader(
-                type: LoaderType.wave,
-                size: 80.0,
-                primaryColor: AppColors.primary,
-                text: "Loading products...",
-                textStyle: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.primary,
-                ),
-              ),
-            ))
-            : _isError
-            ? Scaffold(
-          appBar: AppBar(),
-          body: Center(
-            child: RichText(
-              textAlign: TextAlign.center,
-              text: TextSpan(
-                  text: 'Error...\n',
-                  style: TextStyle(
-                      fontSize: .06 * w,
-                      fontFamily: 'Futura BdCn BT Bold',
-                      fontWeight: FontWeight.w300,
-                      color: Colors.black),
-                  children: [
-                    TextSpan(
-                      text: 'Return Back',
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () => Navigator.pop(context),
-                      style: TextStyle(
-                          fontSize: .06 * w,
-                          fontFamily: 'Futura BdCn BT Bold',
-                          fontWeight: FontWeight.w300,
-                          color: AppColors.primary),
-                    )
-                  ]),
-            ),
-          ),
-        )
-            : !isLoggedIn
-            ? Constants.noLoginDesign(context, 'liked product')
-            : Scaffold(
-          key: _scaffoldKey,
-          body: Stack(
-            children: [
-              SafeArea(
-                bottom: true,
-                child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 5),
-                    Visibility(
-                      visible: totalProductCount > 0,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        child: Row(
-                          children: [
-                            // Filters Icon Button
-                            Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius:
-                                BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary
-                                        .withOpacity(0.3),
-                                    spreadRadius: 1,
-                                    blurRadius: 4,
-                                    offset:
-                                    const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius:
-                                  BorderRadius.circular(
-                                      12),
-                                  onTap: () {
-                                    _scaffoldKey.currentState!
-                                        .openEndDrawer();
-                                  },
-                                  child: Container(
-                                    padding:
-                                    const EdgeInsets.all(
-                                        12),
-                                    child: Icon(
-                                      Icons.filter_alt,
-                                      color: Colors.white,
-                                      size: w * .05,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            // Product Count Badge
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets
-                                    .symmetric(
-                                    horizontal: 16,
-                                    vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[50],
-                                  borderRadius:
-                                  BorderRadius.circular(
-                                      12),
-                                  border: Border.all(
-                                    color: Colors.grey[200]!,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding:
-                                      const EdgeInsets
-                                          .all(6),
-                                      decoration:
-                                      BoxDecoration(
-                                        color: AppColors
-                                            .primary
-                                            .withOpacity(0.1),
-                                        borderRadius:
-                                        BorderRadius
-                                            .circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons
-                                            .shopping_bag_outlined,
-                                        color:
-                                        AppColors.primary,
-                                        size: w * .06,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment
-                                            .start,
-                                        children: [
-                                          Text(
-                                            'Total Products',
-                                            style: TextStyle(
-                                              color: Colors
-                                                  .grey[600],
-                                              fontSize:
-                                              w * .045,
-                                              fontFamily:
-                                              'Segoe UI',
-                                              fontWeight:
-                                              FontWeight
-                                                  .w500,
-                                            ),
-                                          ),
-                                          Text(
-                                            '$totalProductCount items available',
-                                            style: TextStyle(
-                                              color: AppColors
-                                                  .primary,
-                                              fontSize:
-                                              w * .039,
-                                              fontFamily:
-                                              'Segoe UI',
-                                              fontWeight:
-                                              FontWeight
-                                                  .bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                ? Scaffold(
+                    appBar: AppBar(),
+                    body: const Center(
+                      child: StylishLoader(
+                        type: LoaderType.wave,
+                        size: 80.0,
+                        primaryColor: AppColors.primary,
+                        text: "Loading products...",
+                        textStyle: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    totalProductCount == 0
-                        ? const Flexible(
-                      child: Column(
-                        mainAxisAlignment:
-                        MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'No favourites yet!',
+                    ))
+                : _isError
+                    ? Scaffold(
+                        appBar: AppBar(),
+                        body: Center(
+                          child: RichText(
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                                fontFamily: 'Segoe UI',
-                                fontSize: 21,
-                                fontWeight:
-                                FontWeight.bold),
+                            text: TextSpan(
+                                text: 'API IS NOT WORKING\n',
+                                style: TextStyle(
+                                    fontSize: .06 * w,
+                                    fontFamily: 'Futura BdCn BT Bold',
+                                    fontWeight: FontWeight.w300,
+                                    color: Colors.red),
+                                children: [
+                                  TextSpan(
+                                    text: 'Return Back',
+                                    style: TextStyle(
+                                        fontSize: .06 * w,
+                                        fontFamily: 'Futura BdCn BT Bold',
+                                        fontWeight: FontWeight.w300,
+                                        color: AppColors.primary),
+                                  )
+                                ]),
                           ),
-                          SizedBox(height: 6),
-                          Padding(
-                            padding:
-                            EdgeInsets.symmetric(
-                                horizontal: 12.0),
-                            child: Text(
-                              'Tap the heart icon on products you love to add them here',
-                              textAlign:
-                              TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Segoe UI',
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                        : totalProductCount > 0
-                        ? Expanded(
-                      child: Align(
-                        alignment:
-                        Alignment.topCenter,
-                        child: Scrollbar(
-                          thickness: 4,
-                          thumbVisibility: true,
-                          trackVisibility: true,
-                          interactive: true,
-                          controller:
-                          _scrollController,
-                          child:
-                          SingleChildScrollView(
-                            controller:
-                            _scrollController,
-                            child: Padding(
-                              padding:
-                              const EdgeInsets
-                                  .symmetric(
-                                  horizontal:
-                                  10.0),
-                              child: Wrap(
-                                runSpacing: 10,
-                                children:
-                                List.generate(
-                                  finalList.length,
-                                      (index) =>
-                                      Padding(
-                                        padding: const EdgeInsets
-                                            .symmetric(
-                                            horizontal:
-                                            4.0),
-                                        child:
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator
-                                                .push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      ProductDetailsScreen(
-                                                          productId: finalList[index]
-                                                              .productId,
-                                                          brandName: finalList[index]
-                                                              .brandName,
-                                                          productMPN: finalList[index]
-                                                              .productMpn,
-                                                          productImage: finalList[index]
-                                                              .productImage,
-                                                          productPrice: finalList[index]
-                                                              .vendorpricePrice)),
-                                            );
-                                          },
-                                          child:
-                                          Container(
-                                            width:
-                                            w * .45,
-                                            // height: h * .48,
-                                            decoration:
-                                            BoxDecoration(
-                                              color: Colors
-                                                  .white,
-                                              borderRadius:
-                                              BorderRadius.circular(
-                                                  16),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors
-                                                      .grey
-                                                      .withOpacity(0.1),
-                                                  spreadRadius:
-                                                  2,
-                                                  blurRadius:
-                                                  8,
-                                                  offset: const Offset(
-                                                      0,
-                                                      4),
+                        ),
+                      )
+                    : !isLoggedIn
+                        ? Constants.noLoginDesign(context, 'liked product')
+                        : Scaffold(
+                            key: _scaffoldKey,
+                            body: Stack(
+                              children: [
+                                SafeArea(
+                                  bottom: true,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 5),
+                                      Visibility(
+                                        visible: totalProductCount > 0,
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                          child: Row(
+                                            children: [
+                                              // Filters Icon Button
+                                              Container(
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: AppColors.primary
+                                                          .withOpacity(0.3),
+                                                      spreadRadius: 1,
+                                                      blurRadius: 4,
+                                                      offset:
+                                                          const Offset(0, 2),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                            child:
-                                            Column(
-                                              crossAxisAlignment:
-                                              CrossAxisAlignment
-                                                  .start,
-                                              children: [
-                                                Container(
-                                                  width:
-                                                  double.infinity,
-                                                  height:
-                                                  w * .45,
-                                                  decoration:
-                                                  const BoxDecoration(
+                                                child: Material(
+                                                  color: Colors.transparent,
+                                                  child: InkWell(
                                                     borderRadius:
-                                                    BorderRadius.only(
-                                                      topLeft: Radius.circular(
-                                                          16),
-                                                      topRight: Radius.circular(
-                                                          16),
-                                                    ),
-                                                  ),
-                                                  child:
-                                                  ClipRRect(
-                                                    borderRadius:
-                                                    const BorderRadius.only(
-                                                      topLeft: Radius.circular(
-                                                          0),
-                                                      topRight: Radius.circular(
-                                                          0),
-                                                    ),
-                                                    child:
-                                                    Image.network(
-                                                      _getProperImageUrl(
-                                                          finalList[index]
-                                                              .productImage),
-                                                      fit: BoxFit.contain,
-                                                      errorBuilder: (context,
-                                                          error, stackTrace) {
-                                                        return Container(
-                                                          color: Colors
-                                                              .grey[200],
-                                                          child: Icon(
-                                                            Icons
-                                                                .image_not_supported_outlined,
-                                                            size: w * .08,
-                                                            color: Colors
-                                                                .grey[400],
-                                                          ),
-                                                        );
-                                                      },
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    onTap: () {
+                                                      _scaffoldKey.currentState!
+                                                          .openEndDrawer();
+                                                    },
+                                                    child: Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              12),
+                                                      child: Icon(
+                                                        Icons.filter_alt,
+                                                        color: Colors.white,
+                                                        size: w * .05,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
+                                              ),
 
-                                                // Product Details
-                                                Padding(
+                                              const SizedBox(width: 12),
+
+                                              // Product Count Badge
+                                              Expanded(
+                                                child: Container(
                                                   padding: const EdgeInsets
-                                                      .all(
-                                                      16),
-                                                  child:
-                                                  Column(
-                                                    crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
+                                                      .symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 10),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[50],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    border: Border.all(
+                                                      color: Colors.grey[200]!,
+                                                      width: 1,
+                                                    ),
+                                                  ),
+                                                  child: Row(
                                                     children: [
-                                                      Padding(
-                                                        padding: const EdgeInsets
-                                                            .all(12.0),
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(6),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: AppColors
+                                                              .primary
+                                                              .withOpacity(0.1),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
+                                                        ),
+                                                        child: Icon(
+                                                          Icons
+                                                              .shopping_bag_outlined,
+                                                          color:
+                                                              AppColors.primary,
+                                                          size: w * .06,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      Expanded(
                                                         child: Column(
-                                                          crossAxisAlignment: CrossAxisAlignment
-                                                              .start,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
                                                           children: [
                                                             Text(
-                                                              finalList[index]
-                                                                  .productName,
-                                                              style: const TextStyle(
-                                                                fontSize: 18,
-                                                                fontWeight: FontWeight
-                                                                    .w600,
-                                                                color: Colors
-                                                                    .black87,
-                                                              ),
-                                                              maxLines: 2,
-                                                              overflow: TextOverflow
-                                                                  .ellipsis,
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 4),
-                                                            Text(
-                                                              finalList[index]
-                                                                  .brandName,
+                                                              'Total Products',
                                                               style: TextStyle(
-                                                                fontSize: 16,
                                                                 color: Colors
                                                                     .grey[600],
-                                                                fontWeight: FontWeight
-                                                                    .w500,
+                                                                fontSize:
+                                                                    w * .045,
+                                                                fontFamily:
+                                                                    'Segoe UI',
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
                                                               ),
-                                                              maxLines: 1,
-                                                              overflow: TextOverflow
-                                                                  .ellipsis,
                                                             ),
-                                                            SizedBox(
-                                                                height: 20),
-                                                            Row(
-                                                              mainAxisAlignment: MainAxisAlignment
-                                                                  .spaceBetween,
-                                                              children: [
-                                                                Expanded(
-                                                                  child: Text(
-                                                                    finalList[index]
-                                                                        .vendorpricePrice,
-                                                                    style: const TextStyle(
-                                                                      fontSize: 16,
-                                                                      fontWeight: FontWeight
-                                                                          .bold,
-                                                                      color: Colors
-                                                                          .green,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                                GestureDetector(
-                                                                  onTap: _unlikingProducts
-                                                                      .contains(
-                                                                      finalList[index]
-                                                                          .productId)
-                                                                      ? null // Disable tap when loading
-                                                                      : () async {
-                                                                    await _unlikeProduct(
-                                                                        finalList[index]
-                                                                            .productId);
-                                                                  },
-                                                                  child: Container(
-                                                                    padding: const EdgeInsets
-                                                                        .all(3),
-                                                                    decoration: BoxDecoration(
-                                                                      color: _unlikingProducts
-                                                                          .contains(
-                                                                          finalList[index]
-                                                                              .productId)
-                                                                          ? Colors
-                                                                          .grey
-                                                                          .withOpacity(
-                                                                          0.1)
-                                                                          : Colors
-                                                                          .red
-                                                                          .withOpacity(
-                                                                          0.1),
-                                                                      borderRadius: BorderRadius
-                                                                          .circular(
-                                                                          20),
-                                                                    ),
-                                                                    child: _unlikingProducts
-                                                                        .contains(
-                                                                        finalList[index]
-                                                                            .productId)
-                                                                        ? SizedBox(
-                                                                      width: 20,
-                                                                      height: 20,
-                                                                      child: CircularProgressIndicator(
-                                                                        strokeWidth: 2,
-                                                                        valueColor: AlwaysStoppedAnimation<
-                                                                            Color>(
-                                                                            Colors
-                                                                                .grey),
-                                                                      ),
-                                                                    )
-                                                                        : const Icon(
-                                                                      Icons
-                                                                          .favorite,
-                                                                      color: Colors
-                                                                          .red,
-                                                                      size: 20,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
+                                                            Text(
+                                                              '$totalProductCount items available',
+                                                              style: TextStyle(
+                                                                color: AppColors
+                                                                    .primary,
+                                                                fontSize:
+                                                                    w * .039,
+                                                                fontFamily:
+                                                                    'Segoe UI',
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
                                                             ),
                                                           ],
                                                         ),
@@ -785,497 +495,741 @@ class _LikedProductScreen extends State<LikedProductScreen> {
                                                     ],
                                                   ),
                                                 ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      totalProductCount == 0
+                                          ? const Flexible(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    'No favourites yet!',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        fontFamily: 'Segoe UI',
+                                                        fontSize: 21,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  SizedBox(height: 6),
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 12.0),
+                                                    child: Text(
+                                                      'Tap the heart icon on products you love to add them here',
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: TextStyle(
+                                                        fontFamily: 'Segoe UI',
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          : totalProductCount > 0
+                                              ? Expanded(
+                                                  child: Align(
+                                                    alignment:
+                                                        Alignment.topCenter,
+                                                    child: Scrollbar(
+                                                      thickness: 4,
+                                                      thumbVisibility: true,
+                                                      trackVisibility: true,
+                                                      interactive: true,
+                                                      controller:
+                                                          _scrollController,
+                                                      child:
+                                                          SingleChildScrollView(
+                                                        controller:
+                                                            _scrollController,
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      10.0),
+                                                          child: Wrap(
+                                                            runSpacing: 10,
+                                                            children:
+                                                                List.generate(
+                                                              finalList.length,
+                                                              (index) =>
+                                                                  Padding(
+                                                                padding: const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        4.0),
+                                                                child:
+                                                                    GestureDetector(
+                                                                  onTap: () {
+                                                                    Navigator
+                                                                        .push(
+                                                                      context,
+                                                                      MaterialPageRoute(
+                                                                          builder: (context) => ProductDetailsScreen(
+                                                                              productId: finalList[index].productId,
+                                                                              brandName: finalList[index].brandName,
+                                                                              productMPN: finalList[index].productMpn,
+                                                                              productImage: finalList[index].productImage,
+                                                                              productPrice: finalList[index].vendorpricePrice)),
+                                                                    );
+                                                                  },
+                                                                  child:
+                                                                      Container(
+                                                                    width:
+                                                                        w * .45,
+                                                                    // height: h * .48,
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              16),
+                                                                      boxShadow: [
+                                                                        BoxShadow(
+                                                                          color: Colors
+                                                                              .grey
+                                                                              .withOpacity(0.1),
+                                                                          spreadRadius:
+                                                                              2,
+                                                                          blurRadius:
+                                                                              8,
+                                                                          offset: const Offset(
+                                                                              0,
+                                                                              4),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    child:
+                                                                        Column(
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .start,
+                                                                      children: [
+                                                                        Container(
+                                                                          width:
+                                                                              double.infinity,
+                                                                          height:
+                                                                              w * .45,
+                                                                          decoration:
+                                                                              const BoxDecoration(
+                                                                            borderRadius:
+                                                                                BorderRadius.only(
+                                                                              topLeft: Radius.circular(16),
+                                                                              topRight: Radius.circular(16),
+                                                                            ),
+                                                                          ),
+                                                                          child:
+                                                                              ClipRRect(
+                                                                            borderRadius:
+                                                                                const BorderRadius.only(
+                                                                              topLeft: Radius.circular(0),
+                                                                              topRight: Radius.circular(0),
+                                                                            ),
+                                                                            child:
+                                                                                Image.network(
+                                                                              _getProperImageUrl(finalList[index].productImage),
+                                                                              fit: BoxFit.contain,
+                                                                              errorBuilder: (context, error, stackTrace) {
+                                                                                return Container(
+                                                                                  color: Colors.grey[200],
+                                                                                  child: Icon(
+                                                                                    Icons.image_not_supported_outlined,
+                                                                                    size: w * .08,
+                                                                                    color: Colors.grey[400],
+                                                                                  ),
+                                                                                );
+                                                                              },
+                                                                            ),
+                                                                          ),
+                                                                        ),
+
+                                                                        // Product Details
+                                                                        Padding(
+                                                                          padding: const EdgeInsets
+                                                                              .all(
+                                                                              16),
+                                                                          child:
+                                                                              Column(
+                                                                            crossAxisAlignment:
+                                                                                CrossAxisAlignment.start,
+                                                                            children: [
+                                                                              Padding(
+                                                                                padding: const EdgeInsets.all(12.0),
+                                                                                child: Column(
+                                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                  children: [
+                                                                                    Text(
+                                                                                      finalList[index].productName,
+                                                                                      style: const TextStyle(
+                                                                                        fontSize: 18,
+                                                                                        fontWeight: FontWeight.w600,
+                                                                                        color: Colors.black87,
+                                                                                      ),
+                                                                                      maxLines: 2,
+                                                                                      overflow: TextOverflow.ellipsis,
+                                                                                    ),
+                                                                                    const SizedBox(height: 4),
+                                                                                    Text(
+                                                                                      finalList[index].brandName,
+                                                                                      style: TextStyle(
+                                                                                        fontSize: 16,
+                                                                                        color: Colors.grey[600],
+                                                                                        fontWeight: FontWeight.w500,
+                                                                                      ),
+                                                                                      maxLines: 1,
+                                                                                      overflow: TextOverflow.ellipsis,
+                                                                                    ),
+                                                                                    SizedBox(height: 20),
+                                                                                    Row(
+                                                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                      children: [
+                                                                                        Expanded(
+                                                                                          child: Text(
+                                                                                            finalList[index].vendorpricePrice,
+                                                                                            style: const TextStyle(
+                                                                                              fontSize: 16,
+                                                                                              fontWeight: FontWeight.bold,
+                                                                                              color: Colors.green,
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                        GestureDetector(
+                                                                                          onTap: _unlikingProducts.contains(finalList[index].productId)
+                                                                                              ? null // Disable tap when loading
+                                                                                              : () async {
+                                                                                                  await _unlikeProduct(finalList[index].productId);
+                                                                                                },
+                                                                                          child: Container(
+                                                                                            padding: const EdgeInsets.all(3),
+                                                                                            decoration: BoxDecoration(
+                                                                                              color: _unlikingProducts.contains(finalList[index].productId) ? Colors.grey.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                                                                                              borderRadius: BorderRadius.circular(20),
+                                                                                            ),
+                                                                                            child: _unlikingProducts.contains(finalList[index].productId)
+                                                                                                ? SizedBox(
+                                                                                                    width: 20,
+                                                                                                    height: 20,
+                                                                                                    child: CircularProgressIndicator(
+                                                                                                      strokeWidth: 2,
+                                                                                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                                                                                    ),
+                                                                                                  )
+                                                                                                : const Icon(
+                                                                                                    Icons.favorite,
+                                                                                                    color: Colors.red,
+                                                                                                    size: 20,
+                                                                                                  ),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              : const SizedBox(),
+                                      //const SizedBox(height: 10),
+                                      // Loading indicator for more products
+                                      if (_isLoading && allProducts.isNotEmpty)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 20),
+                                          child: Center(
+                                            child: Column(
+                                              children: [
+                                                CircularProgressIndicator(
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                              Color>(
+                                                          AppColors.primary),
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Text(
+                                                  'Loading more products...',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: w * .035,
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
                                         ),
-                                      ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                        : const SizedBox(),
-                    //const SizedBox(height: 10),
-                    // Loading indicator for more products
-                    if (_isLoading && allProducts.isNotEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20),
-                        child: Center(
-                          child: Column(
-                            children: [
-                              CircularProgressIndicator(
-                                valueColor:
-                                AlwaysStoppedAnimation<
-                                    Color>(
-                                    AppColors.primary),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Loading more products...',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: w * .035,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 15, horizontal: 16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.grey[100]!,
-                            Colors.grey[200]!,
-                          ],
-                        ),
-                        border: Border(
-                          top: BorderSide(
-                              color: Colors.grey[300]!,
-                              width: 1),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                            Colors.grey.withOpacity(0.1),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, -1),
-                          ),
-                        ],
-                      ),
-                      child: totalProductCount > itemsPerPage
-                          ? Column(
-                        children: [
-                          // Page Counter
-                          Container(
-                            padding: const EdgeInsets
-                                .symmetric(
-                                horizontal: 16,
-                                vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius:
-                              BorderRadius.circular(
-                                  20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey
-                                      .withOpacity(0.2),
-                                  spreadRadius: 1,
-                                  blurRadius: 4,
-                                  offset: const Offset(
-                                      0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize:
-                              MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Page ${currentPage + 1} of $totalPages',
-                                  style: TextStyle(
-                                    fontSize: w * .039,
-                                    fontWeight:
-                                    FontWeight.w700,
-                                    color: Colors
-                                        .grey[800],
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(
-                                    width: 8),
-                                Container(
-                                  padding:
-                                  const EdgeInsets
-                                      .symmetric(
-                                      horizontal: 8,
-                                      vertical: 4),
-                                  decoration:
-                                  BoxDecoration(
-                                    color: AppColors
-                                        .primary
-                                        .withOpacity(
-                                        0.1),
-                                    borderRadius:
-                                    BorderRadius
-                                        .circular(
-                                        12),
-                                  ),
-                                  child: Text(
-                                    '$totalPages total',
-                                    style: TextStyle(
-                                      fontSize:
-                                      w * .039,
-                                      fontWeight:
-                                      FontWeight
-                                          .w600,
-                                      color: AppColors
-                                          .primary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Navigation Buttons
-                          Row(
-                            mainAxisAlignment:
-                            MainAxisAlignment
-                                .spaceBetween,
-                            children: <Widget>[
-                              // Previous Button
-                              Expanded(
-                                child: Container(
-                                  height: 50,
-                                  margin:
-                                  const EdgeInsets
-                                      .only(
-                                      right: 8),
-                                  child: ElevatedButton(
-                                    style: ButtonStyle(
-                                      backgroundColor:
-                                      MaterialStateProperty
-                                          .resolveWith<
-                                          Color>(
-                                            (Set<MaterialState>
-                                        states) {
-                                          if (states.contains(
-                                              MaterialState
-                                                  .pressed)) {
-                                            return AppColors
-                                                .primary
-                                                .withOpacity(
-                                                0.8);
-                                          }
-                                          return currentPage ==
-                                              0
-                                              ? Colors.grey[
-                                          300]!
-                                              : Colors
-                                              .white;
-                                        },
-                                      ),
-                                      foregroundColor:
-                                      MaterialStateProperty
-                                          .resolveWith<
-                                          Color>(
-                                            (Set<MaterialState>
-                                        states) {
-                                          return currentPage ==
-                                              0
-                                              ? Colors.grey[
-                                          500]!
-                                              : AppColors
-                                              .primary;
-                                        },
-                                      ),
-                                      side: MaterialStateProperty
-                                          .resolveWith<
-                                          BorderSide>(
-                                            (Set<MaterialState>
-                                        states) {
-                                          return currentPage ==
-                                              0
-                                              ? BorderSide(
-                                              color: Colors.grey[
-                                              300]!)
-                                              : BorderSide(
-                                              color: AppColors
-                                                  .primary,
-                                              width:
-                                              2);
-                                        },
-                                      ),
-                                      shape: MaterialStateProperty
-                                          .resolveWith<
-                                          OutlinedBorder>(
-                                            (states) =>
-                                            RoundedRectangleBorder(
-                                              borderRadius:
-                                              BorderRadius
-                                                  .circular(
-                                                  12),
-                                            ),
-                                      ),
-                                      elevation:
-                                      MaterialStateProperty
-                                          .resolveWith<
-                                          double>(
-                                            (Set<MaterialState>
-                                        states) {
-                                          if (states.contains(
-                                              MaterialState
-                                                  .pressed)) {
-                                            return 2;
-                                          }
-                                          return currentPage ==
-                                              0
-                                              ? 0
-                                              : 3;
-                                        },
-                                      ),
-                                      shadowColor: MaterialStateProperty
-                                          .all(AppColors
-                                          .primary
-                                          .withOpacity(
-                                          0.3)),
-                                    ),
-                                    onPressed:
-                                    currentPage == 0
-                                        ? null
-                                        : () {
-                                      setState(
-                                              () {
-                                            currentPage--;
-                                            _updateCurrentPageDisplay();
-                                          });
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .center,
-                                      children: [
-                                        Icon(
-                                          Icons
-                                              .arrow_back_ios,
-                                          size: 18,
-                                          color: currentPage ==
-                                              0
-                                              ? Colors.grey[
-                                          500]
-                                              : AppColors
-                                              .primary,
-                                        ),
-                                        const SizedBox(
-                                            width: 6),
-                                        Text(
-                                          'Previous',
-                                          style:
-                                          TextStyle(
-                                            fontSize:
-                                            w * .035,
-                                            fontWeight:
-                                            FontWeight
-                                                .w700,
-                                            letterSpacing:
-                                            0.5,
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 15, horizontal: 16),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Colors.grey[100]!,
+                                              Colors.grey[200]!,
+                                            ],
                                           ),
+                                          border: Border(
+                                            top: BorderSide(
+                                                color: Colors.grey[300]!,
+                                                width: 1),
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.grey.withOpacity(0.1),
+                                              spreadRadius: 1,
+                                              blurRadius: 3,
+                                              offset: const Offset(0, -1),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                        child: totalProductCount > itemsPerPage
+                                            ? Column(
+                                                children: [
+                                                  // Page Counter
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 8),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.grey
+                                                              .withOpacity(0.2),
+                                                          spreadRadius: 1,
+                                                          blurRadius: 4,
+                                                          offset: const Offset(
+                                                              0, 2),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          'Page ${currentPage + 1} of $totalPages',
+                                                          style: TextStyle(
+                                                            fontSize: w * .039,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color: Colors
+                                                                .grey[800],
+                                                            letterSpacing: 0.5,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal: 8,
+                                                                  vertical: 4),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: AppColors
+                                                                .primary
+                                                                .withOpacity(
+                                                                    0.1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                          ),
+                                                          child: Text(
+                                                            '$totalPages total',
+                                                            style: TextStyle(
+                                                              fontSize:
+                                                                  w * .039,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: AppColors
+                                                                  .primary,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 16),
+                                                  // Navigation Buttons
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: <Widget>[
+                                                      // Previous Button
+                                                      Expanded(
+                                                        child: Container(
+                                                          height: 50,
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  right: 8),
+                                                          child: ElevatedButton(
+                                                            style: ButtonStyle(
+                                                              backgroundColor:
+                                                                  MaterialStateProperty
+                                                                      .resolveWith<
+                                                                          Color>(
+                                                                (Set<MaterialState>
+                                                                    states) {
+                                                                  if (states.contains(
+                                                                      MaterialState
+                                                                          .pressed)) {
+                                                                    return AppColors
+                                                                        .primary
+                                                                        .withOpacity(
+                                                                            0.8);
+                                                                  }
+                                                                  return currentPage ==
+                                                                          0
+                                                                      ? Colors.grey[
+                                                                          300]!
+                                                                      : Colors
+                                                                          .white;
+                                                                },
+                                                              ),
+                                                              foregroundColor:
+                                                                  MaterialStateProperty
+                                                                      .resolveWith<
+                                                                          Color>(
+                                                                (Set<MaterialState>
+                                                                    states) {
+                                                                  return currentPage ==
+                                                                          0
+                                                                      ? Colors.grey[
+                                                                          500]!
+                                                                      : AppColors
+                                                                          .primary;
+                                                                },
+                                                              ),
+                                                              side: MaterialStateProperty
+                                                                  .resolveWith<
+                                                                      BorderSide>(
+                                                                (Set<MaterialState>
+                                                                    states) {
+                                                                  return currentPage ==
+                                                                          0
+                                                                      ? BorderSide(
+                                                                          color: Colors.grey[
+                                                                              300]!)
+                                                                      : BorderSide(
+                                                                          color: AppColors
+                                                                              .primary,
+                                                                          width:
+                                                                              2);
+                                                                },
+                                                              ),
+                                                              shape: MaterialStateProperty
+                                                                  .resolveWith<
+                                                                      OutlinedBorder>(
+                                                                (states) =>
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12),
+                                                                ),
+                                                              ),
+                                                              elevation:
+                                                                  MaterialStateProperty
+                                                                      .resolveWith<
+                                                                          double>(
+                                                                (Set<MaterialState>
+                                                                    states) {
+                                                                  if (states.contains(
+                                                                      MaterialState
+                                                                          .pressed)) {
+                                                                    return 2;
+                                                                  }
+                                                                  return currentPage ==
+                                                                          0
+                                                                      ? 0
+                                                                      : 3;
+                                                                },
+                                                              ),
+                                                              shadowColor: MaterialStateProperty
+                                                                  .all(AppColors
+                                                                      .primary
+                                                                      .withOpacity(
+                                                                          0.3)),
+                                                            ),
+                                                            onPressed:
+                                                                currentPage == 0
+                                                                    ? null
+                                                                    : () {
+                                                                        setState(
+                                                                            () {
+                                                                          currentPage--;
+                                                                          _updateCurrentPageDisplay();
+                                                                        });
+                                                                      },
+                                                            child: Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Icon(
+                                                                  Icons
+                                                                      .arrow_back_ios,
+                                                                  size: 18,
+                                                                  color: currentPage ==
+                                                                          0
+                                                                      ? Colors.grey[
+                                                                          500]
+                                                                      : AppColors
+                                                                          .primary,
+                                                                ),
+                                                                const SizedBox(
+                                                                    width: 6),
+                                                                Text(
+                                                                  'Previous',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        w * .035,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w700,
+                                                                    letterSpacing:
+                                                                        0.5,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+
+                                                      // Next Button
+                                                      Expanded(
+                                                        child: Container(
+                                                          height: 50,
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  left: 8),
+                                                          child: ElevatedButton(
+                                                            style: ButtonStyle(
+                                                              backgroundColor:
+                                                                  MaterialStateProperty
+                                                                      .resolveWith<
+                                                                          Color>(
+                                                                (Set<MaterialState>
+                                                                    states) {
+                                                                  if (states.contains(
+                                                                      MaterialState
+                                                                          .pressed)) {
+                                                                    return AppColors
+                                                                        .primary
+                                                                        .withOpacity(
+                                                                            0.8);
+                                                                  }
+                                                                  return (currentPage +
+                                                                              1) >=
+                                                                          totalPages
+                                                                      ? Colors.grey[
+                                                                          300]!
+                                                                      : Colors
+                                                                          .white;
+                                                                },
+                                                              ),
+                                                              foregroundColor:
+                                                                  MaterialStateProperty
+                                                                      .resolveWith<
+                                                                          Color>(
+                                                                (Set<MaterialState>
+                                                                    states) {
+                                                                  return (currentPage +
+                                                                              1) >=
+                                                                          totalPages
+                                                                      ? Colors.grey[
+                                                                          500]!
+                                                                      : AppColors
+                                                                          .primary;
+                                                                },
+                                                              ),
+                                                              side: MaterialStateProperty
+                                                                  .resolveWith<
+                                                                      BorderSide>(
+                                                                (Set<MaterialState>
+                                                                    states) {
+                                                                  return (currentPage +
+                                                                              1) >=
+                                                                          totalPages
+                                                                      ? BorderSide(
+                                                                          color: Colors.grey[
+                                                                              300]!)
+                                                                      : BorderSide(
+                                                                          color: AppColors
+                                                                              .primary,
+                                                                          width:
+                                                                              2);
+                                                                },
+                                                              ),
+                                                              shape: MaterialStateProperty
+                                                                  .resolveWith<
+                                                                      OutlinedBorder>(
+                                                                (states) =>
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12),
+                                                                ),
+                                                              ),
+                                                              elevation:
+                                                                  MaterialStateProperty
+                                                                      .resolveWith<
+                                                                          double>(
+                                                                (Set<MaterialState>
+                                                                    states) {
+                                                                  if (states.contains(
+                                                                      MaterialState
+                                                                          .pressed)) {
+                                                                    return 2;
+                                                                  }
+                                                                  return (currentPage +
+                                                                              1) >=
+                                                                          totalPages
+                                                                      ? 0
+                                                                      : 3;
+                                                                },
+                                                              ),
+                                                              shadowColor: MaterialStateProperty
+                                                                  .all(AppColors
+                                                                      .primary
+                                                                      .withOpacity(
+                                                                          0.3)),
+                                                            ),
+                                                            onPressed:
+                                                                (currentPage +
+                                                                            1) >=
+                                                                        totalPages
+                                                                    ? null
+                                                                    : () async {
+                                                                        _scrollController.animateTo(
+                                                                            0,
+                                                                            duration:
+                                                                                const Duration(milliseconds: 500),
+                                                                            curve: Curves.easeInOut);
+
+                                                                        // Check if we need to load more data
+                                                                        if ((currentPage + 1) * itemsPerPage >=
+                                                                                allProducts.length &&
+                                                                            hasMoreData) {
+                                                                          // await _loadMoreProducts();
+                                                                        }
+
+                                                                        setState(
+                                                                            () {
+                                                                          currentPage++;
+                                                                          _updateCurrentPageDisplay();
+                                                                        });
+                                                                      },
+                                                            child: Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Text(
+                                                                  'Next',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        w * .035,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w700,
+                                                                    letterSpacing:
+                                                                        0.5,
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                    width: 6),
+                                                                Icon(
+                                                                  Icons
+                                                                      .arrow_forward_ios,
+                                                                  size: 18,
+                                                                  color: (currentPage +
+                                                                              1) >=
+                                                                          totalPages
+                                                                      ? Colors.grey[
+                                                                          500]
+                                                                      : AppColors
+                                                                          .primary,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              )
+                                            : const SizedBox(),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-
-                              // Next Button
-                              Expanded(
-                                child: Container(
-                                  height: 50,
-                                  margin:
-                                  const EdgeInsets
-                                      .only(
-                                      left: 8),
-                                  child: ElevatedButton(
-                                    style: ButtonStyle(
-                                      backgroundColor:
-                                      MaterialStateProperty
-                                          .resolveWith<
-                                          Color>(
-                                            (Set<MaterialState>
-                                        states) {
-                                          if (states.contains(
-                                              MaterialState
-                                                  .pressed)) {
-                                            return AppColors
-                                                .primary
-                                                .withOpacity(
-                                                0.8);
-                                          }
-                                          return (currentPage +
-                                              1) >=
-                                              totalPages
-                                              ? Colors.grey[
-                                          300]!
-                                              : Colors
-                                              .white;
-                                        },
-                                      ),
-                                      foregroundColor:
-                                      MaterialStateProperty
-                                          .resolveWith<
-                                          Color>(
-                                            (Set<MaterialState>
-                                        states) {
-                                          return (currentPage +
-                                              1) >=
-                                              totalPages
-                                              ? Colors.grey[
-                                          500]!
-                                              : AppColors
-                                              .primary;
-                                        },
-                                      ),
-                                      side: MaterialStateProperty
-                                          .resolveWith<
-                                          BorderSide>(
-                                            (Set<MaterialState>
-                                        states) {
-                                          return (currentPage +
-                                              1) >=
-                                              totalPages
-                                              ? BorderSide(
-                                              color: Colors.grey[
-                                              300]!)
-                                              : BorderSide(
-                                              color: AppColors
-                                                  .primary,
-                                              width:
-                                              2);
-                                        },
-                                      ),
-                                      shape: MaterialStateProperty
-                                          .resolveWith<
-                                          OutlinedBorder>(
-                                            (states) =>
-                                            RoundedRectangleBorder(
-                                              borderRadius:
-                                              BorderRadius
-                                                  .circular(
-                                                  12),
-                                            ),
-                                      ),
-                                      elevation:
-                                      MaterialStateProperty
-                                          .resolveWith<
-                                          double>(
-                                            (Set<MaterialState>
-                                        states) {
-                                          if (states.contains(
-                                              MaterialState
-                                                  .pressed)) {
-                                            return 2;
-                                          }
-                                          return (currentPage +
-                                              1) >=
-                                              totalPages
-                                              ? 0
-                                              : 3;
-                                        },
-                                      ),
-                                      shadowColor: MaterialStateProperty
-                                          .all(AppColors
-                                          .primary
-                                          .withOpacity(
-                                          0.3)),
-                                    ),
-                                    onPressed:
-                                    (currentPage +
-                                        1) >=
-                                        totalPages
-                                        ? null
-                                        : () async {
-                                      _scrollController.animateTo(
-                                          0,
-                                          duration:
-                                          const Duration(milliseconds: 500),
-                                          curve: Curves.easeInOut);
-
-                                      // Check if we need to load more data
-                                      if ((currentPage + 1) * itemsPerPage >=
-                                          allProducts.length &&
-                                          hasMoreData) {
-                                        // await _loadMoreProducts();
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Builder(
+                                    builder: (BuildContext context) {
+                                      final MediaQueryData mediaQuery =
+                                          MediaQuery.of(context);
+                                      final double bottomPadding =
+                                          mediaQuery.padding.bottom;
+                                      if (bottomPadding > 0) {
+                                        return Container(
+                                          height: bottomPadding,
+                                          color: Colors.blueGrey,
+                                        );
+                                      } else {
+                                        return const SizedBox.shrink();
                                       }
-
-                                      setState(
-                                              () {
-                                            currentPage++;
-                                            _updateCurrentPageDisplay();
-                                          });
                                     },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .center,
-                                      children: [
-                                        Text(
-                                          'Next',
-                                          style:
-                                          TextStyle(
-                                            fontSize:
-                                            w * .035,
-                                            fontWeight:
-                                            FontWeight
-                                                .w700,
-                                            letterSpacing:
-                                            0.5,
-                                          ),
-                                        ),
-                                        const SizedBox(
-                                            width: 6),
-                                        Icon(
-                                          Icons
-                                              .arrow_forward_ios,
-                                          size: 18,
-                                          color: (currentPage +
-                                              1) >=
-                                              totalPages
-                                              ? Colors.grey[
-                                          500]
-                                              : AppColors
-                                              .primary,
-                                        ),
-                                      ],
-                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      )
-                          : const SizedBox(),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Builder(
-                  builder: (BuildContext context) {
-                    final MediaQueryData mediaQuery =
-                    MediaQuery.of(context);
-                    final double bottomPadding =
-                        mediaQuery.padding.bottom;
-                    if (bottomPadding > 0) {
-                      return Container(
-                        height: bottomPadding,
-                        color: Colors.blueGrey,
-                      );
-                    } else {
-                      return const SizedBox.shrink();
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ));
+                              ],
+                            ),
+                          ));
   }
 
   String _getProperImageUrl(String? imageUrl) {
@@ -1320,7 +1274,7 @@ class FilterMenu extends StatefulWidget {
     this.currentVendorFilters = const [],
     this.currentPriceSorting,
     this.currentPriceRange =
-    const RangeValues(0, 1000), // Will be updated dynamically
+        const RangeValues(0, 1000), // Will be updated dynamically
     this.currentInStockOnly = false,
     this.currentOnSaleOnly = false,
   });
@@ -1445,10 +1399,10 @@ class _FilterMenuState extends State<FilterMenu> {
                             children: [
                               Text('\$${priceRange.start.round()}',
                                   style:
-                                  TextStyle(fontWeight: FontWeight.w600)),
+                                      TextStyle(fontWeight: FontWeight.w600)),
                               Text('\$${priceRange.end.round()}',
                                   style:
-                                  TextStyle(fontWeight: FontWeight.w600)),
+                                      TextStyle(fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ],
@@ -1481,10 +1435,10 @@ class _FilterMenuState extends State<FilterMenu> {
                     child: Column(
                       children: List.generate(
                         _getUniqueVendorsFromProducts().length,
-                            (index) {
+                        (index) {
                           final vendor = _getUniqueVendorsFromProducts()[index];
                           final productCount =
-                          _getProductCountForVendor(vendor);
+                              _getProductCountForVendor(vendor);
                           final isSelected = tempFilterVendor.contains(vendor);
                           return Container(
                             decoration: BoxDecoration(

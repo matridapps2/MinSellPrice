@@ -18,7 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class NotificationScreen extends StatefulWidget {
   final Map<String, dynamic>? notificationData;
 
-  const NotificationScreen({Key? key, this.notificationData}) : super(key: key);
+  const NotificationScreen({super.key, this.notificationData});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -89,8 +89,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
       setState(() {});
     }
   }
-
-
 
   Future<void> _getProductData(String emailId) async {
     setState(() {
@@ -335,7 +333,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           // Notifications list
           Expanded(
             child: !isLoggedIn
-                ? Constants.noLoginDesign(context,'notification')
+                ? Constants.noLoginDesign(context, 'notification')
                 : isLoading
                     ? const Center(
                         child: Column(
