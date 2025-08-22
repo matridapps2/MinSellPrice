@@ -14,13 +14,14 @@ import 'package:minsellprice/screens/account_screen/account_screen.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
 import 'package:minsellprice/screens/categories_screen/categories_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
-import 'package:minsellprice/screens/dashboard_screen/notification_screen/notification_screen.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_api.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
+
+import 'notification_screen/notification_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({

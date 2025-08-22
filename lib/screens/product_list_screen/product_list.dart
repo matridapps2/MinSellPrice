@@ -5,10 +5,14 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:http/http.dart';
+import 'package:minsellprice/widgets/category_shimmer.dart';
+import 'package:provider/provider.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
+import 'package:minsellprice/screens/categories_provider/product_list_provider.dart';
 import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
@@ -70,8 +74,14 @@ class _ProductList extends State<ProductList> {
   @override
   void initState() {
     super.initState();
-    _initCall();
+    // _initCall();
     _addScrollListener();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context
+          .read<ProductProvider>()
+          .getProductList(widget.brandName.toString(), context);
+    });
   }
 
   // Store scroll listener reference for proper disposal
@@ -98,6 +108,7 @@ class _ProductList extends State<ProductList> {
       }
 
       // Only trigger API call when user is at the VERY bottom AND has seen the last product
+      final productProvider = context.read<ProductProvider>();
       if (_hasUserScrolled &&
           _isUserActivelyScrolling &&
           _hasUserSeenLastProduct &&
@@ -107,7 +118,8 @@ class _ProductList extends State<ProductList> {
               _scrollController.position.maxScrollExtent - 10) {
         // Very strict threshold
         log('Scroll detection: User at very bottom and has seen last product - triggering API call');
-        _loadMoreProducts();
+        //_loadMoreProducts();
+        productProvider.loadMoreProducts(widget.brandName.toString(), context);
       }
     };
 
@@ -311,811 +323,1374 @@ class _ProductList extends State<ProductList> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: () {
-          _focusNode.unfocus();
+      onTap: () {
+        _focusNode.unfocus();
+      },
+      child: Consumer<ProductProvider>(
+        builder: (context, productProvider, child) {
+          return _buildScaffold(productProvider);
         },
-        child: _isLoading
-            ? Scaffold(
-                appBar: AppBar(
-                  backgroundColor: Colors.white,
-                  surfaceTintColor: Colors.transparent,
-                  elevation: 0,
-                  toolbarHeight: 80,
-                  automaticallyImplyLeading: false,
-                  centerTitle: false,
-                  title: Visibility(
-                    visible: !_isLoading,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                      child: SizedBox(
-                        width: w * .54,
-                        child: AutoSizeText(
-                          '${widget.brandName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: w * .04),
-                        ),
-                      ),
+      ),
+    );
+  }
+
+  Widget _buildScaffold(ProductProvider productProvider) {
+    if (productProvider.isLoading) {
+      return _buildLoadingScaffold();
+    } else if (productProvider.hasError) {
+      return _buildErrorScaffold(productProvider);
+    } else {
+      return _buildMainScaffold(productProvider);
+    }
+  }
+
+  Widget _buildLoadingScaffold() {
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: const Column(
+        children: [
+          SizedBox(height: 5),
+          Expanded(
+              child: SingleChildScrollView(
+                  child: BrandsSectionShimmer(title: ''))),
+        ],
+      ),
+      // Center(
+      //   child: StylishLoader(
+      //     type: LoaderType.wave,
+      //     size: 80.0,
+      //     primaryColor: AppColors.primary,
+      //     text: "Loading ${widget.brandName} products...",
+      //     textStyle: const TextStyle(
+      //       fontSize: 16,
+      //       fontWeight: FontWeight.w500,
+      //       color: AppColors.primary,
+      //     ),
+      //   ),
+      // ),
+    );
+  }
+
+  Widget _buildErrorScaffold(ProductProvider productProvider) {
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Failed to load products',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              productProvider.errorMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => productProvider.retry(),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      surfaceTintColor: Colors.white,
+      toolbarHeight: .18 * w,
+      backgroundColor: Colors.white,
+      centerTitle: false,
+      title: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2.0),
+        child: SizedBox(
+          width: w * .54,
+          child: AutoSizeText(
+            '${widget.brandName}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: w * .06),
+          ),
+        ),
+      ),
+      actions: [
+        GestureDetector(
+          onTap: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.asset(
+              'assets/minsellprice_app_icon.png',
+              height: .23 * w,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMainScaffold(ProductProvider productProvider) {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: _buildAppBar(),
+      body: Stack(
+        children: [
+          SafeArea(
+              child: Column(
+            children: [
+              const SizedBox(height: 5),
+              _buildProductCountBadge(productProvider),
+              const SizedBox(height: 5),
+              _buildProductList(productProvider),
+              const SizedBox(height: 10),
+              _buildLoadingMoreIndicator(productProvider),
+            ],
+          ))
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductCountBadge(ProductProvider productProvider) {
+    if (productProvider.totalProductCount == 0) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.shopping_bag_outlined,
+                      color: AppColors.primary,
+                      size: w * .06,
                     ),
                   ),
-                  actions: [
-                    Visibility(
-                      visible: !_isLoading,
-                      child: GestureDetector(
-                        onTap: () {
-                          log('Working');
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                                builder: (context) => const HomePage()),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Image.asset(
-                            'assets/minsellprice_app_icon.png',
-                            height: .23 * w,
-                            fit: BoxFit.contain,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total Products',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: w * .045,
+                            fontFamily: 'Segoe UI',
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
+                        Text(
+                          '${productProvider.totalProductCount} items available',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: w * .039,
+                            fontFamily: 'Segoe UI',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductList(ProductProvider productProvider) {
+    if (productProvider.allProducts.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return Expanded(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Scrollbar(
+          thickness: 4,
+          thumbVisibility: true,
+          trackVisibility: true,
+          interactive: true,
+          controller: _scrollController,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: Wrap(
+                runSpacing: 10,
+                children: List.generate(
+                  productProvider.allProducts.length,
+                  (index) =>
+                      _buildProductCard(productProvider.allProducts[index]),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Flexible(
+      child: Container(
+        width: w,
+        height: h / 1.1,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: w * 0.3,
+              height: w * 0.3,
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 2,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.search_off_rounded,
+                size: w * 0.15,
+                color: AppColors.primary.withOpacity(0.7),
+              ),
+            ),
+            SizedBox(height: h * 0.03),
+            Text(
+              'No Products Found',
+              style: TextStyle(
+                fontSize: w * 0.06,
+                fontFamily: 'Futura BdCn BT Bold',
+                fontWeight: FontWeight.w600,
+                color: AppColors.text,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: h * 0.015),
+            Text(
+              'We couldn\'t find any products for this brand.\nPlease try a different search or browse other categories.',
+              style: TextStyle(
+                fontSize: w * 0.035,
+                fontFamily: 'Futura BdCn BT Bold',
+                fontWeight: FontWeight.w300,
+                color: Colors.grey[600],
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: h * 0.04),
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: w * 0.06,
+                  vertical: h * 0.018,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.arrow_back_ios_rounded,
+                      size: w * 0.035,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: w * 0.015),
+                    Text(
+                      'Go Back',
+                      style: TextStyle(
+                        fontSize: w * 0.035,
+                        fontFamily: 'Futura BdCn BT Bold',
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
-                body: Center(
-                  child: StylishLoader(
-                    type: LoaderType.wave,
-                    size: 80.0,
-                    primaryColor: AppColors.primary,
-                    text: "Loading ${widget.brandName} products...",
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ))
-            : _isError
-                ? Scaffold(
-                    appBar: AppBar(
-                      surfaceTintColor: Colors.white,
-                      toolbarHeight: .18 * w,
-                      backgroundColor: Colors.white,
-                      centerTitle: false,
-                      title: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                        child: SizedBox(
-                          width: w * .54,
-                          child: AutoSizeText(
-                            '${widget.brandName}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: w * .06),
-                          ),
-                        ),
-                      ),
-                      actions: [
-                        GestureDetector(
-                          onTap: () {
-                            log('Working');
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                  builder: (context) => const HomePage()),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Image.asset(
-                              'assets/minsellprice_app_icon.png',
-                              height: .23 * w,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    body: Center(
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                            text: 'No Product(s) found.\n',
-                            style: TextStyle(
-                                fontSize: .06 * w,
-                                fontFamily: 'Futura BdCn BT Bold',
-                                fontWeight: FontWeight.w300,
-                                color: Colors.black),
-                            children: [
-                              TextSpan(
-                                text: 'Return Back',
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () => Navigator.pop(context),
-                                style: TextStyle(
-                                    fontSize: .06 * w,
-                                    fontFamily: 'Futura BdCn BT Bold',
-                                    fontWeight: FontWeight.w300,
-                                    color: AppColors.primary),
-                              )
-                            ]),
-                      ),
-                    ),
-                  )
-                : Scaffold(
-                    key: _scaffoldKey,
-                    appBar: AppBar(
-                      surfaceTintColor: Colors.white,
-                      toolbarHeight: .18 * w,
-                      backgroundColor: Colors.white,
-                      centerTitle: false,
-                      title: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                        child: SizedBox(
-                          width: w * .54,
-                          child: AutoSizeText(
-                            '${widget.brandName}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: w * .06),
-                          ),
-                        ),
-                      ),
-                      actions: [
-                        GestureDetector(
-                          onTap: () {
-                            log('Working');
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                  builder: (context) => const HomePage()),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Image.asset(
-                              'assets/minsellprice_app_icon.png',
-                              height: .23 * w,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    body: Stack(
-                      children: [
-                        SafeArea(
-                          bottom: true,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 5),
-                              Visibility(
-                                visible: totalProductCount > 0,
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
-                                  child: Row(
-                                    children: [
-                                      // Filters Icon Button
-                                      // Container(
-                                      //   decoration: BoxDecoration(
-                                      //     color: AppColors.primary,
-                                      //     borderRadius:
-                                      //         BorderRadius.circular(12),
-                                      //     boxShadow: [
-                                      //       BoxShadow(
-                                      //         color: AppColors.primary
-                                      //             .withOpacity(0.3),
-                                      //         spreadRadius: 1,
-                                      //         blurRadius: 4,
-                                      //         offset: const Offset(0, 2),
-                                      //       ),
-                                      //     ],
-                                      //   ),
-                                      //   child: Material(
-                                      //     color: Colors.transparent,
-                                      //     child: InkWell(
-                                      //       borderRadius:
-                                      //           BorderRadius.circular(12),
-                                      //       onTap: () {
-                                      //         // _scaffoldKey.currentState!
-                                      //         //     .openEndDrawer();
-                                      //       },
-                                      //       child: Container(
-                                      //         padding: const EdgeInsets.all(12),
-                                      //         // child: Icon(
-                                      //         //   Icons.filter_alt,
-                                      //         //   color: Colors.white,
-                                      //         //   size: w * .05,
-                                      //         // ),
-                                      //       ),
-                                      //     ),
-                                      //   ),
-                                      // ),
-                                      const SizedBox(width: 12),
-                                      // Product Count Badge
-                                      Expanded(
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 16, vertical: 10),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[50],
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: Colors.grey[200]!,
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.all(6),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.primary
-                                                      .withOpacity(0.1),
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                                child: Icon(
-                                                  Icons.shopping_bag_outlined,
-                                                  color: AppColors.primary,
-                                                  size: w * .06,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Total Products',
-                                                      style: TextStyle(
-                                                        color: Colors.grey[600],
-                                                        fontSize: w * .045,
-                                                        fontFamily: 'Segoe UI',
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      '$totalProductCount items available',
-                                                      style: TextStyle(
-                                                        color:
-                                                            AppColors.primary,
-                                                        fontSize: w * .039,
-                                                        fontFamily: 'Segoe UI',
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              allProducts.isEmpty
-                                  ? Flexible(
-                                      child: Container(
-                                        width: w,
-                                        height: h / 1.1,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 20),
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            // Illustration/Icon
-                                            Container(
-                                              width: w * 0.3,
-                                              height: w * 0.3,
-                                              decoration: BoxDecoration(
-                                                color: AppColors.background,
-                                                shape: BoxShape.circle,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.grey
-                                                        .withOpacity(0.1),
-                                                    spreadRadius: 2,
-                                                    blurRadius: 10,
-                                                    offset: const Offset(0, 4),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Icon(
-                                                Icons.search_off_rounded,
-                                                size: w * 0.15,
-                                                color: AppColors.primary
-                                                    .withOpacity(0.7),
-                                              ),
-                                            ),
-                                            SizedBox(height: h * 0.03),
-
-                                            // Main Title
-                                            Text(
-                                              'No Products Found',
-                                              style: TextStyle(
-                                                fontSize: w * 0.06,
-                                                fontFamily:
-                                                    'Futura BdCn BT Bold',
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.text,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            SizedBox(height: h * 0.015),
-
-                                            // Subtitle
-                                            Text(
-                                              'We couldn\'t find any products for this brand.\nPlease try a different search or browse other categories.',
-                                              style: TextStyle(
-                                                fontSize: w * 0.035,
-                                                fontFamily:
-                                                    'Futura BdCn BT Bold',
-                                                fontWeight: FontWeight.w300,
-                                                color: Colors.grey[600],
-                                                height: 1.4,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            SizedBox(height: h * 0.04),
-
-                                            // Action Button
-                                            GestureDetector(
-                                              onTap: () =>
-                                                  Navigator.pop(context),
-                                              child: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: w * 0.06,
-                                                  vertical: h * 0.018,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.primary,
-                                                  borderRadius:
-                                                      BorderRadius.circular(25),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: AppColors.primary
-                                                          .withOpacity(0.3),
-                                                      spreadRadius: 1,
-                                                      blurRadius: 8,
-                                                      offset:
-                                                          const Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Icon(
-                                                      Icons
-                                                          .arrow_back_ios_rounded,
-                                                      size: w * 0.035,
-                                                      color: Colors.white,
-                                                    ),
-                                                    SizedBox(width: w * 0.015),
-                                                    Text(
-                                                      'Go Back',
-                                                      style: TextStyle(
-                                                        fontSize: w * 0.035,
-                                                        fontFamily:
-                                                            'Futura BdCn BT Bold',
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    )
-                                  : allProducts.isNotEmpty
-                                      ? Expanded(
-                                          child: Align(
-                                            alignment: Alignment.topCenter,
-                                            child: Scrollbar(
-                                              thickness: 4,
-                                              thumbVisibility: true,
-                                              trackVisibility: true,
-                                              interactive: true,
-                                              controller: _scrollController,
-                                              child: NotificationListener<
-                                                  ScrollNotification>(
-                                                onNotification: (notification) {
-                                                  if (notification
-                                                          is ScrollUpdateNotification &&
-                                                      notification
-                                                              .metrics.axis ==
-                                                          Axis.vertical) {
-                                                    final bool isUserDrag =
-                                                        notification
-                                                                .dragDetails !=
-                                                            null;
-
-                                                    // Check if user has seen the last product
-                                                    if (notification
-                                                            .metrics.pixels >=
-                                                        notification.metrics
-                                                                .maxScrollExtent -
-                                                            20) {
-                                                      _hasUserSeenLastProduct =
-                                                          true;
-                                                    }
-
-                                                    if (isUserDrag &&
-                                                        _isUserActivelyScrolling &&
-                                                        _hasUserSeenLastProduct &&
-                                                        hasMoreData &&
-                                                        !_isLoadingMore &&
-                                                        notification.metrics
-                                                                .pixels >=
-                                                            notification.metrics
-                                                                    .maxScrollExtent -
-                                                                10) {
-                                                      // Very strict threshold
-                                                      log('NotificationListener: User at very bottom and has seen last product - triggering API call');
-                                                      _loadMoreProducts();
-                                                    }
-                                                  }
-                                                  return false; // allow other listeners to receive notifications
-                                                },
-                                                child: SingleChildScrollView(
-                                                  controller: _scrollController,
-                                                  child: Padding(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 10.0),
-                                                    child: Wrap(
-                                                      runSpacing: 10,
-                                                      children: List.generate(
-                                                        allProducts.length,
-                                                        (index) => Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal:
-                                                                      4.0),
-                                                          child:
-                                                              GestureDetector(
-                                                            onTap: () {
-                                                              Navigator.push(
-                                                                context,
-                                                                MaterialPageRoute(
-                                                                    builder: (context) => ProductDetailsScreen(
-                                                                        productId:
-                                                                            allProducts[index]
-                                                                                .productId,
-                                                                        brandName:
-                                                                            widget.brandName ??
-                                                                                'Unknown Brand',
-                                                                        productMPN:
-                                                                            allProducts[index]
-                                                                                .productMpn,
-                                                                        productImage:
-                                                                            allProducts[index]
-                                                                                .productImage,
-                                                                        productPrice:
-                                                                            allProducts[index].vendorpricePrice)),
-                                                              );
-                                                            },
-                                                            child: Container(
-                                                              width: w * .45,
-                                                              // height: h * .48,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Colors
-                                                                    .white,
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            16),
-                                                                boxShadow: [
-                                                                  BoxShadow(
-                                                                    color: Colors
-                                                                        .grey
-                                                                        .withOpacity(
-                                                                            0.1),
-                                                                    spreadRadius:
-                                                                        2,
-                                                                    blurRadius:
-                                                                        8,
-                                                                    offset:
-                                                                        const Offset(
-                                                                            0,
-                                                                            4),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                              child: Column(
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  Container(
-                                                                    width: double
-                                                                        .infinity,
-                                                                    height:
-                                                                        w * .45,
-                                                                    decoration:
-                                                                        const BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topLeft:
-                                                                            Radius.circular(16),
-                                                                        topRight:
-                                                                            Radius.circular(16),
-                                                                      ),
-                                                                    ),
-                                                                    child:
-                                                                        ClipRRect(
-                                                                      borderRadius:
-                                                                          const BorderRadius
-                                                                              .only(
-                                                                        topLeft:
-                                                                            Radius.circular(0),
-                                                                        topRight:
-                                                                            Radius.circular(0),
-                                                                      ),
-                                                                      child: Image
-                                                                          .network(
-                                                                        _getProperImageUrl(
-                                                                            allProducts[index].productImage),
-                                                                        fit: BoxFit
-                                                                            .contain,
-                                                                        // Memory-efficient image loading
-                                                                        cacheWidth: (w *
-                                                                                .45 *
-                                                                                MediaQuery.of(context).devicePixelRatio)
-                                                                            .round(),
-                                                                        cacheHeight: (w *
-                                                                                .45 *
-                                                                                MediaQuery.of(context).devicePixelRatio)
-                                                                            .round(),
-                                                                        errorBuilder: (context,
-                                                                            error,
-                                                                            stackTrace) {
-                                                                          return Container(
-                                                                            color:
-                                                                                Colors.grey[200],
-                                                                            child:
-                                                                                Icon(
-                                                                              Icons.image_not_supported_outlined,
-                                                                              size: w * .08,
-                                                                              color: Colors.grey[400],
-                                                                            ),
-                                                                          );
-                                                                        },
-                                                                      ),
-                                                                    ),
-                                                                  ),
-
-                                                                  // Product Details
-                                                                  Padding(
-                                                                    padding:
-                                                                        const EdgeInsets
-                                                                            .all(
-                                                                            16),
-                                                                    child:
-                                                                        Column(
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment
-                                                                              .start,
-                                                                      children: [
-                                                                        // Product Name
-                                                                        SizedBox(
-                                                                          height:
-                                                                              w * .25,
-                                                                          child:
-                                                                              Text(
-                                                                            allProducts[index].productName.isEmpty
-                                                                                ? 'Product Name Not Available'
-                                                                                : allProducts[index].productName,
-                                                                            maxLines:
-                                                                                4,
-                                                                            overflow:
-                                                                                TextOverflow.ellipsis,
-                                                                            style:
-                                                                                TextStyle(
-                                                                              color: Colors.grey[800],
-                                                                              fontFamily: 'Segoe UI',
-                                                                              fontSize: 18,
-                                                                              height: 1.2,
-                                                                              fontWeight: FontWeight.w600,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        const SizedBox(
-                                                                            height:
-                                                                                0),
-                                                                        // MPN
-                                                                        SizedBox(
-                                                                          height:
-                                                                              h * .06,
-                                                                          child:
-                                                                              Text(
-                                                                            'MPN: #${allProducts[index].productMpn}',
-                                                                            style:
-                                                                                const TextStyle(
-                                                                              fontFamily: 'Segoe UI',
-                                                                              fontSize: 16,
-                                                                            ),
-                                                                            overflow:
-                                                                                TextOverflow.ellipsis,
-                                                                            maxLines:
-                                                                                2,
-                                                                          ),
-                                                                        ),
-                                                                        const SizedBox(
-                                                                            height:
-                                                                                13),
-                                                                        // Price Section
-                                                                        Container(
-                                                                          //height: h * .09,
-                                                                          decoration:
-                                                                              BoxDecoration(
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(10),
-                                                                          ),
-                                                                          child:
-                                                                              Column(
-                                                                            crossAxisAlignment:
-                                                                                CrossAxisAlignment.start,
-                                                                            children: [
-                                                                              // Price Row
-                                                                              Row(
-                                                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                                                children: [
-                                                                                  Text(
-                                                                                    '\$${allProducts[index].vendorpricePrice}',
-                                                                                    style: const TextStyle(
-                                                                                      color: Colors.black,
-                                                                                      fontFamily: 'Segoe UI',
-                                                                                      fontSize: 20,
-                                                                                      fontWeight: FontWeight.bold,
-                                                                                    ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                              const SizedBox(height: 10),
-                                                                              // Vendor Count Row
-                                                                              Row(
-                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                children: [
-                                                                                  Container(
-                                                                                    padding: EdgeInsets.symmetric(
-                                                                                      horizontal: w * .02,
-                                                                                      vertical: w * .015,
-                                                                                    ),
-                                                                                    decoration: BoxDecoration(
-                                                                                      gradient: LinearGradient(
-                                                                                        colors: [
-                                                                                          AppColors.primary,
-                                                                                          AppColors.primary.withOpacity(0.8),
-                                                                                        ],
-                                                                                      ),
-                                                                                      borderRadius: BorderRadius.circular(8),
-                                                                                      boxShadow: [
-                                                                                        BoxShadow(
-                                                                                          color: AppColors.primary.withOpacity(0.3),
-                                                                                          spreadRadius: 1,
-                                                                                          blurRadius: 3,
-                                                                                          offset: const Offset(0, 1),
-                                                                                        ),
-                                                                                      ],
-                                                                                    ),
-                                                                                    child: Row(
-                                                                                      mainAxisSize: MainAxisSize.min,
-                                                                                      children: [
-                                                                                        Icon(
-                                                                                          Icons.storefront_outlined,
-                                                                                          color: Colors.white,
-                                                                                          size: 18,
-                                                                                        ),
-                                                                                        const SizedBox(width: 2),
-                                                                                        Text(
-                                                                                          '${allProducts[index].vendorIdCount}',
-                                                                                          style: TextStyle(
-                                                                                            color: Colors.white,
-                                                                                            fontSize: 19,
-                                                                                            fontWeight: FontWeight.w500,
-                                                                                          ),
-                                                                                        ),
-                                                                                        const SizedBox(width: 2),
-                                                                                        Text(
-                                                                                          'vendors',
-                                                                                          style: TextStyle(
-                                                                                            color: Colors.white.withOpacity(0.9),
-                                                                                            fontSize: 20,
-                                                                                            fontWeight: FontWeight.w500,
-                                                                                          ),
-                                                                                          maxLines: 1,
-                                                                                          overflow: TextOverflow.ellipsis,
-                                                                                        ),
-                                                                                      ],
-                                                                                    ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                      : const SizedBox(),
-                              const SizedBox(height: 10),
-                              // Loading indicator for more products
-                              if (_isLoadingMore && allProducts.isNotEmpty)
-                                Container(
-                                  width: double.infinity,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 20),
-                                  child: const Center(
-                                    child: Column(
-                                      children: [
-                                        CircularProgressIndicator(
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                  AppColors.primary),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              // Show scroll progress indicator - removed due to linter issues
-                              // Show "No more products" message when all products are loaded
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: Builder(
-                            builder: (BuildContext context) {
-                              final MediaQueryData mediaQuery =
-                                  MediaQuery.of(context);
-                              final double bottomPadding =
-                                  mediaQuery.padding.bottom;
-                              if (bottomPadding > 0) {
-                                return Container(
-                                  height: bottomPadding,
-                                  color: Colors.blueGrey,
-                                );
-                              } else {
-                                return const SizedBox.shrink();
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ));
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+
+  Widget _buildLoadingMoreIndicator(ProductProvider productProvider) {
+    if (!productProvider.isLoadingMore || productProvider.allProducts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: const Center(
+        child: Column(
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductCard(VendorProduct product) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductDetailsScreen(
+                productId: product.productId,
+                brandName: widget.brandName ?? 'Unknown Brand',
+                productMPN: product.productMpn,
+                productImage: product.productImage,
+                productPrice: product.vendorpricePrice,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          width: w * .45,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProductImage(product),
+              _buildProductDetails(product),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductImage(VendorProduct product) {
+    return Container(
+      width: double.infinity,
+      height: w * .45,
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(0),
+          topRight: Radius.circular(0),
+        ),
+        child: Image.network(
+          _getProperImageUrl(product.productImage),
+          fit: BoxFit.contain,
+          cacheWidth:
+              (w * .45 * MediaQuery.of(context).devicePixelRatio).round(),
+          cacheHeight:
+              (w * .45 * MediaQuery.of(context).devicePixelRatio).round(),
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[200],
+              child: Icon(
+                Icons.image_not_supported_outlined,
+                size: w * .08,
+                color: Colors.grey[400],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductDetails(VendorProduct product) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: w * .25,
+            child: Text(
+              product.productName.isEmpty
+                  ? 'Product Name Not Available'
+                  : product.productName,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontFamily: 'Segoe UI',
+                fontSize: 18,
+                height: 1.2,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 0),
+          SizedBox(
+            height: h * .06,
+            child: Text(
+              'MPN: #${product.productMpn}',
+              style: const TextStyle(
+                fontFamily: 'Segoe UI',
+                fontSize: 16,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
+          ),
+          const SizedBox(height: 13),
+          _buildPriceSection(product),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceSection(VendorProduct product) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Text(
+                '\$${product.vendorpricePrice}',
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontFamily: 'Segoe UI',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: w * .02,
+                  vertical: w * .015,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      spreadRadius: 1,
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.storefront_outlined,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${product.vendorIdCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Text(
+                      'vendors',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // _isLoading
+  //           ? Scaffold(
+  //               appBar: AppBar(
+  //                 backgroundColor: Colors.white,
+  //                 surfaceTintColor: Colors.transparent,
+  //                 elevation: 0,
+  //                 toolbarHeight: 80,
+  //                 automaticallyImplyLeading: false,
+  //                 centerTitle: false,
+  //                 title: Visibility(
+  //                   visible: !_isLoading,
+  //                   child: Padding(
+  //                     padding: const EdgeInsets.symmetric(horizontal: 2.0),
+  //                     child: SizedBox(
+  //                       width: w * .54,
+  //                       child: AutoSizeText(
+  //                         '${widget.brandName}',
+  //                         maxLines: 1,
+  //                         overflow: TextOverflow.ellipsis,
+  //                         style: TextStyle(fontSize: w * .04),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 actions: [
+  //                   Visibility(
+  //                     visible: !_isLoading,
+  //                     child: GestureDetector(
+  //                       onTap: () {
+  //                         log('Working');
+  //                         Navigator.of(context).pushReplacement(
+  //                           MaterialPageRoute(
+  //                               builder: (context) => const HomePage()),
+  //                         );
+  //                       },
+  //                       child: Container(
+  //                         padding: const EdgeInsets.all(8.0),
+  //                         child: Image.asset(
+  //                           'assets/minsellprice_app_icon.png',
+  //                           height: .23 * w,
+  //                           fit: BoxFit.contain,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               body: Center(
+  //                 child: StylishLoader(
+  //                   type: LoaderType.wave,
+  //                   size: 80.0,
+  //                   primaryColor: AppColors.primary,
+  //                   text: "Loading ${widget.brandName} products...",
+  //                   textStyle: const TextStyle(
+  //                     fontSize: 16,
+  //                     fontWeight: FontWeight.w500,
+  //                     color: AppColors.primary,
+  //                   ),
+  //                 ),
+  //               ))
+  //           : _isError
+  //               ? Scaffold(
+  //                   appBar: AppBar(
+  //                     surfaceTintColor: Colors.white,
+  //                     toolbarHeight: .18 * w,
+  //                     backgroundColor: Colors.white,
+  //                     centerTitle: false,
+  //                     title: Padding(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 2.0),
+  //                       child: SizedBox(
+  //                         width: w * .54,
+  //                         child: AutoSizeText(
+  //                           '${widget.brandName}',
+  //                           maxLines: 1,
+  //                           overflow: TextOverflow.ellipsis,
+  //                           style: TextStyle(fontSize: w * .06),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                     actions: [
+  //                       GestureDetector(
+  //                         onTap: () {
+  //                           log('Working');
+  //                           Navigator.of(context).pushReplacement(
+  //                             MaterialPageRoute(
+  //                                 builder: (context) => const HomePage()),
+  //                           );
+  //                         },
+  //                         child: Container(
+  //                           padding: const EdgeInsets.all(8.0),
+  //                           child: Image.asset(
+  //                             'assets/minsellprice_app_icon.png',
+  //                             height: .23 * w,
+  //                             fit: BoxFit.contain,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   body: Center(
+  //                     child: RichText(
+  //                       textAlign: TextAlign.center,
+  //                       text: TextSpan(
+  //                           text: 'No Product(s) found.\n',
+  //                           style: TextStyle(
+  //                               fontSize: .06 * w,
+  //                               fontFamily: 'Futura BdCn BT Bold',
+  //                               fontWeight: FontWeight.w300,
+  //                               color: Colors.black),
+  //                           children: [
+  //                             TextSpan(
+  //                               text: 'Return Back',
+  //                               recognizer: TapGestureRecognizer()
+  //                                 ..onTap = () => Navigator.pop(context),
+  //                               style: TextStyle(
+  //                                   fontSize: .06 * w,
+  //                                   fontFamily: 'Futura BdCn BT Bold',
+  //                                   fontWeight: FontWeight.w300,
+  //                                   color: AppColors.primary),
+  //                             )
+  //                           ]),
+  //                     ),
+  //                   ),
+  //                 )
+  //               : Scaffold(
+  //                   key: _scaffoldKey,
+  //                   appBar: AppBar(
+  //                     surfaceTintColor: Colors.white,
+  //                     toolbarHeight: .18 * w,
+  //                     backgroundColor: Colors.white,
+  //                     centerTitle: false,
+  //                     title: Padding(
+  //                       padding: const EdgeInsets.symmetric(horizontal: 2.0),
+  //                       child: SizedBox(
+  //                         width: w * .54,
+  //                         child: AutoSizeText(
+  //                           '${widget.brandName}',
+  //                           maxLines: 1,
+  //                           overflow: TextOverflow.ellipsis,
+  //                           style: TextStyle(fontSize: w * .06),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                     actions: [
+  //                       GestureDetector(
+  //                         onTap: () {
+  //                           log('Working');
+  //                           Navigator.of(context).pushReplacement(
+  //                             MaterialPageRoute(
+  //                                 builder: (context) => const HomePage()),
+  //                           );
+  //                         },
+  //                         child: Container(
+  //                           padding: const EdgeInsets.all(8.0),
+  //                           child: Image.asset(
+  //                             'assets/minsellprice_app_icon.png',
+  //                             height: .23 * w,
+  //                             fit: BoxFit.contain,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   body: Stack(
+  //                     children: [
+  //                       SafeArea(
+  //                         bottom: true,
+  //                         child: Column(
+  //                           crossAxisAlignment: CrossAxisAlignment.start,
+  //                           children: [
+  //                             const SizedBox(height: 5),
+  //                             Visibility(
+  //                               visible: totalProductCount > 0,
+  //                               child: Container(
+  //                                 margin: const EdgeInsets.symmetric(
+  //                                     horizontal: 16, vertical: 8),
+  //                                 child: Row(
+  //                                   children: [
+  //                                     // Filters Icon Button
+  //                                     // Container(
+  //                                     //   decoration: BoxDecoration(
+  //                                     //     color: AppColors.primary,
+  //                                     //     borderRadius:
+  //                                     //         BorderRadius.circular(12),
+  //                                     //     boxShadow: [
+  //                                     //       BoxShadow(
+  //                                     //         color: AppColors.primary
+  //                                     //             .withOpacity(0.3),
+  //                                     //         spreadRadius: 1,
+  //                                     //         blurRadius: 4,
+  //                                     //         offset: const Offset(0, 2),
+  //                                     //       ),
+  //                                     //     ],
+  //                                     //   ),
+  //                                     //   child: Material(
+  //                                     //     color: Colors.transparent,
+  //                                     //     child: InkWell(
+  //                                     //       borderRadius:
+  //                                     //           BorderRadius.circular(12),
+  //                                     //       onTap: () {
+  //                                     //         // _scaffoldKey.currentState!
+  //                                     //         //     .openEndDrawer();
+  //                                     //       },
+  //                                     //       child: Container(
+  //                                     //         padding: const EdgeInsets.all(12),
+  //                                     //         // child: Icon(
+  //                                     //         //   Icons.filter_alt,
+  //                                     //         //   color: Colors.white,
+  //                                     //         //   size: w * .05,
+  //                                     //         // ),
+  //                                     //       ),
+  //                                     //     ),
+  //                                     //   ),
+  //                                     // ),
+  //                                     const SizedBox(width: 12),
+  //                                     // Product Count Badge
+  //                                     Expanded(
+  //                                       child: Container(
+  //                                         padding: const EdgeInsets.symmetric(
+  //                                             horizontal: 16, vertical: 10),
+  //                                         decoration: BoxDecoration(
+  //                                           color: Colors.grey[50],
+  //                                           borderRadius:
+  //                                               BorderRadius.circular(12),
+  //                                           border: Border.all(
+  //                                             color: Colors.grey[200]!,
+  //                                             width: 1,
+  //                                           ),
+  //                                         ),
+  //                                         child: Row(
+  //                                           children: [
+  //                                             Container(
+  //                                               padding:
+  //                                                   const EdgeInsets.all(6),
+  //                                               decoration: BoxDecoration(
+  //                                                 color: AppColors.primary
+  //                                                     .withOpacity(0.1),
+  //                                                 borderRadius:
+  //                                                     BorderRadius.circular(8),
+  //                                               ),
+  //                                               child: Icon(
+  //                                                 Icons.shopping_bag_outlined,
+  //                                                 color: AppColors.primary,
+  //                                                 size: w * .06,
+  //                                               ),
+  //                                             ),
+  //                                             const SizedBox(width: 12),
+  //                                             Expanded(
+  //                                               child: Column(
+  //                                                 crossAxisAlignment:
+  //                                                     CrossAxisAlignment.start,
+  //                                                 children: [
+  //                                                   Text(
+  //                                                     'Total Products',
+  //                                                     style: TextStyle(
+  //                                                       color: Colors.grey[600],
+  //                                                       fontSize: w * .045,
+  //                                                       fontFamily: 'Segoe UI',
+  //                                                       fontWeight:
+  //                                                           FontWeight.w500,
+  //                                                     ),
+  //                                                   ),
+  //                                                   Text(
+  //                                                     '$totalProductCount items available',
+  //                                                     style: TextStyle(
+  //                                                       color:
+  //                                                           AppColors.primary,
+  //                                                       fontSize: w * .039,
+  //                                                       fontFamily: 'Segoe UI',
+  //                                                       fontWeight:
+  //                                                           FontWeight.bold,
+  //                                                     ),
+  //                                                   ),
+  //                                                 ],
+  //                                               ),
+  //                                             ),
+  //                                           ],
+  //                                         ),
+  //                                       ),
+  //                                     ),
+  //                                   ],
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                             const SizedBox(height: 5),
+  //                             allProducts.isEmpty
+  //                                 ? Flexible(
+  //                                     child: Container(
+  //                                       width: w,
+  //                                       height: h / 1.1,
+  //                                       padding: const EdgeInsets.symmetric(
+  //                                           horizontal: 20),
+  //                                       child: Column(
+  //                                         mainAxisAlignment:
+  //                                             MainAxisAlignment.center,
+  //                                         children: [
+  //                                           // Illustration/Icon
+  //                                           Container(
+  //                                             width: w * 0.3,
+  //                                             height: w * 0.3,
+  //                                             decoration: BoxDecoration(
+  //                                               color: AppColors.background,
+  //                                               shape: BoxShape.circle,
+  //                                               boxShadow: [
+  //                                                 BoxShadow(
+  //                                                   color: Colors.grey
+  //                                                       .withOpacity(0.1),
+  //                                                   spreadRadius: 2,
+  //                                                   blurRadius: 10,
+  //                                                   offset: const Offset(0, 4),
+  //                                                 ),
+  //                                               ],
+  //                                             ),
+  //                                             child: Icon(
+  //                                               Icons.search_off_rounded,
+  //                                               size: w * 0.15,
+  //                                               color: AppColors.primary
+  //                                                   .withOpacity(0.7),
+  //                                             ),
+  //                                           ),
+  //                                           SizedBox(height: h * 0.03),
+  //
+  //                                           // Main Title
+  //                                           Text(
+  //                                             'No Products Found',
+  //                                             style: TextStyle(
+  //                                               fontSize: w * 0.06,
+  //                                               fontFamily:
+  //                                                   'Futura BdCn BT Bold',
+  //                                               fontWeight: FontWeight.w600,
+  //                                               color: AppColors.text,
+  //                                             ),
+  //                                             textAlign: TextAlign.center,
+  //                                           ),
+  //                                           SizedBox(height: h * 0.015),
+  //
+  //                                           // Subtitle
+  //                                           Text(
+  //                                             'We couldn\'t find any products for this brand.\nPlease try a different search or browse other categories.',
+  //                                             style: TextStyle(
+  //                                               fontSize: w * 0.035,
+  //                                               fontFamily:
+  //                                                   'Futura BdCn BT Bold',
+  //                                               fontWeight: FontWeight.w300,
+  //                                               color: Colors.grey[600],
+  //                                               height: 1.4,
+  //                                             ),
+  //                                             textAlign: TextAlign.center,
+  //                                           ),
+  //                                           SizedBox(height: h * 0.04),
+  //
+  //                                           // Action Button
+  //                                           GestureDetector(
+  //                                             onTap: () =>
+  //                                                 Navigator.pop(context),
+  //                                             child: Container(
+  //                                               padding: EdgeInsets.symmetric(
+  //                                                 horizontal: w * 0.06,
+  //                                                 vertical: h * 0.018,
+  //                                               ),
+  //                                               decoration: BoxDecoration(
+  //                                                 color: AppColors.primary,
+  //                                                 borderRadius:
+  //                                                     BorderRadius.circular(25),
+  //                                                 boxShadow: [
+  //                                                   BoxShadow(
+  //                                                     color: AppColors.primary
+  //                                                         .withOpacity(0.3),
+  //                                                     spreadRadius: 1,
+  //                                                     blurRadius: 8,
+  //                                                     offset:
+  //                                                         const Offset(0, 2),
+  //                                                   ),
+  //                                                 ],
+  //                                               ),
+  //                                               child: Row(
+  //                                                 mainAxisSize:
+  //                                                     MainAxisSize.min,
+  //                                                 children: [
+  //                                                   Icon(
+  //                                                     Icons
+  //                                                         .arrow_back_ios_rounded,
+  //                                                     size: w * 0.035,
+  //                                                     color: Colors.white,
+  //                                                   ),
+  //                                                   SizedBox(width: w * 0.015),
+  //                                                   Text(
+  //                                                     'Go Back',
+  //                                                     style: TextStyle(
+  //                                                       fontSize: w * 0.035,
+  //                                                       fontFamily:
+  //                                                           'Futura BdCn BT Bold',
+  //                                                       fontWeight:
+  //                                                           FontWeight.w500,
+  //                                                       color: Colors.white,
+  //                                                     ),
+  //                                                   ),
+  //                                                 ],
+  //                                               ),
+  //                                             ),
+  //                                           ),
+  //                                         ],
+  //                                       ),
+  //                                     ),
+  //                                   )
+  //                                 : allProducts.isNotEmpty
+  //                                     ? Expanded(
+  //                                         child: Align(
+  //                                           alignment: Alignment.topCenter,
+  //                                           child: Scrollbar(
+  //                                             thickness: 4,
+  //                                             thumbVisibility: true,
+  //                                             trackVisibility: true,
+  //                                             interactive: true,
+  //                                             controller: _scrollController,
+  //                                             child: NotificationListener<
+  //                                                 ScrollNotification>(
+  //                                               onNotification: (notification) {
+  //                                                 if (notification
+  //                                                         is ScrollUpdateNotification &&
+  //                                                     notification
+  //                                                             .metrics.axis ==
+  //                                                         Axis.vertical) {
+  //                                                   final bool isUserDrag =
+  //                                                       notification
+  //                                                               .dragDetails !=
+  //                                                           null;
+  //
+  //                                                   // Check if user has seen the last product
+  //                                                   if (notification
+  //                                                           .metrics.pixels >=
+  //                                                       notification.metrics
+  //                                                               .maxScrollExtent -
+  //                                                           20) {
+  //                                                     _hasUserSeenLastProduct =
+  //                                                         true;
+  //                                                   }
+  //
+  //                                                   if (isUserDrag &&
+  //                                                       _isUserActivelyScrolling &&
+  //                                                       _hasUserSeenLastProduct &&
+  //                                                       hasMoreData &&
+  //                                                       !_isLoadingMore &&
+  //                                                       notification.metrics
+  //                                                               .pixels >=
+  //                                                           notification.metrics
+  //                                                                   .maxScrollExtent -
+  //                                                               10) {
+  //                                                     // Very strict threshold
+  //                                                     log('NotificationListener: User at very bottom and has seen last product - triggering API call');
+  //                                                     _loadMoreProducts();
+  //                                                   }
+  //                                                 }
+  //                                                 return false; // allow other listeners to receive notifications
+  //                                               },
+  //                                               child: SingleChildScrollView(
+  //                                                 controller: _scrollController,
+  //                                                 child: Padding(
+  //                                                   padding: const EdgeInsets
+  //                                                       .symmetric(
+  //                                                       horizontal: 10.0),
+  //                                                   child: Wrap(
+  //                                                     runSpacing: 10,
+  //                                                     children: List.generate(
+  //                                                       allProducts.length,
+  //                                                       (index) => Padding(
+  //                                                         padding:
+  //                                                             const EdgeInsets
+  //                                                                 .symmetric(
+  //                                                                 horizontal:
+  //                                                                     4.0),
+  //                                                         child:
+  //                                                             GestureDetector(
+  //                                                           onTap: () {
+  //                                                             Navigator.push(
+  //                                                               context,
+  //                                                               MaterialPageRoute(
+  //                                                                   builder: (context) => ProductDetailsScreen(
+  //                                                                       productId:
+  //                                                                           allProducts[index]
+  //                                                                               .productId,
+  //                                                                       brandName:
+  //                                                                           widget.brandName ??
+  //                                                                               'Unknown Brand',
+  //                                                                       productMPN:
+  //                                                                           allProducts[index]
+  //                                                                               .productMpn,
+  //                                                                       productImage:
+  //                                                                           allProducts[index]
+  //                                                                               .productImage,
+  //                                                                       productPrice:
+  //                                                                           allProducts[index].vendorpricePrice)),
+  //                                                             );
+  //                                                           },
+  //                                                           child: Container(
+  //                                                             width: w * .45,
+  //                                                             // height: h * .48,
+  //                                                             decoration:
+  //                                                                 BoxDecoration(
+  //                                                               color: Colors
+  //                                                                   .white,
+  //                                                               borderRadius:
+  //                                                                   BorderRadius
+  //                                                                       .circular(
+  //                                                                           16),
+  //                                                               boxShadow: [
+  //                                                                 BoxShadow(
+  //                                                                   color: Colors
+  //                                                                       .grey
+  //                                                                       .withOpacity(
+  //                                                                           0.1),
+  //                                                                   spreadRadius:
+  //                                                                       2,
+  //                                                                   blurRadius:
+  //                                                                       8,
+  //                                                                   offset:
+  //                                                                       const Offset(
+  //                                                                           0,
+  //                                                                           4),
+  //                                                                 ),
+  //                                                               ],
+  //                                                             ),
+  //                                                             child: Column(
+  //                                                               crossAxisAlignment:
+  //                                                                   CrossAxisAlignment
+  //                                                                       .start,
+  //                                                               children: [
+  //                                                                 Container(
+  //                                                                   width: double
+  //                                                                       .infinity,
+  //                                                                   height:
+  //                                                                       w * .45,
+  //                                                                   decoration:
+  //                                                                       const BoxDecoration(
+  //                                                                     borderRadius:
+  //                                                                         BorderRadius
+  //                                                                             .only(
+  //                                                                       topLeft:
+  //                                                                           Radius.circular(16),
+  //                                                                       topRight:
+  //                                                                           Radius.circular(16),
+  //                                                                     ),
+  //                                                                   ),
+  //                                                                   child:
+  //                                                                       ClipRRect(
+  //                                                                     borderRadius:
+  //                                                                         const BorderRadius
+  //                                                                             .only(
+  //                                                                       topLeft:
+  //                                                                           Radius.circular(0),
+  //                                                                       topRight:
+  //                                                                           Radius.circular(0),
+  //                                                                     ),
+  //                                                                     child: Image
+  //                                                                         .network(
+  //                                                                       _getProperImageUrl(
+  //                                                                           allProducts[index].productImage),
+  //                                                                       fit: BoxFit
+  //                                                                           .contain,
+  //                                                                       // Memory-efficient image loading
+  //                                                                       cacheWidth: (w *
+  //                                                                               .45 *
+  //                                                                               MediaQuery.of(context).devicePixelRatio)
+  //                                                                           .round(),
+  //                                                                       cacheHeight: (w *
+  //                                                                               .45 *
+  //                                                                               MediaQuery.of(context).devicePixelRatio)
+  //                                                                           .round(),
+  //                                                                       errorBuilder: (context,
+  //                                                                           error,
+  //                                                                           stackTrace) {
+  //                                                                         return Container(
+  //                                                                           color:
+  //                                                                               Colors.grey[200],
+  //                                                                           child:
+  //                                                                               Icon(
+  //                                                                             Icons.image_not_supported_outlined,
+  //                                                                             size: w * .08,
+  //                                                                             color: Colors.grey[400],
+  //                                                                           ),
+  //                                                                         );
+  //                                                                       },
+  //                                                                     ),
+  //                                                                   ),
+  //                                                                 ),
+  //
+  //                                                                 // Product Details
+  //                                                                 Padding(
+  //                                                                   padding:
+  //                                                                       const EdgeInsets
+  //                                                                           .all(
+  //                                                                           16),
+  //                                                                   child:
+  //                                                                       Column(
+  //                                                                     crossAxisAlignment:
+  //                                                                         CrossAxisAlignment
+  //                                                                             .start,
+  //                                                                     children: [
+  //                                                                       // Product Name
+  //                                                                       SizedBox(
+  //                                                                         height:
+  //                                                                             w * .25,
+  //                                                                         child:
+  //                                                                             Text(
+  //                                                                           allProducts[index].productName.isEmpty
+  //                                                                               ? 'Product Name Not Available'
+  //                                                                               : allProducts[index].productName,
+  //                                                                           maxLines:
+  //                                                                               4,
+  //                                                                           overflow:
+  //                                                                               TextOverflow.ellipsis,
+  //                                                                           style:
+  //                                                                               TextStyle(
+  //                                                                             color: Colors.grey[800],
+  //                                                                             fontFamily: 'Segoe UI',
+  //                                                                             fontSize: 18,
+  //                                                                             height: 1.2,
+  //                                                                             fontWeight: FontWeight.w600,
+  //                                                                           ),
+  //                                                                         ),
+  //                                                                       ),
+  //                                                                       const SizedBox(
+  //                                                                           height:
+  //                                                                               0),
+  //                                                                       // MPN
+  //                                                                       SizedBox(
+  //                                                                         height:
+  //                                                                             h * .06,
+  //                                                                         child:
+  //                                                                             Text(
+  //                                                                           'MPN: #${allProducts[index].productMpn}',
+  //                                                                           style:
+  //                                                                               const TextStyle(
+  //                                                                             fontFamily: 'Segoe UI',
+  //                                                                             fontSize: 16,
+  //                                                                           ),
+  //                                                                           overflow:
+  //                                                                               TextOverflow.ellipsis,
+  //                                                                           maxLines:
+  //                                                                               2,
+  //                                                                         ),
+  //                                                                       ),
+  //                                                                       const SizedBox(
+  //                                                                           height:
+  //                                                                               13),
+  //                                                                       // Price Section
+  //                                                                       Container(
+  //                                                                         //height: h * .09,
+  //                                                                         decoration:
+  //                                                                             BoxDecoration(
+  //                                                                           borderRadius:
+  //                                                                               BorderRadius.circular(10),
+  //                                                                         ),
+  //                                                                         child:
+  //                                                                             Column(
+  //                                                                           crossAxisAlignment:
+  //                                                                               CrossAxisAlignment.start,
+  //                                                                           children: [
+  //                                                                             // Price Row
+  //                                                                             Row(
+  //                                                                               mainAxisAlignment: MainAxisAlignment.start,
+  //                                                                               children: [
+  //                                                                                 Text(
+  //                                                                                   '\$${allProducts[index].vendorpricePrice}',
+  //                                                                                   style: const TextStyle(
+  //                                                                                     color: Colors.black,
+  //                                                                                     fontFamily: 'Segoe UI',
+  //                                                                                     fontSize: 20,
+  //                                                                                     fontWeight: FontWeight.bold,
+  //                                                                                   ),
+  //                                                                                 ),
+  //                                                                               ],
+  //                                                                             ),
+  //                                                                             const SizedBox(height: 10),
+  //                                                                             // Vendor Count Row
+  //                                                                             Row(
+  //                                                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                                                                               children: [
+  //                                                                                 Container(
+  //                                                                                   padding: EdgeInsets.symmetric(
+  //                                                                                     horizontal: w * .02,
+  //                                                                                     vertical: w * .015,
+  //                                                                                   ),
+  //                                                                                   decoration: BoxDecoration(
+  //                                                                                     gradient: LinearGradient(
+  //                                                                                       colors: [
+  //                                                                                         AppColors.primary,
+  //                                                                                         AppColors.primary.withOpacity(0.8),
+  //                                                                                       ],
+  //                                                                                     ),
+  //                                                                                     borderRadius: BorderRadius.circular(8),
+  //                                                                                     boxShadow: [
+  //                                                                                       BoxShadow(
+  //                                                                                         color: AppColors.primary.withOpacity(0.3),
+  //                                                                                         spreadRadius: 1,
+  //                                                                                         blurRadius: 3,
+  //                                                                                         offset: const Offset(0, 1),
+  //                                                                                       ),
+  //                                                                                     ],
+  //                                                                                   ),
+  //                                                                                   child: Row(
+  //                                                                                     mainAxisSize: MainAxisSize.min,
+  //                                                                                     children: [
+  //                                                                                       Icon(
+  //                                                                                         Icons.storefront_outlined,
+  //                                                                                         color: Colors.white,
+  //                                                                                         size: 18,
+  //                                                                                       ),
+  //                                                                                       const SizedBox(width: 2),
+  //                                                                                       Text(
+  //                                                                                         '${allProducts[index].vendorIdCount}',
+  //                                                                                         style: TextStyle(
+  //                                                                                           color: Colors.white,
+  //                                                                                           fontSize: 19,
+  //                                                                                           fontWeight: FontWeight.w500,
+  //                                                                                         ),
+  //                                                                                       ),
+  //                                                                                       const SizedBox(width: 2),
+  //                                                                                       Text(
+  //                                                                                         'vendors',
+  //                                                                                         style: TextStyle(
+  //                                                                                           color: Colors.white.withOpacity(0.9),
+  //                                                                                           fontSize: 20,
+  //                                                                                           fontWeight: FontWeight.w500,
+  //                                                                                         ),
+  //                                                                                         maxLines: 1,
+  //                                                                                         overflow: TextOverflow.ellipsis,
+  //                                                                                       ),
+  //                                                                                     ],
+  //                                                                                   ),
+  //                                                                                 ),
+  //                                                                               ],
+  //                                                                             ),
+  //                                                                           ],
+  //                                                                         ),
+  //                                                                       ),
+  //                                                                     ],
+  //                                                                   ),
+  //                                                                 ),
+  //                                                               ],
+  //                                                             ),
+  //                                                           ),
+  //                                                         ),
+  //                                                       ),
+  //                                                     ),
+  //                                                   ),
+  //                                                 ),
+  //                                               ),
+  //                                             ),
+  //                                           ),
+  //                                         ),
+  //                                       )
+  //                                     : const SizedBox(),
+  //                             const SizedBox(height: 10),
+  //                             // Loading indicator for more products
+  //                             if (_isLoadingMore && allProducts.isNotEmpty)
+  //                               Container(
+  //                                 width: double.infinity,
+  //                                 padding:
+  //                                     const EdgeInsets.symmetric(vertical: 20),
+  //                                 child: const Center(
+  //                                   child: Column(
+  //                                     children: [
+  //                                       CircularProgressIndicator(
+  //                                         valueColor:
+  //                                             AlwaysStoppedAnimation<Color>(
+  //                                                 AppColors.primary),
+  //                                       ),
+  //                                     ],
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                             // Show scroll progress indicator - removed due to linter issues
+  //                             // Show "No more products" message when all products are loaded
+  //                           ],
+  //                         ),
+  //                       ),
+  //                       Positioned(
+  //                         left: 0,
+  //                         right: 0,
+  //                         bottom: 0,
+  //                         child: Builder(
+  //                           builder: (BuildContext context) {
+  //                             final MediaQueryData mediaQuery =
+  //                                 MediaQuery.of(context);
+  //                             final double bottomPadding =
+  //                                 mediaQuery.padding.bottom;
+  //                             if (bottomPadding > 0) {
+  //                               return Container(
+  //                                 height: bottomPadding,
+  //                                 color: Colors.blueGrey,
+  //                               );
+  //                             } else {
+  //                               return const SizedBox.shrink();
+  //                             }
+  //                           },
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ));
 
   String _getProperImageUrl(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {

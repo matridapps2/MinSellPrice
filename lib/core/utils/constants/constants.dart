@@ -2,9 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/loging_page/loging_page.dart';
-import 'package:minsellprice/screens/register_page/register_page.dart';
-import 'package:path/path.dart';
-
 import 'colors.dart';
 
 class Constants {
@@ -91,36 +88,36 @@ class Constants {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            'Don\'t have an account?',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const RegisterPage(),
-                ),
-              );
-            },
-            child: const Text(
-              'Create Account',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 }
+// const SizedBox(height: 24),
+// Text(
+//   'Don\'t have an account?',
+//   style: TextStyle(
+//     fontSize: 14,
+//     color: Colors.grey[500],
+//   ),
+// ),
+// const SizedBox(height: 8),
+// GestureDetector(
+//   onTap: () {
+//     Navigator.pushReplacement(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => const RegisterPage(),
+//       ),
+//     );
+//   },
+//   child: const Text(
+//     'Create Account',
+//     style: TextStyle(
+//       fontSize: 16,
+//       fontWeight: FontWeight.w600,
+//       color: AppColors.primary,
+//       decoration: TextDecoration.underline,
+//     ),
+//   ),
+// ),

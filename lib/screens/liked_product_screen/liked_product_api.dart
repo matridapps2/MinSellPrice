@@ -780,451 +780,254 @@ class _LikedProductScreen extends State<LikedProductScreen> {
                                             ),
                                           ),
                                         ),
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 15, horizontal: 16),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              Colors.grey[100]!,
-                                              Colors.grey[200]!,
+                                      // Pagination section - only show if there are multiple pages
+                                      if (totalProductCount > itemsPerPage)
+                                        Container(
+                                          width: double.infinity,
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 16),
+                                          padding: const EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.grey
+                                                    .withOpacity(0.1),
+                                                spreadRadius: 1,
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
                                             ],
                                           ),
-                                          border: Border(
-                                            top: BorderSide(
-                                                color: Colors.grey[300]!,
-                                                width: 1),
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.grey.withOpacity(0.1),
-                                              spreadRadius: 1,
-                                              blurRadius: 3,
-                                              offset: const Offset(0, -1),
-                                            ),
-                                          ],
-                                        ),
-                                        child: totalProductCount > itemsPerPage
-                                            ? Column(
-                                                children: [
-                                                  // Page Counter
-                                                  Container(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
+                                          child: Column(
+                                            children: [
+                                              // Page Counter
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
                                                         horizontal: 16,
                                                         vertical: 8),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              20),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.grey
-                                                              .withOpacity(0.2),
-                                                          spreadRadius: 1,
-                                                          blurRadius: 4,
-                                                          offset: const Offset(
-                                                              0, 2),
-                                                        ),
-                                                      ],
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primary
+                                                      .withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.pageview,
+                                                      size: 18,
+                                                      color: AppColors.primary,
                                                     ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Text(
-                                                          'Page ${currentPage + 1} of $totalPages',
-                                                          style: TextStyle(
-                                                            fontSize: w * .039,
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                            color: Colors
-                                                                .grey[800],
-                                                            letterSpacing: 0.5,
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      'Page ${currentPage + 1} of $totalPages',
+                                                      style: TextStyle(
+                                                        fontSize: w * .04,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color:
+                                                            AppColors.primary,
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 20),
+                                              // Navigation Buttons
+                                              Row(
+                                                children: [
+                                                  // Previous Button
+                                                  Expanded(
+                                                    child: Container(
+                                                      height: 48,
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                              right: 8),
+                                                      child: ElevatedButton(
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              currentPage == 0
+                                                                  ? Colors
+                                                                      .grey[200]
+                                                                  : Colors
+                                                                      .white,
+                                                          foregroundColor:
+                                                              currentPage == 0
+                                                                  ? Colors
+                                                                      .grey[500]
+                                                                  : AppColors
+                                                                      .primary,
+                                                          side: BorderSide(
+                                                            color: currentPage ==
+                                                                    0
+                                                                ? Colors
+                                                                    .grey[300]!
+                                                                : AppColors
+                                                                    .primary,
+                                                            width: 1.5,
                                                           ),
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 8),
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 4),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: AppColors
-                                                                .primary
-                                                                .withOpacity(
-                                                                    0.1),
+                                                          shape:
+                                                              RoundedRectangleBorder(
                                                             borderRadius:
                                                                 BorderRadius
                                                                     .circular(
                                                                         12),
                                                           ),
-                                                          child: Text(
-                                                            '$totalPages total',
-                                                            style: TextStyle(
-                                                              fontSize:
-                                                                  w * .039,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              color: AppColors
-                                                                  .primary,
-                                                            ),
-                                                          ),
+                                                          elevation:
+                                                              currentPage == 0
+                                                                  ? 0
+                                                                  : 2,
                                                         ),
-                                                      ],
+                                                        onPressed:
+                                                            currentPage == 0
+                                                                ? null
+                                                                : () {
+                                                                    setState(
+                                                                        () {
+                                                                      currentPage--;
+                                                                      _updateCurrentPageDisplay();
+                                                                    });
+                                                                  },
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .arrow_back_ios,
+                                                              size: 16,
+                                                              color: currentPage ==
+                                                                      0
+                                                                  ? Colors
+                                                                      .grey[500]
+                                                                  : AppColors
+                                                                      .primary,
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 6),
+                                                            Text(
+                                                              'Previous',
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    w * .035,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 16),
-                                                  // Navigation Buttons
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: <Widget>[
-                                                      // Previous Button
-                                                      Expanded(
-                                                        child: Container(
-                                                          height: 50,
-                                                          margin:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  right: 8),
-                                                          child: ElevatedButton(
-                                                            style: ButtonStyle(
-                                                              backgroundColor:
-                                                                  MaterialStateProperty
-                                                                      .resolveWith<
-                                                                          Color>(
-                                                                (Set<MaterialState>
-                                                                    states) {
-                                                                  if (states.contains(
-                                                                      MaterialState
-                                                                          .pressed)) {
-                                                                    return AppColors
-                                                                        .primary
-                                                                        .withOpacity(
-                                                                            0.8);
-                                                                  }
-                                                                  return currentPage ==
-                                                                          0
-                                                                      ? Colors.grey[
-                                                                          300]!
-                                                                      : Colors
-                                                                          .white;
-                                                                },
-                                                              ),
-                                                              foregroundColor:
-                                                                  MaterialStateProperty
-                                                                      .resolveWith<
-                                                                          Color>(
-                                                                (Set<MaterialState>
-                                                                    states) {
-                                                                  return currentPage ==
-                                                                          0
-                                                                      ? Colors.grey[
-                                                                          500]!
-                                                                      : AppColors
-                                                                          .primary;
-                                                                },
-                                                              ),
-                                                              side: MaterialStateProperty
-                                                                  .resolveWith<
-                                                                      BorderSide>(
-                                                                (Set<MaterialState>
-                                                                    states) {
-                                                                  return currentPage ==
-                                                                          0
-                                                                      ? BorderSide(
-                                                                          color: Colors.grey[
-                                                                              300]!)
-                                                                      : BorderSide(
-                                                                          color: AppColors
-                                                                              .primary,
-                                                                          width:
-                                                                              2);
-                                                                },
-                                                              ),
-                                                              shape: MaterialStateProperty
-                                                                  .resolveWith<
-                                                                      OutlinedBorder>(
-                                                                (states) =>
-                                                                    RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              12),
-                                                                ),
-                                                              ),
-                                                              elevation:
-                                                                  MaterialStateProperty
-                                                                      .resolveWith<
-                                                                          double>(
-                                                                (Set<MaterialState>
-                                                                    states) {
-                                                                  if (states.contains(
-                                                                      MaterialState
-                                                                          .pressed)) {
-                                                                    return 2;
-                                                                  }
-                                                                  return currentPage ==
-                                                                          0
-                                                                      ? 0
-                                                                      : 3;
-                                                                },
-                                                              ),
-                                                              shadowColor: MaterialStateProperty
-                                                                  .all(AppColors
-                                                                      .primary
-                                                                      .withOpacity(
-                                                                          0.3)),
-                                                            ),
-                                                            onPressed:
-                                                                currentPage == 0
-                                                                    ? null
-                                                                    : () {
-                                                                        setState(
-                                                                            () {
-                                                                          currentPage--;
-                                                                          _updateCurrentPageDisplay();
-                                                                        });
-                                                                      },
-                                                            child: Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                Icon(
-                                                                  Icons
-                                                                      .arrow_back_ios,
-                                                                  size: 18,
-                                                                  color: currentPage ==
-                                                                          0
-                                                                      ? Colors.grey[
-                                                                          500]
-                                                                      : AppColors
-                                                                          .primary,
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 6),
-                                                                Text(
-                                                                  'Previous',
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontSize:
-                                                                        w * .035,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w700,
-                                                                    letterSpacing:
-                                                                        0.5,
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
+                                                  // Next Button
+                                                  Expanded(
+                                                    child: Container(
+                                                      height: 48,
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                              left: 8),
+                                                      child: ElevatedButton(
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              (currentPage +
+                                                                          1) >=
+                                                                      totalPages
+                                                                  ? Colors
+                                                                      .grey[200]
+                                                                  : AppColors
+                                                                      .primary,
+                                                          foregroundColor:
+                                                              (currentPage +
+                                                                          1) >=
+                                                                      totalPages
+                                                                  ? Colors
+                                                                      .grey[500]
+                                                                  : Colors
+                                                                      .white,
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
                                                           ),
+                                                          elevation:
+                                                              (currentPage +
+                                                                          1) >=
+                                                                      totalPages
+                                                                  ? 0
+                                                                  : 3,
+                                                        ),
+                                                        onPressed:
+                                                            (currentPage + 1) >=
+                                                                    totalPages
+                                                                ? null
+                                                                : () async {
+                                                                    _scrollController.animateTo(
+                                                                        0,
+                                                                        duration: const Duration(
+                                                                            milliseconds:
+                                                                                500),
+                                                                        curve: Curves
+                                                                            .easeInOut);
+
+                                                                    setState(
+                                                                        () {
+                                                                      currentPage++;
+                                                                      _updateCurrentPageDisplay();
+                                                                    });
+                                                                  },
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Text(
+                                                              'Next',
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    w * .035,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 6),
+                                                            Icon(
+                                                              Icons
+                                                                  .arrow_forward_ios,
+                                                              size: 16,
+                                                              color: (currentPage +
+                                                                          1) >=
+                                                                      totalPages
+                                                                  ? Colors
+                                                                      .grey[500]
+                                                                  : Colors
+                                                                      .white,
+                                                            ),
+                                                          ],
                                                         ),
                                                       ),
-
-                                                      // Next Button
-                                                      Expanded(
-                                                        child: Container(
-                                                          height: 50,
-                                                          margin:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  left: 8),
-                                                          child: ElevatedButton(
-                                                            style: ButtonStyle(
-                                                              backgroundColor:
-                                                                  MaterialStateProperty
-                                                                      .resolveWith<
-                                                                          Color>(
-                                                                (Set<MaterialState>
-                                                                    states) {
-                                                                  if (states.contains(
-                                                                      MaterialState
-                                                                          .pressed)) {
-                                                                    return AppColors
-                                                                        .primary
-                                                                        .withOpacity(
-                                                                            0.8);
-                                                                  }
-                                                                  return (currentPage +
-                                                                              1) >=
-                                                                          totalPages
-                                                                      ? Colors.grey[
-                                                                          300]!
-                                                                      : Colors
-                                                                          .white;
-                                                                },
-                                                              ),
-                                                              foregroundColor:
-                                                                  MaterialStateProperty
-                                                                      .resolveWith<
-                                                                          Color>(
-                                                                (Set<MaterialState>
-                                                                    states) {
-                                                                  return (currentPage +
-                                                                              1) >=
-                                                                          totalPages
-                                                                      ? Colors.grey[
-                                                                          500]!
-                                                                      : AppColors
-                                                                          .primary;
-                                                                },
-                                                              ),
-                                                              side: MaterialStateProperty
-                                                                  .resolveWith<
-                                                                      BorderSide>(
-                                                                (Set<MaterialState>
-                                                                    states) {
-                                                                  return (currentPage +
-                                                                              1) >=
-                                                                          totalPages
-                                                                      ? BorderSide(
-                                                                          color: Colors.grey[
-                                                                              300]!)
-                                                                      : BorderSide(
-                                                                          color: AppColors
-                                                                              .primary,
-                                                                          width:
-                                                                              2);
-                                                                },
-                                                              ),
-                                                              shape: MaterialStateProperty
-                                                                  .resolveWith<
-                                                                      OutlinedBorder>(
-                                                                (states) =>
-                                                                    RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              12),
-                                                                ),
-                                                              ),
-                                                              elevation:
-                                                                  MaterialStateProperty
-                                                                      .resolveWith<
-                                                                          double>(
-                                                                (Set<MaterialState>
-                                                                    states) {
-                                                                  if (states.contains(
-                                                                      MaterialState
-                                                                          .pressed)) {
-                                                                    return 2;
-                                                                  }
-                                                                  return (currentPage +
-                                                                              1) >=
-                                                                          totalPages
-                                                                      ? 0
-                                                                      : 3;
-                                                                },
-                                                              ),
-                                                              shadowColor: MaterialStateProperty
-                                                                  .all(AppColors
-                                                                      .primary
-                                                                      .withOpacity(
-                                                                          0.3)),
-                                                            ),
-                                                            onPressed:
-                                                                (currentPage +
-                                                                            1) >=
-                                                                        totalPages
-                                                                    ? null
-                                                                    : () async {
-                                                                        _scrollController.animateTo(
-                                                                            0,
-                                                                            duration:
-                                                                                const Duration(milliseconds: 500),
-                                                                            curve: Curves.easeInOut);
-
-                                                                        // Check if we need to load more data
-                                                                        if ((currentPage + 1) * itemsPerPage >=
-                                                                                allProducts.length &&
-                                                                            hasMoreData) {
-                                                                          // await _loadMoreProducts();
-                                                                        }
-
-                                                                        setState(
-                                                                            () {
-                                                                          currentPage++;
-                                                                          _updateCurrentPageDisplay();
-                                                                        });
-                                                                      },
-                                                            child: Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                Text(
-                                                                  'Next',
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontSize:
-                                                                        w * .035,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w700,
-                                                                    letterSpacing:
-                                                                        0.5,
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 6),
-                                                                Icon(
-                                                                  Icons
-                                                                      .arrow_forward_ios,
-                                                                  size: 18,
-                                                                  color: (currentPage +
-                                                                              1) >=
-                                                                          totalPages
-                                                                      ? Colors.grey[
-                                                                          500]
-                                                                      : AppColors
-                                                                          .primary,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
+                                                    ),
                                                   ),
                                                 ],
-                                              )
-                                            : const SizedBox(),
-                                      ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                     ],
-                                  ),
-                                ),
-                                Positioned(
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  child: Builder(
-                                    builder: (BuildContext context) {
-                                      final MediaQueryData mediaQuery =
-                                          MediaQuery.of(context);
-                                      final double bottomPadding =
-                                          mediaQuery.padding.bottom;
-                                      if (bottomPadding > 0) {
-                                        return Container(
-                                          height: bottomPadding,
-                                          color: Colors.blueGrey,
-                                        );
-                                      } else {
-                                        return const SizedBox.shrink();
-                                      }
-                                    },
                                   ),
                                 ),
                               ],

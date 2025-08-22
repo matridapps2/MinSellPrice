@@ -9,7 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:minsellprice/screens/dashboard_screen/notification_screen/notification_screen.dart';
+import 'package:minsellprice/screens/categories_provider/product_list_provider.dart';
+import 'package:minsellprice/screens/home_page/notification_screen/notification_screen.dart';
 import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:minsellprice/services/background_service.dart';
@@ -67,48 +68,51 @@ void main() async {
 
   // Run the app immediately with loading screen - no delays
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => my_auth.AuthProvider(),
-      child: ConnectionNotifier(
-        connectionNotificationOptions: const ConnectionNotificationOptions(
-          alignment: AlignmentDirectional.topCenter,
-        ),
-        child: MaterialApp(
-          navigatorKey: NavigationService().getNavigatorKey(),
-          title: 'FlutterMinSellPrice',
-          debugShowMaterialGrid: false,
-          debugShowCheckedModeBanner: false,
-          routes: {
-            '/notifications': (context) => const NotificationScreen(),
-          },
-          theme: ThemeData(
-            fontFamily: 'Segoe UI',
-            primarySwatch: MaterialColor(_d90310, colorCodes),
-            useMaterial3: true,
-            primaryColor: Colors.white,
-            textSelectionTheme: const TextSelectionThemeData(
-              selectionColor: Colors.blue,
-              cursorColor: Colors.blue,
+   MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => my_auth.AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+      ],
+          child: ConnectionNotifier(
+            connectionNotificationOptions: const ConnectionNotificationOptions(
+              alignment: AlignmentDirectional.topCenter,
             ),
-            cardColor: Colors.white,
-            appBarTheme:
-                AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
-            cardTheme: CardTheme(
-              color: Colors.white,
-              margin: const EdgeInsets.all(2),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            child: MaterialApp(
+              navigatorKey: NavigationService().getNavigatorKey(),
+              title: 'FlutterMinSellPrice',
+              debugShowMaterialGrid: false,
+              debugShowCheckedModeBanner: false,
+              routes: {
+                '/notifications': (context) => const NotificationScreen(),
+              },
+              theme: ThemeData(
+                fontFamily: 'Segoe UI',
+                primarySwatch: MaterialColor(_d90310, colorCodes),
+                useMaterial3: true,
+                primaryColor: Colors.white,
+                textSelectionTheme: const TextSelectionThemeData(
+                  selectionColor: Colors.blue,
+                  cursorColor: Colors.blue,
+                ),
+                cardColor: Colors.white,
+                appBarTheme:
+                    AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
+                cardTheme: CardTheme(
+                  color: Colors.white,
+                  margin: const EdgeInsets.all(2),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              home: const SafeArea(
+                top: true,
+                child: BridgeClass(),
               ),
             ),
           ),
-          home: const SafeArea(
-            top: true,
-            child: BridgeClass(),
-          ),
-        ),
-      ),
-    ),
+  ),
   );
 
   // Initialize everything in background after app is running

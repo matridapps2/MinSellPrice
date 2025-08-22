@@ -29,8 +29,9 @@ class BrandsProvider extends ChangeNotifier {
       log('Fetching brands using BrandsApi');
       final brandsData = await BrandsApi.fetchAllBrands();
 
-      _homeGardenBrands = (brandsData["Home & Garden Brands"] ?? [])
-          .whereType<Map<String, dynamic>>()
+      _homeGardenBrands = (
+          brandsData["Home & Garden Brands"] ?? []
+      ).whereType<Map<String, dynamic>>()
           .toList();
 
       _shoesApparels = (brandsData["Shoes & Apparels"] ?? [])
