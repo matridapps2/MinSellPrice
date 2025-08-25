@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
@@ -26,7 +28,11 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _getEmailPassword();
+    _initCall();
+  }
+
+  void _initCall() async {
+    await _getEmailPassword();
   }
 
   Future<void> _getEmailPassword() async {
@@ -57,8 +63,14 @@ class _LoginPageState extends State<LoginPage> {
     FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    if (email.isEmpty || password.isEmpty) {
-      _showToast('Please enter email and password');
+    if (email.isEmpty) {
+      _showToast('Please Enter Email Id');
+      return;
+    } else if (password.isEmpty) {
+      _showToast('Please Enter Password');
+      return;
+    } else if(!email.contains('@gmail.com')){
+      _showToast('Enter Correct Email Id');
       return;
     }
     setState(() => _isLoading = true);
@@ -75,20 +87,31 @@ class _LoginPageState extends State<LoginPage> {
       widget.onLoginSuccess();
 
       CommonToasts.centeredMobile(msg: 'Login successfully', context: context);
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) =>
-          HomePage(),
-        )
-      );
-
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => HomePage(),
+      ));
     } on FirebaseAuthException catch (e) {
+      log('Exception in log in ${e.code}');
       String errorMsg = 'Login failed';
-      if (e.code == 'user-not-found') {
-        errorMsg = 'No user found for that email.';
-      } else if (e.code == 'wrong-password') {
-        errorMsg = 'Wrong password provided.';
-      } else if (e.message != null) {
-        errorMsg = e.message!;
+
+      switch (e.code) {
+        case 'user-not-found':
+          errorMsg = 'No user found for that email.';
+          break;
+        case 'invalid-credential':  // worng psw
+          errorMsg = 'Wrong Password Provided.';
+          break;
+        case 'invalid-email':
+          errorMsg = 'Invalid Email Format.';
+          break;
+        case 'user-disabled':
+          errorMsg = 'This account has been disabled.';
+          break;
+        case 'too-many-requests':
+          errorMsg = 'Too many failed attempts. Please try again later.';
+          break;
+        default:
+          errorMsg = e.message ?? 'An authentication error occurred.';
       }
       _showToast(errorMsg);
     } catch (e) {
@@ -234,7 +257,8 @@ class _LoginPageState extends State<LoginPage> {
                           children: [
                             Checkbox(
                               value: _isRememberChecked,
-                              activeColor: const Color.fromARGB(255, 51, 102, 153),
+                              activeColor:
+                                  const Color.fromARGB(255, 51, 102, 153),
                               checkColor: Colors.white,
                               onChanged: (bool? newValue) {
                                 setState(() {

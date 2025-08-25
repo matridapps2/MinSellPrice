@@ -1,34 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-class BrandsSectionShimmer extends StatelessWidget {
-  final String title;
-
-  const BrandsSectionShimmer({
-    Key? key,
-    required this.title,
-  }) : super(key: key);
+class ShimmerDesign extends StatelessWidget {
+  const ShimmerDesign({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SizedBox(height: 25),
         Padding(
-          padding: const EdgeInsets.only(left: 20.0),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 27,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Segoe UI',
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 25),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          padding: EdgeInsets.symmetric(horizontal: 8.0),
           child: BrandsShimmer(),
         ),
       ],
@@ -53,7 +38,7 @@ class BrandsShimmer extends StatelessWidget {
           crossAxisSpacing: 5,
           childAspectRatio: 1,
         ),
-        itemCount: 12,
+        itemCount: 50,
         itemBuilder: (context, index) => Card(
           elevation: 0.5,
           shape: RoundedRectangleBorder(
@@ -76,7 +61,8 @@ class BrandsShimmer extends StatelessWidget {
               Expanded(
                 flex: 1,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   width: double.infinity,
                   height: 16,
                   decoration: BoxDecoration(

@@ -50,7 +50,7 @@ class _LikedProductScreen extends State<LikedProductScreen> {
   bool _isLoading = false;
   bool _isError = false;
   bool isLoggedIn = false;
-  bool _isCheckingAuth = true; // Track if we're still checking auth state
+  bool _isCheckingAuth = true;
   bool _hasInitialDataLoaded = false; // Track if initial data has been loaded
   Set<int> _unlikingProducts = {}; // Track products being unliked
 

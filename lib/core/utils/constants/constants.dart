@@ -1,16 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/screens/loging_page/loging_page.dart';
+import 'package:path/path.dart';
 import 'colors.dart';
 
 class Constants {
   Constants._();
 
-  static Widget noLoginDesign(
-    BuildContext context,
-    String text,
-  ) {
+  static Widget noLoginDesign(BuildContext context, String text,) {
     return Container(
       height: h * 0.8,
       padding: const EdgeInsets.all(24),
@@ -62,9 +61,10 @@ class Constants {
                 onTap: () async {
                   await Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => LoginPage(
-                        onLoginSuccess: () {},
-                      ),
+                      builder: (context) =>
+                          LoginPage(
+                            onLoginSuccess: () {},
+                          ),
                     ),
                   );
                 },

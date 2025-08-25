@@ -182,6 +182,7 @@ class ToastUtils {
         style: const TextStyle(
           fontFamily: 'RobotoMono',
           color: Colors.white,
+          fontSize: 17,
         ),
       ),
       toastPosition: array.Position.center,

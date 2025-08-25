@@ -6,7 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart';
-import 'package:minsellprice/widgets/category_shimmer.dart';
+import 'package:minsellprice/widgets/product_list_shimmer.dart';
 import 'package:provider/provider.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
@@ -345,30 +345,7 @@ class _ProductList extends State<ProductList> {
   }
 
   Widget _buildLoadingScaffold() {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: const Column(
-        children: [
-          SizedBox(height: 5),
-          Expanded(
-              child: SingleChildScrollView(
-                  child: BrandsSectionShimmer(title: ''))),
-        ],
-      ),
-      // Center(
-      //   child: StylishLoader(
-      //     type: LoaderType.wave,
-      //     size: 80.0,
-      //     primaryColor: AppColors.primary,
-      //     text: "Loading ${widget.brandName} products...",
-      //     textStyle: const TextStyle(
-      //       fontSize: 16,
-      //       fontWeight: FontWeight.w500,
-      //       color: AppColors.primary,
-      //     ),
-      //   ),
-      // ),
-    );
+    return ProductListLoadingShimmer(itemCount: 8);
   }
 
   Widget _buildErrorScaffold(ProductProvider productProvider) {
