@@ -12,6 +12,7 @@ import 'package:minsellprice/screens/product_list_screen/product_list.dart';
 import 'package:minsellprice/screens/search_screen/brand_search_screen.dart';
 import 'package:minsellprice/screens/search_screen/product_search_screen.dart';
 import 'package:minsellprice/widgets/category_shimmer.dart';
+import 'package:minsellprice/widgets/work_manager_status_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
 import 'package:sqflite/sqflite.dart';
@@ -157,6 +158,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ],
             ),
           ),
+
+          // WorkManager Status Widget
+          // const WorkManagerStatusWidget(),
+
           Container(
             padding: const EdgeInsets.only(top: 1, bottom: 20),
             decoration: BoxDecoration(
@@ -261,6 +266,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ],
             ),
           ),
+
           /// ALL BRANDS
           Expanded(
             child: Scrollbar(

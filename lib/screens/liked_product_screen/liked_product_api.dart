@@ -14,6 +14,7 @@ import 'package:minsellprice/screens/product_details_screen/product_details_scre
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/register_page/register_page.dart';
 import 'package:minsellprice/service_new/filter_preferences_db.dart';
+import 'package:minsellprice/widgets/product_list_shimmer.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
 
 class LikedProductScreen extends StatefulWidget {
@@ -312,19 +313,21 @@ class _LikedProductScreen extends State<LikedProductScreen> {
             : _isLoading
                 ? Scaffold(
                     appBar: AppBar(),
-                    body: const Center(
-                      child: StylishLoader(
-                        type: LoaderType.wave,
-                        size: 80.0,
-                        primaryColor: AppColors.primary,
-                        text: "Loading products...",
-                        textStyle: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ))
+                    body: const ProductListLoadingShimmer(itemCount: 5,isVisible: false)
+                    // const Center(
+                    //   child: StylishLoader(
+                    //     type: LoaderType.wave,
+                    //     size: 80.0,
+                    //     primaryColor: AppColors.primary,
+                    //     text: "Loading products...",
+                    //     textStyle: TextStyle(
+                    //       fontSize: 16,
+                    //       fontWeight: FontWeight.w500,
+                    //       color: AppColors.primary,
+                    //     ),
+                    //   ),
+                    // )
+        )
                 : _isError
                     ? Scaffold(
                         appBar: AppBar(),

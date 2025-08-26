@@ -168,7 +168,8 @@ class ProductListShimmer extends StatelessWidget {
 }
 
 class ProductCardShimmer extends StatefulWidget {
-  const ProductCardShimmer({Key? key}) : super(key: key);
+  final bool isShow;
+  const ProductCardShimmer({Key? key, required this.isShow}) : super(key: key);
 
   @override
   State<ProductCardShimmer> createState() => _ProductCardShimmerState();
@@ -176,6 +177,7 @@ class ProductCardShimmer extends StatefulWidget {
 
 class _ProductCardShimmerState extends State<ProductCardShimmer>
     with SingleTickerProviderStateMixin {
+
   late AnimationController _animationController;
   late Animation<double> _animation;
 
@@ -266,10 +268,13 @@ class _ProductCardShimmerState extends State<ProductCardShimmer>
           const SizedBox(height: 8),
 
           // MPN Shimmer
-          _buildAnimatedShimmerContainer(
-            width: w * .3,
-            height: h * .06,
-            borderRadius: 6,
+          Visibility(
+            visible: widget.isShow,
+            child: _buildAnimatedShimmerContainer(
+              width: w * .3,
+              height: h * .06,
+              borderRadius: 6,
+            ),
           ),
           const SizedBox(height: 13),
 
@@ -285,18 +290,24 @@ class _ProductCardShimmerState extends State<ProductCardShimmer>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Price Shimmer
-        _buildAnimatedShimmerContainer(
-          width: w * .25,
-          height: 24,
-          borderRadius: 6,
+        Visibility(
+          visible: widget.isShow,
+          child: _buildAnimatedShimmerContainer(
+            width: w * .25,
+            height: 24,
+            borderRadius: 6,
+          ),
         ),
         const SizedBox(height: 10),
 
         // Vendor Count Badge Shimmer
-        _buildAnimatedShimmerContainer(
-          width: w * .35,
-          height: 32,
-          borderRadius: 8,
+        Visibility(
+          visible: widget.isShow,
+          child: _buildAnimatedShimmerContainer(
+            width: w * .35,
+            height: 32,
+            borderRadius: 8,
+          ),
         ),
       ],
     );
@@ -338,20 +349,23 @@ class _ProductCardShimmerState extends State<ProductCardShimmer>
 
 class ProductListLoadingShimmer extends StatelessWidget {
   final int itemCount;
+  final bool isVisible;
 
   const ProductListLoadingShimmer({
     Key? key,
     this.itemCount = 8,
+    required this.isVisible,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildShimmerAppBar(),
+      appBar:
+      isVisible ? _buildShimmerAppBar() : null,
       body: Column(
         children: [
-          const SizedBox(height: 5),
-          _buildShimmerProductCountBadge(),
+          const SizedBox(height: 0),
+          _buildShimmerProductCountBadge() ,
           const SizedBox(height: 5),
           Expanded(
             child: _buildShimmerProductGrid(),
@@ -367,6 +381,7 @@ class ProductListLoadingShimmer extends StatelessWidget {
       toolbarHeight: .18 * w,
       backgroundColor: Colors.white,
       centerTitle: false,
+      automaticallyImplyLeading: false,
       title: _buildShimmerContainer(
         width: w * .54,
         height: 24,
@@ -438,7 +453,7 @@ class ProductListLoadingShimmer extends StatelessWidget {
         runSpacing: 10,
         children: List.generate(
           itemCount,
-          (index) => const ProductCardShimmer(),
+          (index) =>  ProductCardShimmer(isShow: isVisible),
         ),
       ),
     );

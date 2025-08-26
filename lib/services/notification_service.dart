@@ -457,4 +457,158 @@ Don't miss this amazing deal! Tap to view product details.
       );
     }
   }
+
+  ///  WELCOME DROP NOTIFICATION DESIGN
+
+  // Show welcome notification when user sets price alert
+  Future<void> showWelcomeDropNotification({
+    required String productName,
+    String? productImage,
+    required int productId,
+    String? currentPrice,
+  }) async {
+    // Create formatted title and body for welcome message
+    const title = 'Welcome to Price Alerts! 🎉';
+    final body = 'You\'ll be notified when prices drop for $productName';
+
+    // Create detailed welcome notification with product image
+    await _showDetailedWelcomeDropNotification(
+      title: title,
+      body: body,
+      productName: productName,
+      productImage: productImage,
+      productId: productId,
+      currentPrice: currentPrice,
+    );
+  }
+
+  // Show detailed welcome notification with product image
+  Future<void> _showDetailedWelcomeDropNotification({
+    required String title,
+    required String body,
+    required String productName,
+    String? productImage,
+    required int productId,
+    String? currentPrice,
+  }) async {
+    try {
+      // Store notification data for detailed view
+      _notificationData[productId.toString()] = {
+        'productName': productName,
+        'productImage': productImage,
+        'notificationType': 'welcome_alert',
+        'currentPrice': currentPrice,
+      };
+
+      // Get image file path - handles network, asset, and file images
+      String? imageFilePath;
+      if (productImage != null && productImage.isNotEmpty) {
+        log('Processing product image: $productImage');
+        imageFilePath = await _getImageFilePath(productImage);
+
+        if (imageFilePath != null) {
+          log('Image file path obtained: $imageFilePath');
+        } else {
+          log('Failed to get image file path, will use app icon');
+        }
+      }
+
+      // Create rich welcome notification content
+      final richBody = '''
+🎉 WELCOME TO PRICE ALERTS!
+
+Product: $productName
+${currentPrice != null ? 'Current Price: \$$currentPrice' : ''}
+
+You're all set! We'll notify you as soon as the price drops for this product.
+
+Tap to view product details and manage your alerts.
+''';
+
+      // Android notification with big picture style for welcome
+      final AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+        'welcome_price_alerts',
+        'Welcome Price Alerts',
+        channelDescription: 'Welcome notifications when setting price alerts',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        playSound: true,
+        styleInformation: BigPictureStyleInformation(
+          // Use product image if available, otherwise use app icon
+          imageFilePath != null
+              ? FilePathAndroidBitmap(imageFilePath)
+              : const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          largeIcon: imageFilePath != null
+              ? FilePathAndroidBitmap(imageFilePath)
+              : const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          contentTitle: 'Welcome to Price Alerts! 🎉',
+          summaryText: 'You\'ll be notified when prices drop for $productName',
+          htmlFormatContentTitle: true,
+          htmlFormatSummaryText: true,
+        ),
+        category: AndroidNotificationCategory.status,
+        visibility: NotificationVisibility.public,
+        color: const Color(0xFF4CAF50), // Green color for welcome notifications
+        ledColor: const Color(0xFF4CAF50),
+        ledOnMs: 1000,
+        ledOffMs: 500,
+        enableLights: true,
+        icon: '@mipmap/ic_launcher',
+        largeIcon: imageFilePath != null
+            ? FilePathAndroidBitmap(imageFilePath)
+            : const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      );
+
+      // iOS notification with rich content for welcome
+      final DarwinNotificationDetails iOSDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        categoryIdentifier: 'WELCOME_ALERT',
+        threadIdentifier: 'welcome_alerts',
+        attachments: imageFilePath != null
+            ? [DarwinNotificationAttachment(imageFilePath)]
+            : [],
+        interruptionLevel: InterruptionLevel.active,
+      );
+
+      // Combine platform settings
+      final NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iOSDetails,
+      );
+
+      // Generate unique notification ID
+      final notificationId =
+          DateTime.now().millisecondsSinceEpoch.remainder(100000);
+
+      // Show the welcome notification
+      await _localNotifications.show(
+        notificationId,
+        title,
+        richBody,
+        platformDetails,
+        payload:
+            'product:$productId|welcome_alert|${currentPrice ?? 'no_price'}',
+      );
+
+      log('Welcome notification sent successfully for product: $productName');
+      if (imageFilePath != null) {
+        log('Notification includes product image: $imageFilePath');
+      } else {
+        log('Notification using app icon (no product image available)');
+      }
+    } catch (e) {
+      log('Error showing welcome notification: $e');
+      // Fallback to simple notification if detailed one fails
+      await showStaticNotification(
+        title: title,
+        body: body,
+        payload: 'product:$productId|welcome_alert',
+      );
+    }
+  }
 }

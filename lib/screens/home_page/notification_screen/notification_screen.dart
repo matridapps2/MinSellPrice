@@ -185,8 +185,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
         leading: Container(
           margin: const EdgeInsets.only(left: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
+          //color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(5),
           ),
           child: IconButton(
               icon: const Icon(

@@ -98,6 +98,7 @@ dependencies:
   firebase_database: ^11.3.6
   logger: ^2.2.0
   flutter_local_notifications: ^18.0.0+1
+  workmanager: ^0.7.0
 
 dev_dependencies:
   flutter_test:

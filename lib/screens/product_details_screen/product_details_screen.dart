@@ -354,15 +354,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           Navigator.of(context).pop();
-                          await _testNotificationTap(context)
-                              .whenComplete(() async {
-                            await saveProductData(
-                              context,
-                              _emailController.text,
-                              widget.productPrice,
-                              widget.productId,
-                            );
-                          });
+
+                          // Show welcome notification after successfully setting price alert
+                          _showWelcomeNotification(context, widget.productId, widget.productPrice);
+
+                          // await _testNotificationTap(context)
+                          //     .whenComplete(() async {
+                          //   await saveProductData(
+                          //     context,
+                          //     _emailController.text,
+                          //     widget.productPrice,
+                          //     widget.productId,
+                          //   );
+                          // });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -372,7 +376,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text(
+                        child: const Text(
                           'Set Alert',
                           style: TextStyle(
                             color: Colors.white,
@@ -410,10 +414,36 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         log('Data Successfully Saved');
         preferences.setString('email_id', emailId);
         preferences.setString('brand_name', widget.brandName);
+
       } else {
         log('Error');
       }
     });
+  }
+
+  // Show welcome notification when price alert is set
+  Future<void> _showWelcomeNotification(
+      BuildContext context, int productId, String price) async {
+    try {
+      final notificationService = NotificationService();
+
+      if (!notificationService.isInitialized) {
+        await notificationService.initialize();
+      }
+
+      // Show welcome notification with product details
+      await notificationService.showWelcomeDropNotification(
+        productName: productDetails?.data?.productName ?? 'Product',
+        productImage: widget.productImage?.toString(),
+        productId: productId,
+        currentPrice: price,
+      );
+
+      log('Welcome notification sent successfully for product: $productId');
+    } catch (e) {
+      log('Error showing welcome notification: $e');
+      // Don't show error to user as this is just a welcome notification
+    }
   }
 
   Future<void> _testNotificationTap(BuildContext context) async {

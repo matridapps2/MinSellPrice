@@ -345,7 +345,7 @@ class _ProductList extends State<ProductList> {
   }
 
   Widget _buildLoadingScaffold() {
-    return ProductListLoadingShimmer(itemCount: 8);
+    return const ProductListLoadingShimmer(itemCount: 8, isVisible: true);
   }
 
   Widget _buildErrorScaffold(ProductProvider productProvider) {

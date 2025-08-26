@@ -16,12 +16,14 @@ import 'package:minsellprice/screens/categories_screen/categories_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_api.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_screen.dart';
+import 'package:minsellprice/services/notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'notification_screen/notification_screen.dart';
+import 'package:minsellprice/services/work_manager_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -45,6 +47,9 @@ class _HomePageState extends State<HomePage>
   String emailId = '';
 
   bool hasUnreadNotifications = false;
+  bool isWorkManagerRunning = false;
+  DateTime? lastApiExecution;
+  DateTime? nextApiExecution;
 
   late Database database;
 
@@ -70,26 +75,35 @@ class _HomePageState extends State<HomePage>
   void _initCall() async {
     await _initializeDatabase();
 
+    // Initialize WorkManager for background API calls
+    await _initializeWorkManager();
+
     _authStateSubscription =
         FirebaseAuth.instance.authStateChanges().listen((User? user) {
-          if (mounted) {
-            if (user != null && user.email != null) {
-              setState(() {
-                isLoggedIn = true;
-                emailId = user.email!;
-              });
-              log('Home Screen');
-              log('User Logged ?');
-              _checkNotificationStatus(emailId);
-            } else {
-              setState(() {
-                isLoggedIn = false;
-                emailId = '';
-              });
-              log('User Not Login');
-            }
-          }
-        });
+      if (mounted) {
+        if (user != null && user.email != null) {
+          setState(() {
+            isLoggedIn = true;
+            emailId = user.email!;
+          });
+          log('Home Screen');
+          log('User Logged ?');
+          _checkNotificationStatus(emailId);
+
+          // Start WorkManager task when user is logged in
+          _startWorkManagerTask();
+        } else {
+          setState(() {
+            isLoggedIn = false;
+            emailId = '';
+          });
+          log('User Not Login');
+
+          // Stop WorkManager task when user logs out
+          _stopWorkManagerTask();
+        }
+      }
+    });
   }
 
   Future<void> _checkNotificationStatus(String emailId) async {
@@ -119,6 +133,113 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  // Initialize WorkManager service
+  Future<void> _initializeWorkManager() async {
+    try {
+      await WorkManagerService.initialize();
+      log('WorkManager initialized in HomePage');
+    } catch (e) {
+      log('Error initializing WorkManager in HomePage: $e');
+    }
+  }
+
+  // Start WorkManager periodic task
+  Future<void> _startWorkManagerTask() async {
+    try {
+      await WorkManagerService.startPeriodicTask();
+      log('WorkManager task started in HomePage');
+
+      // Check status after starting
+      await Future.delayed(const Duration(seconds: 2));
+      await _checkWorkManagerStatus();
+      _showWelcomeNotification(context, 22, '454');
+    } catch (e) {
+      log('Error starting WorkManager task in HomePage: $e');
+    }
+  }
+
+  // Stop WorkManager periodic task
+  Future<void> _stopWorkManagerTask() async {
+    try {
+      await WorkManagerService.stopPeriodicTask();
+      log('WorkManager task stopped in HomePage');
+    } catch (e) {
+      log('Error stopping WorkManager task in HomePage: $e');
+    }
+  }
+
+  // Check WorkManager status and update UI
+  Future<void> _checkWorkManagerStatus() async {
+    try {
+      final isRunning = await WorkManagerService.isTaskRunning();
+      final lastExecution = await WorkManagerService.getLastExecutionTime();
+      final nextExecution = await WorkManagerService.getNextExecutionTime();
+
+      if (mounted) {
+        setState(() {
+          isWorkManagerRunning = isRunning;
+          lastApiExecution = lastExecution;
+          nextApiExecution = nextExecution;
+        });
+      }
+    } catch (e) {
+      log('Error checking WorkManager status: $e');
+    }
+  }
+
+  // Refresh WorkManager status
+  Future<void> _refreshWorkManagerStatus() async {
+    await _checkWorkManagerStatus();
+  }
+
+  // Manual test API call for debugging
+  Future<void> _manualTestApiCall() async {
+    try {
+      log('Manual API test triggered');
+
+      // Show a simple toast or snackbar to indicate the test
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Manual API test triggered - check logs for details'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // You can add actual API call logic here if needed
+      // For now, just log the action
+      log('Manual API test completed');
+    } catch (e) {
+      log('Error in manual API test: $e');
+    }
+  }
+
+  Future<void> _showWelcomeNotification(
+      BuildContext context, int productId, String price) async {
+    log('test notification');
+    try {
+      final notificationService = NotificationService();
+
+      if (!notificationService.isInitialized) {
+        await notificationService.initialize();
+      }
+
+      // Show welcome notification with product details
+      await notificationService.showWelcomeDropNotification(
+        productName: 'Product',
+        productImage: '',
+        productId: productId,
+        currentPrice: price,
+      );
+
+      log('Welcome notification sent successfully for product: $productId');
+    } catch (e) {
+      log('Error showing welcome notification: $e');
+      // Don't show error to user as this is just a welcome notification
+    }
+  }
+
   Future<void> _initializeDatabase() async {
     try {
       final db = await DatabaseHelper().database ??
@@ -138,7 +259,7 @@ class _HomePageState extends State<HomePage>
               },
               child: DashboardScreenWidget(),
             ),
-         //   LikedProduct(database: db),
+            //   LikedProduct(database: db),
             LikedProductScreen(),
             ChangeNotifierProvider(
               create: (context) {
@@ -341,6 +462,111 @@ class _HomePageState extends State<HomePage>
                           // Action Buttons
                           Row(
                             children: [
+                              // WorkManager Status Indicator
+                              // if (isLoggedIn) ...[
+                              //   Container(
+                              //     margin: const EdgeInsets.only(right: 12),
+                              //     decoration: BoxDecoration(
+                              //       color: isWorkManagerRunning
+                              //           ? Colors.green
+                              //           : Colors.orange,
+                              //       borderRadius: BorderRadius.circular(8),
+                              //       boxShadow: [
+                              //         BoxShadow(
+                              //           color: Colors.grey.withOpacity(0.1),
+                              //           spreadRadius: 1,
+                              //           blurRadius: 3,
+                              //           offset: const Offset(0, 1),
+                              //         ),
+                              //       ],
+                              //     ),
+                              //     child: Material(
+                              //       color: Colors.transparent,
+                              //       child: InkWell(
+                              //         borderRadius: BorderRadius.circular(8),
+                              //         onTap: _refreshWorkManagerStatus,
+                              //         child: Container(
+                              //           padding: const EdgeInsets.symmetric(
+                              //               horizontal: 8, vertical: 4),
+                              //           child: Row(
+                              //             mainAxisSize: MainAxisSize.min,
+                              //             children: [
+                              //               Icon(
+                              //                 isWorkManagerRunning
+                              //                     ? Icons.sync
+                              //                     : Icons.sync_disabled,
+                              //                 color: Colors.white,
+                              //                 size: 16,
+                              //               ),
+                              //               const SizedBox(width: 4),
+                              //               Text(
+                              //                 isWorkManagerRunning
+                              //                     ? 'API Active'
+                              //                     : 'API Inactive',
+                              //                 style: const TextStyle(
+                              //                   color: Colors.white,
+                              //                   fontSize: 10,
+                              //                   fontWeight: FontWeight.w600,
+                              //                 ),
+                              //               ),
+                              //             ],
+                              //           ),
+                              //         ),
+                              //       ),
+                              //     ),
+                              //   ),
+                              //
+                              //   // Manual Test Button
+                              //   Container(
+                              //     margin: const EdgeInsets.only(right: 12),
+                              //     decoration: BoxDecoration(
+                              //       color: Colors.blue,
+                              //       borderRadius: BorderRadius.circular(8),
+                              //       boxShadow: [
+                              //         BoxShadow(
+                              //           color: Colors.grey.withOpacity(0.1),
+                              //           spreadRadius: 1,
+                              //           blurRadius: 3,
+                              //           offset: const Offset(0, 1),
+                              //         ),
+                              //       ],
+                              //     ),
+                              //     child: Material(
+                              //       color: Colors.transparent,
+                              //       child: InkWell(
+                              //         borderRadius: BorderRadius.circular(8),
+                              //         onTap: () async {
+                              //           // Manually trigger API call for testing
+                              //           await _manualTestApiCall();
+                              //         },
+                              //         child: Container(
+                              //           padding: const EdgeInsets.symmetric(
+                              //               horizontal: 8, vertical: 4),
+                              //           child: Row(
+                              //             mainAxisSize: MainAxisSize.min,
+                              //             children: [
+                              //               Icon(
+                              //                 Icons.play_arrow,
+                              //                 color: Colors.white,
+                              //                 size: 16,
+                              //               ),
+                              //               const SizedBox(width: 4),
+                              //               Text(
+                              //                 'Test API',
+                              //                 style: const TextStyle(
+                              //                   color: Colors.white,
+                              //                   fontSize: 10,
+                              //                   fontWeight: FontWeight.w600,
+                              //                 ),
+                              //               ),
+                              //             ],
+                              //           ),
+                              //         ),
+                              //       ),
+                              //     ),
+                              //   ),
+                              // ],
+
                               // Notifications
                               Container(
                                 decoration: BoxDecoration(
@@ -367,7 +593,7 @@ class _HomePageState extends State<HomePage>
                                               const NotificationScreen(),
                                         ),
                                       );
-                                     await _checkNotificationStatus(emailId);
+                                      await _checkNotificationStatus(emailId);
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(10),
