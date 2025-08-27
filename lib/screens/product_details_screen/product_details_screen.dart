@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:async';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -9,6 +12,7 @@ import 'package:minsellprice/InAppBrowser.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/app.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
+import 'package:minsellprice/core/utils/constants/constants.dart';
 import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/model/product_details_model.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
@@ -18,6 +22,7 @@ import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/comparison_db.dart';
 import 'package:minsellprice/service_new/liked_preference_db.dart';
 import 'package:minsellprice/services/notification_service.dart';
+import 'package:minsellprice/services/work_manager_service.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,11 +53,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   TextEditingController _emailController = TextEditingController();
 
+  Timer? _notificationCheckTimer;
+
   bool isLoading = true;
   bool isLiked = false;
   bool isInComparison = false;
   bool _isSubscribedToPriceAlert = false;
   bool _isLoadingPriceAlert = false;
+  bool isLoggedIn = false;
+
   double _priceThreshold = 0;
 
   List<String> filterVendor = [];
@@ -77,12 +86,108 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     super.initState();
     _initCall();
     _setupAuthStateListener();
+
+    // Start background WorkManager for price monitoring
+    _startBackgroundWorkManager();
+
+    // Check for auto-triggered notifications when screen loads
+    _checkForAutoNotifications();
+
+    // Set up periodic notification check every 10 seconds while screen is active
+    _notificationCheckTimer =
+        Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (mounted) {
+        _checkForAutoNotifications();
+      }
+    });
+  }
+
+  Future<void> _startBackgroundWorkManager() async {
+    try {
+      // Initialize WorkManager if not already done
+      await WorkManagerService.initialize();
+
+      // Start the periodic task
+      await WorkManagerService.startPeriodicTask();
+
+      log('Background WorkManager started successfully');
+
+      // Check if task is running
+      final isRunning = await WorkManagerService.isTaskRunning();
+      log('WorkManager task running: $isRunning');
+
+      // Get last execution time
+      final lastExecution = await WorkManagerService.getLastExecutionTime();
+      log('Last WorkManager execution: $lastExecution');
+    } catch (e) {
+      log('Error starting background WorkManager: $e');
+    }
   }
 
   @override
   void dispose() {
     _authStateSubscription?.cancel();
+    _notificationCheckTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _getDeviceId() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      deviceId = androidInfo.id;
+      log('Android Unique ID: $deviceId');
+    } else if (Platform.isIOS) {
+      IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+      deviceId = iosInfo.identifierForVendor!;
+      log('IOS Unique ID: $deviceId');
+    }
+  }
+
+  Future<void> _checkForAutoNotifications() async {
+    log('🔍 Checking for auto-notifications...');
+
+    final notificationData =
+        await WorkManagerService.checkAutoTriggeredNotification();
+
+    if (notificationData != null && mounted) {
+      log('✅ Auto-notification found: $notificationData');
+      await _showAutoNotification(notificationData);
+      await WorkManagerService.clearAutoTriggeredNotification();
+    } else {
+      log('❌ No auto-notifications found');
+    }
+  }
+
+  Future<void> _showAutoNotification(
+      Map<String, dynamic> notificationData) async {
+    log('api load start');
+    try {
+      final notificationService = NotificationService();
+      if (!notificationService.isInitialized) {
+        await notificationService.initialize();
+      }
+
+      await notificationService.showPriceDropNotification(
+        productName: notificationData['product_name'] ?? '---',
+        oldPrice: notificationData['OldPrice'] ??
+            '0.00', // Fixed: OldPrice not old_price
+        newPrice: double.tryParse(notificationData['NewPrice'] ?? '0.00') ??
+            0.00, // Fixed: NewPrice not new_price
+        productId: int.tryParse(notificationData['product_id'] ?? '0') ?? 0,
+        productImage: notificationData['product_image'] ?? '',
+      );
+
+      CommonToasts.centeredMobile(
+        context: context,
+        msg: '🚨 Price drop detected! Notification sent automatically!',
+      );
+    } catch (e) {
+      CommonToasts.centeredMobile(
+          context: context, msg: 'Error showing auto-notification: $e');
+      log('Error showing auto-notification: $e');
+    }
   }
 
   /// Setup Firebase Auth state listener to handle login/logout events
@@ -99,12 +204,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         // If user logged in, refresh liked status
         if (user != null && user.email != null && user.email!.isNotEmpty) {
           log('User logged in, refreshing liked status');
+          setState(() {
+            isLoggedIn = true;
+          });
           await _checkIfLiked();
         } else if (user == null) {
           log('User logged out, clearing liked status');
           // Clear liked status when user logs out
           if (mounted) {
             setState(() {
+              isLoggedIn = false;
               isLiked = false;
             });
           }
@@ -115,6 +224,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   void _initCall() async {
     await _fetchProductDetails().whenComplete(() async {
+      await _getDeviceId();
       await _fetchBrandProducts();
       await _checkIfLiked();
       await _checkIfInComparison();
@@ -356,17 +466,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           Navigator.of(context).pop();
 
                           // Show welcome notification after successfully setting price alert
-                          _showWelcomeNotification(context, widget.productId, widget.productPrice);
+                          _showWelcomeNotification(
+                              context, widget.productId, widget.productPrice);
 
-                          // await _testNotificationTap(context)
-                          //     .whenComplete(() async {
-                          //   await saveProductData(
-                          //     context,
-                          //     _emailController.text,
-                          //     widget.productPrice,
-                          //     widget.productId,
-                          //   );
-                          // });
+                          await _testNotificationTap(context)
+                              .whenComplete(() async {
+                            await saveProductData(
+                                context,
+                                _emailController.text,
+                                widget.productPrice,
+                                widget.productId,
+                                deviceId);
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -396,25 +507,37 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Future<void> saveProductData(
-      BuildContext context, String emailId, String price, int productId) async {
+  Future<void> saveProductData(BuildContext context, String emailId,
+      String price, int productId, String deviceToken) async {
     log('saveProductData method running');
     log('emailId $emailId');
     log('price $price');
     log('productId $productId');
+    log('deviceId $deviceToken');
+
+    String finalDeviceID = deviceToken;
+
+    if (isLoggedIn) {
+      finalDeviceID = '';
+      log('User is logged in, setting device ID to empty string');
+    } else {
+      log('User is not logged in, using device ID: ${deviceToken}...');
+    }
+
+    log('Final DeviceID to send to API: $finalDeviceID');
 
     await BrandsApi.savePriceAlert(
             context: context,
             emailId: emailId,
             price: price,
-            productId: productId)
+            productId: productId,
+            deviceToken: finalDeviceID)
         .then((response) async {
       SharedPreferences preferences = await SharedPreferences.getInstance();
       if (response != 'error') {
         log('Data Successfully Saved');
         preferences.setString('email_id', emailId);
         preferences.setString('brand_name', widget.brandName);
-
       } else {
         log('Error');
       }
@@ -1201,6 +1324,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               _buildMoreName(),
               const SizedBox(height: 16),
               _buildMoreDesign(),
+
+              // Debug section
+              const SizedBox(height: 24),
+              _buildDebugSection(),
             ],
           ),
         ),
@@ -2180,6 +2307,513 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _processApiDataForNotifications(
+      dynamic data, String email, String deviceToken) async {
+    log('🔧 Processing API data for notifications...');
+
+    try {
+      // Process API response based on authentication status
+      if (data is List) {
+        log('🔍 Processing List response with ${data.length} items');
+
+        // Process each item in the list
+        for (int i = 0; i < data.length; i++) {
+          final item = data[i];
+          log('📦 Processing item $i: $item');
+
+          if (item is Map<String, dynamic>) {
+            await _processNotificationItem(item, deviceToken, email);
+          } else {
+            log('⚠️ Item $i is not a Map: ${item.runtimeType}');
+          }
+        }
+      } else if (data is Map<String, dynamic>) {
+        log('🔍 Processing single Map response: ${data.keys.toList()}');
+        await _processNotificationItem(data, deviceToken, email);
+      } else {
+        log('⚠️ Response is neither List nor Map, cannot process: ${data.runtimeType}');
+      }
+
+      log('✅ Data processing completed');
+    } catch (e) {
+      log('❌ Error processing API data: $e');
+    }
+  }
+
+  bool _validateNotificationData(Map<String, dynamic> data) {
+    try {
+      log('🔍 Validating notification data completeness...');
+
+      // Check required fields exist and are not empty
+      final requiredFields = [
+        'product_name',
+        'OldPrice',
+        'NewPrice',
+        'product_id',
+        'product_image'
+      ];
+
+      for (String field in requiredFields) {
+        final value = data[field];
+        if (value == null ||
+            value.toString().isEmpty ||
+            value.toString() == '---') {
+          log('❌ Validation failed: $field is empty or null ($value)');
+          return false;
+        }
+      }
+
+      // Check if prices are valid numbers
+      final oldPrice = double.tryParse(data['OldPrice']?.toString() ?? '');
+      final newPrice = double.tryParse(data['NewPrice']?.toString() ?? '');
+
+      if (oldPrice == null || newPrice == null) {
+        log('❌ Validation failed: Invalid price format');
+        log('   Old Price: ${data['OldPrice']} (parsed: $oldPrice)');
+        log('   New Price: ${data['NewPrice']} (parsed: $newPrice)');
+        return false;
+      }
+
+      // Check if prices are valid (but don't require price drop)
+      log('✅ Prices are valid: Old Price: $oldPrice, New Price: $newPrice');
+      log('📊 Price difference: ${newPrice - oldPrice}');
+
+      // Check if product ID is valid
+      final productId = int.tryParse(data['product_id']?.toString() ?? '');
+      if (productId == null || productId <= 0) {
+        log('❌ Validation failed: Invalid product ID: ${data['product_id']}');
+        return false;
+      }
+
+      // Check if image URL is valid
+      final imageUrl = data['product_image']?.toString() ?? '';
+      if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
+        log('❌ Validation failed: Invalid image URL: $imageUrl');
+        return false;
+      }
+
+      log('✅ All data completeness checks passed:');
+      log('   Product Name: ${data['product_name']}');
+      log('   Old Price: $oldPrice');
+      log('   New Price: $newPrice');
+      log('   Product ID: $productId');
+      log('   Image URL: $imageUrl');
+      log('   📊 Data is complete and ready for notification');
+
+      return true;
+    } catch (e) {
+      log('❌ Error during data validation: $e');
+      return false;
+    }
+  }
+
+  Future<void> _autoTriggerNotification(Map<String, dynamic> data) async {
+    try {
+      log('Auto-triggering notification for product: ${data['product_name']}');
+
+      // Store notification data for immediate UI consumption
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('auto_notification_triggered', true);
+      await prefs.setString(
+          'auto_notification_product_name', data['product_name'] ?? '---');
+      await prefs.setString('auto_notification_old_price',
+          data['OldPrice']?.toString() ?? '0.00');
+      await prefs.setString('auto_notification_new_price',
+          data['NewPrice']?.toString() ?? '0.00');
+      await prefs.setString('auto_notification_product_id',
+          data['product_id']?.toString() ?? '0');
+      await prefs.setString(
+          'auto_notification_product_image', data['product_image'] ?? '');
+      await prefs.setString('auto_notification_timestamp',
+          data['DataNTime'] ?? DateTime.now().toIso8601String());
+
+      log('Auto-notification data stored successfully');
+    } catch (e) {
+      log('Error in auto-trigger notification: $e');
+    }
+  }
+
+  Future<void> _processNotificationItem(
+      Map<String, dynamic> item, String deviceToken, String email) async {
+    log('🔍 Processing notification item: ${item.keys.toList()}');
+
+    try {
+      // Check if this is a price drop notification
+      if (item.containsKey('device_token') && item.containsKey('product_id')) {
+        final responseDeviceToken = item['device_token'];
+        final responseEmail = item['email'];
+
+        log('🔍 Processing notification data:');
+        log('   Response device token: $responseDeviceToken');
+        log('   Response email: $responseEmail');
+        log('   Current device token: $deviceToken');
+        log('   Current user email: $email');
+        log('   User login status: ${email.isNotEmpty ? "LOGGED IN" : "NOT LOGGED IN"}');
+
+        bool shouldShowNotification = false;
+
+        if (email.isNotEmpty) {
+          // User is logged in - check email matches (device token can be anything)
+          if (responseEmail == email) {
+            shouldShowNotification = true;
+            log('✅ User logged in - email matches (showing notification)');
+          } else {
+            log('❌ User logged in - notification conditions not met:');
+            log('   Response email: $responseEmail, Current email: $email');
+          }
+        } else {
+          // User is not logged in - check device token matches
+          if (responseDeviceToken == deviceToken) {
+            shouldShowNotification = true;
+            log('✅ User not logged in - device token matches (showing notification)');
+          } else {
+            log('❌ User not logged in - device token does not match:');
+            log('   Response device token: $responseDeviceToken');
+            log('   Current device token: $deviceToken');
+          }
+        }
+
+        if (shouldShowNotification) {
+          log('🎉 NOTIFICATION APPROVED! Auto-triggering for product: ${item['product_name']}');
+          log('📊 Notification details:');
+          log('   Product: ${item['product_name']}');
+          log('   Old Price: ${item['OldPrice']}');
+          log('   New Price: ${item['NewPrice']}');
+          log('   Product ID: ${item['product_id']}');
+
+          // Check if data is not empty before showing notification
+          bool isDataValid = _validateNotificationData(item);
+
+          if (isDataValid) {
+            log('✅ Data validation passed - showing notification on device');
+
+            // Auto-trigger notification when conditions are met
+            await _autoTriggerNotification(item);
+
+            log('✅ Notification triggered successfully!');
+          } else {
+            log('❌ Data validation failed - notification data is empty or invalid');
+            log('⚠️ Skipping notification due to invalid data');
+          }
+        } else {
+          log('❌ Notification conditions not met, skipping');
+        }
+      } else {
+        log('❌ Invalid item format - missing required fields');
+      }
+    } catch (e) {
+      log('❌ Error processing notification item: $e');
+    }
+  }
+
+  Future<void> _testApiCall() async {
+    log('🧪 Starting manual API test...');
+
+    try {
+      // Get device token
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      String deviceToken = '';
+
+      if (Platform.isAndroid) {
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        deviceToken = androidInfo.id;
+        log('📱 Android Unique ID: $deviceToken');
+      }
+
+      // Get user email
+      String email = '';
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && user.email != null && user.email!.isNotEmpty) {
+        email = user.email!;
+        log('✅ User email: $email');
+      }
+
+      // Construct API URL
+      String apiUrl;
+      if (email.isNotEmpty) {
+        apiUrl =
+            'https://growth.matridtech.net/api/fetch-product-data?email=$email';
+        log('✅ Calling API with email: $email');
+      } else {
+        apiUrl =
+            'https://growth.matridtech.net/api/fetch-product-data?device_token=$deviceToken';
+        log('✅ Calling API with device token: $deviceToken');
+      }
+
+      log('🌐 Making API call to: $apiUrl');
+
+      // Make the API call
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      log('📥 API Response received');
+      log('📊 Status: ${response.statusCode}');
+      log('📏 Body length: ${response.body.length}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        log('✅ API call successful!');
+        log('📊 Response type: ${data.runtimeType}');
+        log('🔍 Response data: $data');
+
+        // Process the data for notifications (same logic as WorkManager)
+        log('🔧 Processing data for notifications...');
+        await _processApiDataForNotifications(data, email, deviceToken);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  '✅ API call successful! Data length: ${data is List ? data.length : 1}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        log('❌ API call failed with status: ${response.statusCode}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ API call failed: HTTP ${response.statusCode}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      log('❌ Manual API test failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ API test failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildDebugSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bug_report, color: Colors.orange),
+              SizedBox(width: 8),
+              Text(
+                'Debug Tools',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    log('🔍 Checking WorkManager status...');
+                    final isRunning = await WorkManagerService.isTaskRunning();
+                    final lastExecution =
+                        await WorkManagerService.getLastExecutionTime();
+                    final nextExecution =
+                        await WorkManagerService.getNextExecutionTime();
+
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  'WorkManager Status: ${isRunning ? "Running" : "Not Running"}'),
+                              Text('Last Run: ${lastExecution ?? "Never"}'),
+                              Text('Next Run: ${nextExecution ?? "Unknown"}'),
+                            ],
+                          ),
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                    }
+                  },
+                  child: Text('Check WorkManager'),
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    log('🔍 Checking for notifications...');
+                    await _checkForAutoNotifications();
+                  },
+                  child: Text('Check Notifications'),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    log('🚀 Restarting WorkManager...');
+                    await _startBackgroundWorkManager();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('Restart WorkManager'),
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    log('🔍 Checking SharedPreferences data...');
+                    final prefs = await SharedPreferences.getInstance();
+                    final lastData =
+                        prefs.getString('last_fetched_product_data');
+                    final lastStatus =
+                        prefs.getString('last_api_response_status');
+                    final lastTime = prefs.getString('last_api_response_time');
+
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('API Status: ${lastStatus ?? "Unknown"}'),
+                              Text('Last Run: ${lastTime ?? "Never"}'),
+                              Text(
+                                  'Data Length: ${lastData?.length ?? 0} chars'),
+                            ],
+                          ),
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                    }
+
+                    log('📊 SharedPreferences Data:');
+                    log('   Status: $lastStatus');
+                    log('   Time: $lastTime');
+                    log('   Data Length: ${lastData?.length ?? 0}');
+                    if (lastData != null && lastData.isNotEmpty) {
+                      log('   Data Preview: ${lastData.substring(0, lastData.length > 200 ? 200 : lastData.length)}...');
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('Check API Data'),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    log('🔍 Checking for API errors...');
+                    final prefs = await SharedPreferences.getInstance();
+                    final errorStatus =
+                        prefs.getString('last_api_response_status');
+                    final errorMessage = prefs.getString('last_api_error');
+                    final errorTime = prefs.getString('last_api_error_time');
+
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  'API Error Status: ${errorStatus ?? "No errors"}'),
+                              if (errorMessage != null)
+                                Text('Error: $errorMessage'),
+                              if (errorTime != null)
+                                Text('Error Time: $errorTime'),
+                            ],
+                          ),
+                          backgroundColor: errorStatus == 'error'
+                              ? Colors.red
+                              : Colors.green,
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                    }
+
+                    log('📊 API Error Details:');
+                    log('   Status: $errorStatus');
+                    log('   Error: $errorMessage');
+                    log('   Time: $errorTime');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('Check API Errors'),
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    log('🚀 Testing API call manually...');
+                    try {
+                      // Call the API directly to test if it works
+                      await _testApiCall();
+                    } catch (e) {
+                      log('❌ Manual API call failed: $e');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Manual API call failed: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('Test API Call'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

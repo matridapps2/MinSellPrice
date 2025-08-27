@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:minsellprice/core/utils/constants/constants.dart';
 import 'package:minsellprice/screens/categories_provider/product_list_provider.dart';
 import 'package:minsellprice/screens/home_page/notification_screen/notification_screen.dart';
 import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
@@ -141,9 +142,10 @@ Future<void> _initializeEverythingInBackground() async {
 
     // Get device token after Firebase is initialized
     try {
-      String? deviceToken = await FirebaseMessaging.instance.getToken();
-      if (deviceToken != null) {
-        //  log('Device Token: $deviceToken');
+      String? token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        log('Device Token: $token');
+
       } else {
         log('Failed to get device token');
       }

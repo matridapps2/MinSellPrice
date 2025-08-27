@@ -181,10 +181,12 @@ class BrandsApi {
       {required BuildContext context,
       required String emailId,
       required String price,
-      required int productId}) async {
+      required int productId,
+      required String deviceToken
+      }) async {
     try {
       final url =
-          '$growthMatridUrl$kSaveProductData$kEmail$emailId&product_id=$productId&price=$price';
+          '$growthMatridUrl$kSaveProductData$kEmail$emailId&product_id=$productId&price=$price&device_token=$deviceToken';
 
       log('SavePriceAlert API: $url');
       final response = await http.post(

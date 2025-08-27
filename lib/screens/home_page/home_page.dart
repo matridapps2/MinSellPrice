@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage>
           _checkNotificationStatus(emailId);
 
           // Start WorkManager task when user is logged in
-          _startWorkManagerTask();
+       //   _startWorkManagerTask();
         } else {
           setState(() {
             isLoggedIn = false;

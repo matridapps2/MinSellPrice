@@ -15,6 +15,8 @@ import 'package:minsellprice/screens/product_details_screen/product_details_scre
 import 'package:minsellprice/screens/register_page/register_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/utils/common_screen_widget/login_reqiure_design.dart';
+
 class NotificationScreen extends StatefulWidget {
   final Map<String, dynamic>? notificationData;
 
