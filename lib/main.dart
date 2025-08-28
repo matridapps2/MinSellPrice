@@ -12,6 +12,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:minsellprice/core/utils/constants/constants.dart';
 import 'package:minsellprice/screens/categories_provider/product_list_provider.dart';
 import 'package:minsellprice/screens/home_page/notification_screen/notification_screen.dart';
+import 'package:minsellprice/services/work_manager_service.dart';
 import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:minsellprice/services/background_service.dart';
@@ -67,9 +68,11 @@ void main() async {
   // Minimal initialization - only what's absolutely necessary
   WidgetsFlutterBinding.ensureInitialized();
 
+  await WorkManagerService.initialize();
+
   // Run the app immediately with loading screen - no delays
   runApp(
-   MultiProvider(
+    MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => my_auth.AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),

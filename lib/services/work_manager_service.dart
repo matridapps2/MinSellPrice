@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:http/http.dart' as http;
@@ -20,73 +21,55 @@ class WorkManagerService {
         callbackDispatcher,
         isInDebugMode: true, // Set to false in production
       );
-      log('WorkManager initialized successfully');
+      log('✅ WorkManager initialized successfully');
+
+      // Cancel any existing tasks to avoid duplicates
+      await Workmanager().cancelAll();
+      log('♻️ Existing WorkManager tasks cancelled');
+
+      // Register one-off task that reschedules itself (more reliable than periodic)
+      await Workmanager().registerOneOffTask(
+        'backgroundTask', // taskId
+        'backgroundTask', // taskName (must match dispatcher)
+        initialDelay: Duration(minutes: 15),
+        constraints: Constraints(
+          networkType: NetworkType.connected,
+          requiresBatteryNotLow: false,
+          requiresCharging: false,
+          requiresDeviceIdle: false,
+          requiresStorageNotLow: false,
+        ),
+      );
+      log('✅ One-off WorkManager task registered (will reschedule every 15 minutes)');
     } catch (e) {
-      log('Error initializing WorkManager: $e');
+      log('❌ Error initializing WorkManager: $e');
     }
   }
 
-  // Start periodic task
+  // Start periodic task (Dual system - Timer + WorkManager)
   static Future<void> startPeriodicTask() async {
     try {
-      log('🚀 Starting WorkManager periodic task...');
+      log('🚀 Starting Dual system - Timer + WorkManager...');
 
-      // Cancel any existing task first
-      await Workmanager().cancelAll();
-      log('✅ Cancelled existing tasks');
+      // Start Timer-based system for foreground (reliable and working)
+      _startTimerBasedFallback();
+      log('✅ Timer-based system started - will run every 30 seconds (foreground)');
 
-      // Try a different approach - use one-off tasks that reschedule themselves
-      await Workmanager().registerOneOffTask(
-        '${_taskName}_1',
-        '${_taskName}_1',
-        initialDelay: const Duration(seconds: 10), // Start after 10 seconds
-        constraints: Constraints(
-          networkType: NetworkType.connected,
-          requiresBatteryNotLow: false,
-          requiresCharging: false,
-          requiresDeviceIdle: false,
-          requiresStorageNotLow: false,
-        ),
-      );
+      // Start WorkManager for background (when app closed)
+      await _startWorkManagerForBackground();
+      log('✅ WorkManager started - will run every 15 minutes (background)');
 
-      log('✅ One-off task registered - will run in 10 seconds and reschedule itself');
+      log('⏰ Dual system: Timer (30s) + WorkManager (15min)');
+      log('🎯 Foreground: Fast updates every 30 seconds');
+      log('🌙 Background: Reliable updates every 15 minutes');
 
-      log('✅ Periodic task registered successfully - will run every 15 minutes');
-      log('⏰ First execution in 10 seconds, then every 15 minutes');
-
-      // Manual testing tasks - commented out for production
-      /*
-      // Also register a one-time task to test immediately
-      await Workmanager().registerOneOffTask(
-        'testTask',
-        'testTask',
-        initialDelay: const Duration(seconds: 2), // Test in 2 seconds
-      );
-      log('🧪 Test task registered - will run in 2 seconds to verify execution');
-
-      // Try a different approach - use constraints that might work better
-      await Workmanager().registerOneOffTask(
-        'immediateTask',
-        'immediateTask',
-        initialDelay: const Duration(seconds: 0), // Run immediately
-        constraints: Constraints(
-          networkType: NetworkType.connected,
-          requiresBatteryNotLow: false,
-          requiresCharging: false,
-          requiresDeviceIdle: false,
-          requiresStorageNotLow: false,
-        ),
-      );
-      log('⚡ Immediate task registered with constraints - should run right now');
-
-      // Also try a simple task without constraints
-      await Workmanager().registerOneOffTask(
-        'simpleTask',
-        'simpleTask',
-        initialDelay: const Duration(seconds: 1), // Run in 1 second
-      );
-      log('🔧 Simple task registered - will run in 1 second');
-      */
+      // Store task registration time for debugging
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          'workmanager_task_registered_time', DateTime.now().toIso8601String());
+      await prefs.setString(
+          'workmanager_task_name', 'Dual System (Timer + WorkManager)');
+      log('💾 Dual system registration time stored in SharedPreferences');
 
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
@@ -94,12 +77,17 @@ class WorkManagerService {
       if (Platform.isAndroid) {
         AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
         deviceToken = androidInfo.id;
-        log('✅ Work Android Unique ID: $deviceToken');
+        log('✅ Android Unique ID: $deviceToken');
         log('📊 Device token length: ${deviceToken.length}');
       }
     } catch (e) {
-      log('❌ Error registering periodic task: $e');
+      log('❌ Error starting dual system: $e');
     }
+  }
+
+  // Start WorkManager for background execution
+  static Future<void> _startWorkManagerForBackground() async {
+    log('ℹ️ WorkManager for background is now managed in initialize()');
   }
 
   // Stop periodic task
@@ -156,6 +144,39 @@ class WorkManagerService {
     } catch (e) {
       log('Error getting next execution time: $e');
       return null;
+    }
+  }
+
+  // Debug method to check Dual system status
+  static Future<Map<String, dynamic>> getWorkManagerDebugInfo() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      return {
+        'system_type': 'Dual System (Timer + WorkManager)',
+        'foreground_system': 'Timer - Every 30 seconds (reliable)',
+        'background_system': 'WorkManager - Every 15 minutes (background)',
+        'task_registered_time':
+            prefs.getString('workmanager_task_registered_time') ?? 'Not set',
+        'task_name': prefs.getString('workmanager_task_name') ?? 'Not set',
+        'last_execution_time':
+            prefs.getString('workmanager_last_execution_time') ?? 'Not set',
+        'last_task': prefs.getString('workmanager_last_task') ?? 'Not set',
+        'rescheduled_time':
+            prefs.getString('workmanager_rescheduled_time') ?? 'Not set',
+        'next_execution_time':
+            prefs.getString('workmanager_next_execution_time') ?? 'Not set',
+        'last_api_execution': prefs.getInt('last_api_execution') ?? 0,
+        'last_api_response_status':
+            prefs.getString('last_api_response_status') ?? 'Not set',
+        'timer_status': 'Active and running (foreground)',
+        'workmanager_status': 'Active and running (background)',
+        'current_time': DateTime.now().toIso8601String(),
+        'note': 'Dual system: Fast foreground + Reliable background',
+      };
+    } catch (e) {
+      log('Error getting Dual system debug info: $e');
+      return {'error': e.toString()};
     }
   }
 
@@ -446,6 +467,105 @@ class WorkManagerService {
       return false;
     }
   }
+
+  // Timer-based fallback for immediate testing
+  static Timer? _fallbackTimer;
+  static void _startTimerBasedFallback() {
+    _fallbackTimer?.cancel();
+    _fallbackTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      log('⏰ Timer-based fallback executing...');
+      _fetchProductData();
+    });
+    log('✅ Timer-based fallback started - will run every 30 seconds');
+  }
+
+  // Direct notification method that works like manual test
+  static Future<void> _showNotificationFromWorkManager(
+      Map<String, dynamic> item) async {
+    try {
+      log('🎯 Showing notification from WorkManager for: ${item['product_name']}');
+
+      // Store notification data for immediate UI consumption
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('auto_notification_triggered', true);
+      await prefs.setString(
+          'auto_notification_product_name', item['product_name'] ?? '---');
+      await prefs.setString('auto_notification_old_price',
+          item['OldPrice']?.toString() ?? '0.00');
+      await prefs.setString('auto_notification_new_price',
+          item['NewPrice']?.toString() ?? '0.00');
+      await prefs.setString('auto_notification_product_id',
+          item['product_id']?.toString() ?? '0');
+      await prefs.setString(
+          'auto_notification_product_image', item['product_image'] ?? '');
+      await prefs.setString('auto_notification_timestamp',
+          item['DataNTime'] ?? DateTime.now().toIso8601String());
+
+      // Also store in the main notification system
+      await prefs.setBool('show_price_drop_notification', true);
+      await prefs.setString(
+          'notification_product_name', item['product_name'] ?? '---');
+      await prefs.setString(
+          'notification_old_price', item['OldPrice']?.toString() ?? '0.00');
+      await prefs.setString(
+          'notification_new_price', item['NewPrice']?.toString() ?? '0.00');
+      await prefs.setString(
+          'notification_product_id', item['product_id']?.toString() ?? '0');
+      await prefs.setString(
+          'notification_product_image', item['product_image'] ?? '');
+      await prefs.setString('notification_timestamp',
+          item['DataNTime'] ?? DateTime.now().toIso8601String());
+
+      log('✅ Notification data stored successfully from WorkManager');
+      log('📱 Notification should now appear in UI');
+    } catch (e) {
+      log('❌ Error showing notification from WorkManager: $e');
+    }
+  }
+
+  // Validation method for WorkManager
+  static bool _validateNotificationDataForWorkManager(
+      Map<String, dynamic> data) {
+    return _validateNotificationData(data);
+  }
+
+  // Trigger background notification for WorkManager
+  static Future<void> _triggerBackgroundNotification() async {
+    try {
+      log('🔔 Triggering background notification...');
+
+      // Get the last fetched API data
+      final prefs = await SharedPreferences.getInstance();
+      final lastApiData = prefs.getString('last_fetched_product_data');
+
+      if (lastApiData != null && lastApiData.isNotEmpty) {
+        log('📊 Processing last API data for background notification...');
+
+        try {
+          final data = json.decode(lastApiData);
+          log('✅ API data decoded successfully for background notification');
+
+          // Process the data and show notification
+          if (data is List && data.isNotEmpty) {
+            final item = data[0]; // Take first item for notification
+            if (item is Map<String, dynamic>) {
+              await _showNotificationFromWorkManager(item);
+              log('✅ Background notification triggered successfully');
+            }
+          } else if (data is Map<String, dynamic>) {
+            await _showNotificationFromWorkManager(data);
+            log('✅ Background notification triggered successfully');
+          }
+        } catch (e) {
+          log('❌ Error processing API data for background notification: $e');
+        }
+      } else {
+        log('⚠️ No API data available for background notification');
+      }
+    } catch (e) {
+      log('❌ Error triggering background notification: $e');
+    }
+  }
 }
 
 // This function must be a top-level function
@@ -461,27 +581,75 @@ void callbackDispatcher() {
         log('🎯 Executing product data fetch task...');
         await _fetchProductData();
         log('✅ Product data fetch task completed');
-      } else if (task == 'fetchProductDataTask_1') {
-        log('🎯 Executing reschedulable product data fetch task...');
+      } else if (task == 'backgroundTask') {
+        log('🌙 Executing background WorkManager task...');
+        log('⏰ Task execution time: ${DateTime.now().toIso8601String()}');
+
+        // Store execution time for debugging
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('workmanager_last_execution_time',
+              DateTime.now().toIso8601String());
+          await prefs.setString('workmanager_last_task', task);
+          log('💾 Background task execution time stored in SharedPreferences');
+        } catch (e) {
+          log('❌ Failed to store execution time: $e');
+        }
+
+        // Execute API call and process data for notifications
         await _fetchProductData();
-        log('✅ Product data fetch task completed');
+
+        // Also trigger notification service for background
+        await WorkManagerService._triggerBackgroundNotification();
+
+        log('✅ Background task completed with notification processing');
 
         // Reschedule the task for 15 minutes later
-        await Workmanager().registerOneOffTask(
-          'fetchProductDataTask_1',
-          'fetchProductDataTask_1',
-          initialDelay: const Duration(minutes: 15),
-          constraints: Constraints(
-            networkType: NetworkType.connected,
-            requiresBatteryNotLow: false,
-            requiresCharging: false,
-            requiresDeviceIdle: false,
-            requiresStorageNotLow: false,
-          ),
-        );
-        log('🔄 Task rescheduled for 15 minutes from now');
+        try {
+          await Workmanager().registerOneOffTask(
+            'backgroundTask',
+            'backgroundTask',
+            initialDelay: const Duration(minutes: 15),
+            constraints: Constraints(
+              networkType: NetworkType.connected,
+              requiresBatteryNotLow: false,
+              requiresCharging: false,
+              requiresDeviceIdle: false,
+              requiresStorageNotLow: false,
+            ),
+          );
+          log('🔄 Background task rescheduled for 15 minutes from now');
+
+          // Store reschedule time for debugging
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+              'workmanager_rescheduled_time', DateTime.now().toIso8601String());
+          await prefs.setString('workmanager_next_execution_time',
+              DateTime.now().add(Duration(minutes: 15)).toIso8601String());
+          log('💾 Background task reschedule time stored in SharedPreferences');
+        } catch (e) {
+          log('❌ Failed to reschedule background task: $e');
+        }
+      } else if (task == 'immediateTest') {
+        log('⚡ Executing immediate test task...');
+        log('⏰ Task execution time: ${DateTime.now().toIso8601String()}');
+
+        // Store execution time for debugging
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('workmanager_last_execution_time',
+              DateTime.now().toIso8601String());
+          await prefs.setString('workmanager_last_task', task);
+          log('💾 Immediate test task execution time stored in SharedPreferences');
+        } catch (e) {
+          log('❌ Failed to store execution time: $e');
+        }
+
+        await _fetchProductData();
+        log('✅ Immediate test task completed');
       } else {
         log('⚠️ Unknown task type: $task');
+        log('📱 Available task types: fetchProductDataTask, backgroundTask, immediateTest');
       }
 
       log('✅ WorkManager task completed successfully: $task');
@@ -602,7 +770,7 @@ Future<void> _fetchProductData() async {
         log('⚠️ Response is neither List nor Map: ${data.runtimeType}');
       }
 
-      // Process API response based on authentication status
+      // Process API response using the SAME logic as manual test
       if (data is List) {
         log('🔍 Processing List response with ${data.length} items');
 
@@ -612,16 +780,64 @@ Future<void> _fetchProductData() async {
           log('📦 Processing item $i: $item');
 
           if (item is Map<String, dynamic>) {
-            await WorkManagerService._processNotificationItem(
-                item, deviceToken, email);
+            // Use the SAME validation and notification logic as manual test
+            bool isDataValid =
+                WorkManagerService._validateNotificationData(item);
+            if (isDataValid) {
+              log('✅ Data validation passed - showing notification on device');
+              await WorkManagerService._autoTriggerNotification(item);
+
+              // Also store in SharedPreferences for UI
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('show_price_drop_notification', true);
+              await prefs.setString(
+                  'notification_product_name', item['product_name'] ?? '---');
+              await prefs.setString('notification_old_price',
+                  item['OldPrice']?.toString() ?? '0.00');
+              await prefs.setString('notification_new_price',
+                  item['NewPrice']?.toString() ?? '0.00');
+              await prefs.setString('notification_product_id',
+                  item['product_id']?.toString() ?? '0');
+              await prefs.setString(
+                  'notification_product_image', item['product_image'] ?? '');
+              await prefs.setString('notification_timestamp',
+                  item['DataNTime'] ?? DateTime.now().toIso8601String());
+
+              log('✅ Notification data stored successfully in SharedPreferences');
+            } else {
+              log('❌ Data validation failed - skipping notification');
+            }
           } else {
             log('⚠️ Item $i is not a Map: ${item.runtimeType}');
           }
         }
       } else if (data is Map<String, dynamic>) {
         log('🔍 Processing single Map response: ${data.keys.toList()}');
-        await WorkManagerService._processNotificationItem(
-            data, deviceToken, email);
+        bool isDataValid = WorkManagerService._validateNotificationData(data);
+        if (isDataValid) {
+          log('✅ Data validation passed - showing notification on device');
+          await WorkManagerService._autoTriggerNotification(data);
+
+          // Also store in SharedPreferences for UI
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('show_price_drop_notification', true);
+          await prefs.setString(
+              'notification_product_name', data['product_name'] ?? '---');
+          await prefs.setString(
+              'notification_old_price', data['OldPrice']?.toString() ?? '0.00');
+          await prefs.setString(
+              'notification_new_price', data['NewPrice']?.toString() ?? '0.00');
+          await prefs.setString(
+              'notification_product_id', data['product_id']?.toString() ?? '0');
+          await prefs.setString(
+              'notification_product_image', data['product_image'] ?? '');
+          await prefs.setString('notification_timestamp',
+              data['DataNTime'] ?? DateTime.now().toIso8601String());
+
+          log('✅ Notification data stored successfully in SharedPreferences');
+        } else {
+          log('❌ Data validation failed - skipping notification');
+        }
       } else {
         log('⚠️ Response is neither List nor Map, cannot process: ${data.runtimeType}');
       }

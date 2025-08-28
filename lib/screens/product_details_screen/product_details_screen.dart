@@ -2612,7 +2612,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(Icons.bug_report, color: Colors.orange),
               SizedBox(width: 8),
@@ -2633,31 +2633,51 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     log('🔍 Checking WorkManager status...');
-                    final isRunning = await WorkManagerService.isTaskRunning();
-                    final lastExecution =
-                        await WorkManagerService.getLastExecutionTime();
-                    final nextExecution =
-                        await WorkManagerService.getNextExecutionTime();
+                    try {
+                      final debugInfo =
+                          await WorkManagerService.getWorkManagerDebugInfo();
 
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                  'WorkManager Status: ${isRunning ? "Running" : "Not Running"}'),
-                              Text('Last Run: ${lastExecution ?? "Never"}'),
-                              Text('Next Run: ${nextExecution ?? "Unknown"}'),
+                      if (mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text('WorkManager Debug Info'),
+                            content: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: debugInfo.entries
+                                    .map((entry) => Padding(
+                                          padding:
+                                              EdgeInsets.symmetric(vertical: 4),
+                                          child: Text(
+                                              '${entry.key}: ${entry.value}'),
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text('Close'),
+                              ),
                             ],
                           ),
-                          duration: Duration(seconds: 5),
-                        ),
-                      );
+                        );
+                      }
+                    } catch (e) {
+                      log('Error checking WorkManager: $e');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error checking WorkManager: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                   },
-                  child: Text('Check WorkManager'),
+                  child: Text('Check Timer System'),
                 ),
               ),
               SizedBox(width: 8),
@@ -2685,7 +2705,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                   ),
-                  child: Text('Restart WorkManager'),
+                  child: Text('Restart Timer System'),
                 ),
               ),
               SizedBox(width: 8),
