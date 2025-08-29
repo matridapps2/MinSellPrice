@@ -98,6 +98,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
 
     try {
+      log('In Notification Screen');
       final response = await BrandsApi.fetchSavedProductData(
           emailId: emailId, context: context);
 

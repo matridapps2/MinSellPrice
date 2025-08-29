@@ -22,7 +22,9 @@ import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/comparison_db.dart';
 import 'package:minsellprice/service_new/liked_preference_db.dart';
 import 'package:minsellprice/services/notification_service.dart';
-import 'package:minsellprice/services/work_manager_service.dart';
+// Commented out - WorkManager no longer needed for auto-notifications
+// import 'package:minsellprice/services/work_manager_service.dart';
+import 'package:minsellprice/services/app_notification_service.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -53,7 +55,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   TextEditingController _emailController = TextEditingController();
 
-  Timer? _notificationCheckTimer;
+  // Commented out - auto-notification timer no longer needed
+  // Timer? _notificationCheckTimer;
 
   bool isLoading = true;
   bool isLiked = false;
@@ -81,6 +84,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   StreamSubscription<User?>? _authStateSubscription;
 
+  // App notification service for handling automatic notifications
+  late AppNotificationService _appNotificationService;
+
   @override
   void initState() {
     super.initState();
@@ -90,44 +96,68 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     // Start background WorkManager for price monitoring
     _startBackgroundWorkManager();
 
-    // Check for auto-triggered notifications when screen loads
-    _checkForAutoNotifications();
+    // Initialize app notification service
+    _initializeAppNotificationService();
 
-    // Set up periodic notification check every 10 seconds while screen is active
-    _notificationCheckTimer =
-        Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (mounted) {
-        _checkForAutoNotifications();
-      }
-    });
+    // Commented out - auto-notification logic now handled by AppNotificationService
+    // // Check for auto-triggered notifications when screen loads
+    // _checkForAutoNotifications();
+
+    // // Set up periodic notification check every 10 seconds while screen is active
+    // _notificationCheckTimer =
+    //     Timer.periodic(const Duration(seconds: 10), (timer) {
+    //   if (mounted) {
+    //     _checkForAutoNotifications();
+    //   }
+    // });
   }
 
   Future<void> _startBackgroundWorkManager() async {
     try {
-      // Initialize WorkManager if not already done
-      await WorkManagerService.initialize();
+      // Commented out WorkManager usage - using AppNotificationService instead
+      // // Initialize WorkManager if not already done
+      // await WorkManagerService.initialize();
 
-      // Start the periodic task
-      await WorkManagerService.startPeriodicTask();
+      // // Start the periodic task
+      // await WorkManagerService.startPeriodicTask();
 
-      log('Background WorkManager started successfully');
+      // log('Background WorkManager started successfully');
 
-      // Check if task is running
-      final isRunning = await WorkManagerService.isTaskRunning();
-      log('WorkManager task running: $isRunning');
+      // // Check if task is running
+      // final isRunning = await WorkManagerService.isTaskRunning();
+      // log('WorkManager task running: $isRunning');
 
-      // Get last execution time
-      final lastExecution = await WorkManagerService.getLastExecutionTime();
-      log('Last WorkManager execution: $lastExecution');
+      // // Get last execution time
+      // final lastExecution = await WorkManagerService.getLastExecutionTime();
+      // log('Last WorkManager execution: $lastExecution');
+
+      log('Background WorkManager functionality commented out - using AppNotificationService instead');
     } catch (e) {
-      log('Error starting background WorkManager: $e');
+      log('Error in background notification service: $e');
+    }
+  }
+
+  /// Initialize app notification service
+  Future<void> _initializeAppNotificationService() async {
+    try {
+      _appNotificationService = AppNotificationService();
+      await _appNotificationService.initialize(context);
+
+      log('✅ App notification service initialized in ProductDetailsScreen');
+    } catch (e) {
+      log('❌ Error initializing app notification service: $e');
     }
   }
 
   @override
   void dispose() {
     _authStateSubscription?.cancel();
-    _notificationCheckTimer?.cancel();
+    // Commented out - auto-notification timer no longer needed
+    // _notificationCheckTimer?.cancel();
+
+    // Dispose the app notification service
+    _appNotificationService.dispose();
+
     super.dispose();
   }
 
@@ -145,50 +175,53 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  Future<void> _checkForAutoNotifications() async {
-    log('🔍 Checking for auto-notifications...');
+  // Commented out - auto-notification logic now handled by AppNotificationService
+  // Future<void> _checkForAutoNotifications() async {
+  //   log('🔍 Checking for auto-notifications...');
 
-    final notificationData =
-        await WorkManagerService.checkAutoTriggeredNotification();
+  //   final notificationData =
+  //       await WorkManagerService.checkAutoTriggeredNotification();
 
-    if (notificationData != null && mounted) {
-      log('✅ Auto-notification found: $notificationData');
-      await _showAutoNotification(notificationData);
-      await WorkManagerService.clearAutoTriggeredNotification();
-    } else {
-      log('❌ No auto-notifications found');
-    }
-  }
+  //   if (notificationData != null && mounted) {
+  //     log('✅ Auto-notification found: $notificationData');
+  //     await _showAutoNotification(notificationData);
+  //     await WorkManagerService.clearAutoTriggeredNotification();
+  //   } else {
+  //     log('❌ No auto-notifications found');
+  //   }
+  // }
 
-  Future<void> _showAutoNotification(
-      Map<String, dynamic> notificationData) async {
-    log('api load start');
-    try {
-      final notificationService = NotificationService();
-      if (!notificationService.isInitialized) {
-        await notificationService.initialize();
-      }
+  // Commented out - auto-notification logic now handled by AppNotificationService
+  // Future<void> _showAutoNotification(
+  //     Map<String, dynamic> notificationData) async {
+  //   log('api load start');
+  //   try {
+  //     final notificationService = NotificationService();
+  //   if (!notificationService.isInitialized) {
+  //     await notificationService.initialize();
+  //     }
 
-      await notificationService.showPriceDropNotification(
-        productName: notificationData['product_name'] ?? '---',
-        oldPrice: notificationData['OldPrice'] ??
-            '0.00', // Fixed: OldPrice not old_price
-        newPrice: double.tryParse(notificationData['NewPrice'] ?? '0.00') ??
-            0.00, // Fixed: NewPrice not new_price
-        productId: int.tryParse(notificationData['product_id'] ?? '0') ?? 0,
-        productImage: notificationData['product_image'] ?? '',
-      );
+  //     await notificationService.showPriceDropNotification(
+  //       productName: notificationData['product_name'] ?? '---',
+  //       oldPrice: notificationData['OldPrice'] ??
+  //           '0.00', // Fixed: OldPrice not old_price
+  //       newPrice: double.tryParse(notificationData['NewPrice'] ?? '0.00') ??
+  //           0.00, // Fixed: NewPrice not new_price
+  //       productId: int.tryParse(notificationData['product_id'] ?? '0') ?? 0,
+  //       productImage: notificationData['product_image'] ?? '',
+  //     );
 
-      CommonToasts.centeredMobile(
-        context: context,
-        msg: '🚨 Price drop detected! Notification sent automatically!',
-      );
-    } catch (e) {
-      CommonToasts.centeredMobile(
-          context: context, msg: 'Error showing auto-notification: $e');
-      log('Error showing auto-notification: $e');
-    }
-  }
+  //     CommonToasts.centeredMobile(
+  //       context: context,
+  //       msg: '🚨 Price drop detected! Notification sent automatically!',
+  //       );
+  //   } catch (e) {
+  //     CommonToasts.centeredMobile(
+  //         context: context, msg: 'Error showing auto-notification: $e');
+  //     log('Error showing auto-notification: $e');
+  //       );
+  //   }
+  // }
 
   /// Setup Firebase Auth state listener to handle login/logout events
   void _setupAuthStateListener() {
@@ -466,10 +499,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           Navigator.of(context).pop();
 
                           // Show welcome notification after successfully setting price alert
-                          _showWelcomeNotification(
-                              context, widget.productId, widget.productPrice);
 
-                          await _testNotificationTap(context)
+                          // await _testNotificationTap(context)
+                          await _showWelcomeNotification(context,
+                                  widget.productId, widget.productPrice)
                               .whenComplete(() async {
                             await saveProductData(
                                 context,
@@ -1327,7 +1360,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
               // Debug section
               const SizedBox(height: 24),
-              _buildDebugSection(),
+              //_buildDebugSection(),
             ],
           ),
         ),
@@ -2633,49 +2666,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     log('🔍 Checking WorkManager status...');
-                    try {
-                      final debugInfo =
-                          await WorkManagerService.getWorkManagerDebugInfo();
-
-                      if (mounted) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text('WorkManager Debug Info'),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: debugInfo.entries
-                                    .map((entry) => Padding(
-                                          padding:
-                                              EdgeInsets.symmetric(vertical: 4),
-                                          child: Text(
-                                              '${entry.key}: ${entry.value}'),
-                                        ))
-                                    .toList(),
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text('Close'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      log('Error checking WorkManager: $e');
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error checking WorkManager: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
+                    // Commented out - WorkManager no longer needed for auto-notifications
+                    log('WorkManager functionality commented out - using AppNotificationService instead');
                   },
                   child: Text('Check Timer System'),
                 ),
@@ -2685,7 +2677,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     log('🔍 Checking for notifications...');
-                    await _checkForAutoNotifications();
+                    // Commented out - auto-notification logic now handled by AppNotificationService
+                    // await _checkForAutoNotifications();
                   },
                   child: Text('Check Notifications'),
                 ),

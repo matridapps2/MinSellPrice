@@ -13,6 +13,7 @@ import 'package:minsellprice/core/utils/constants/constants.dart';
 import 'package:minsellprice/screens/categories_provider/product_list_provider.dart';
 import 'package:minsellprice/screens/home_page/notification_screen/notification_screen.dart';
 import 'package:minsellprice/services/work_manager_service.dart';
+import 'package:minsellprice/services/app_notification_service.dart';
 import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:minsellprice/services/background_service.dart';
@@ -68,7 +69,8 @@ void main() async {
   // Minimal initialization - only what's absolutely necessary
   WidgetsFlutterBinding.ensureInitialized();
 
-  await WorkManagerService.initialize();
+  // Commented out WorkManager usage - using AppNotificationService instead
+  // await WorkManagerService.initialize();
 
   // Run the app immediately with loading screen - no delays
   runApp(
@@ -77,46 +79,46 @@ void main() async {
         ChangeNotifierProvider(create: (_) => my_auth.AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
       ],
-          child: ConnectionNotifier(
-            connectionNotificationOptions: const ConnectionNotificationOptions(
-              alignment: AlignmentDirectional.topCenter,
+      child: ConnectionNotifier(
+        connectionNotificationOptions: const ConnectionNotificationOptions(
+          alignment: AlignmentDirectional.topCenter,
+        ),
+        child: MaterialApp(
+          navigatorKey: NavigationService().getNavigatorKey(),
+          title: 'FlutterMinSellPrice',
+          debugShowMaterialGrid: false,
+          debugShowCheckedModeBanner: false,
+          routes: {
+            '/notifications': (context) => const NotificationScreen(),
+          },
+          theme: ThemeData(
+            fontFamily: 'Segoe UI',
+            primarySwatch: MaterialColor(_d90310, colorCodes),
+            useMaterial3: true,
+            primaryColor: Colors.white,
+            textSelectionTheme: const TextSelectionThemeData(
+              selectionColor: Colors.blue,
+              cursorColor: Colors.blue,
             ),
-            child: MaterialApp(
-              navigatorKey: NavigationService().getNavigatorKey(),
-              title: 'FlutterMinSellPrice',
-              debugShowMaterialGrid: false,
-              debugShowCheckedModeBanner: false,
-              routes: {
-                '/notifications': (context) => const NotificationScreen(),
-              },
-              theme: ThemeData(
-                fontFamily: 'Segoe UI',
-                primarySwatch: MaterialColor(_d90310, colorCodes),
-                useMaterial3: true,
-                primaryColor: Colors.white,
-                textSelectionTheme: const TextSelectionThemeData(
-                  selectionColor: Colors.blue,
-                  cursorColor: Colors.blue,
-                ),
-                cardColor: Colors.white,
-                appBarTheme:
-                    AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
-                cardTheme: CardTheme(
-                  color: Colors.white,
-                  margin: const EdgeInsets.all(2),
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              home: const SafeArea(
-                top: true,
-                child: BridgeClass(),
+            cardColor: Colors.white,
+            appBarTheme:
+                AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
+            cardTheme: CardTheme(
+              color: Colors.white,
+              margin: const EdgeInsets.all(2),
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
-  ),
+          home: const SafeArea(
+            top: true,
+            child: BridgeClass(),
+          ),
+        ),
+      ),
+    ),
   );
 
   // Initialize everything in background after app is running
@@ -124,6 +126,9 @@ void main() async {
 
   // Request notification permission after app is running
   _requestNotificationPermission();
+
+  // Start automatic notification checking after app is running
+  _startAutomaticNotificationChecking();
 }
 
 // Initialize everything in background
@@ -148,7 +153,6 @@ Future<void> _initializeEverythingInBackground() async {
       String? token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
         log('Device Token: $token');
-
       } else {
         log('Failed to get device token');
       }
@@ -218,6 +222,36 @@ Future<void> _requestNotificationPermission() async {
     }
   } catch (e) {
     log('Error requesting notification permission: $e');
+  }
+}
+
+// Start automatic notification checking
+Future<void> _startAutomaticNotificationChecking() async {
+  try {
+    // Wait for the app to fully load and get context
+    await Future.delayed(const Duration(seconds: 5));
+
+    // Get the global navigator key context
+    final context = NavigationService().getNavigatorKey().currentContext;
+    if (context != null) {
+      log('Starting automatic notification checking with context...');
+
+      // Initialize the notification service
+      final appNotificationService = AppNotificationService();
+      await appNotificationService.initialize(context);
+
+      // Start automatic notification checking
+      await appNotificationService.startAutoNotificationChecking();
+
+      // Check for notifications on app open
+      await appNotificationService.checkForNotificationsOnAppOpen();
+
+      log('✅ Automatic notification checking started successfully');
+    } else {
+      log('❌ No context available for notification service initialization');
+    }
+  } catch (e) {
+    log('❌ Error starting automatic notification checking: $e');
   }
 }
 

@@ -27,11 +27,11 @@ class WorkManagerService {
       await Workmanager().cancelAll();
       log('♻️ Existing WorkManager tasks cancelled');
 
-      // Register one-off task that reschedules itself (more reliable than periodic)
-      await Workmanager().registerOneOffTask(
+      // Register periodic task (runs every 15 minutes)
+      await Workmanager().registerPeriodicTask(
         'backgroundTask', // taskId
         'backgroundTask', // taskName (must match dispatcher)
-        initialDelay: Duration(minutes: 15),
+        frequency: Duration(minutes: 15),
         constraints: Constraints(
           networkType: NetworkType.connected,
           requiresBatteryNotLow: false,
@@ -40,7 +40,7 @@ class WorkManagerService {
           requiresStorageNotLow: false,
         ),
       );
-      log('✅ One-off WorkManager task registered (will reschedule every 15 minutes)');
+      log('✅ Periodic WorkManager task registered (15-min interval)');
     } catch (e) {
       log('❌ Error initializing WorkManager: $e');
     }
@@ -606,18 +606,18 @@ void callbackDispatcher() {
 
         // Reschedule the task for 15 minutes later
         try {
-          await Workmanager().registerOneOffTask(
-            'backgroundTask',
-            'backgroundTask',
-            initialDelay: const Duration(minutes: 15),
-            constraints: Constraints(
-              networkType: NetworkType.connected,
-              requiresBatteryNotLow: false,
-              requiresCharging: false,
-              requiresDeviceIdle: false,
-              requiresStorageNotLow: false,
-            ),
-          );
+          // await Workmanager().registerPeriodicTask(
+          //   'backgroundTask',
+          //   'backgroundTask',
+          //   initialDelay: const Duration(minutes: 15),
+          //   constraints: Constraints(
+          //     networkType: NetworkType.connected,
+          //     requiresBatteryNotLow: false,
+          //     requiresCharging: false,
+          //     requiresDeviceIdle: false,
+          //     requiresStorageNotLow: false,
+          //   ),
+          // );
           log('🔄 Background task rescheduled for 15 minutes from now');
 
           // Store reschedule time for debugging

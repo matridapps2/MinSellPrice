@@ -296,6 +296,37 @@ class BrandsApi {
     }
   }
 
+  static Future<void> updateSentNotificationStatus({
+    required String emailId,
+    required String deviceID,
+    required int productId,
+    required int isNotificationSent,
+  }) async {
+
+    log('UPDATE NOTIFICATION SENT STATUS API:');
+
+    String url = '$growthMatridUrl/notification-sent?$kEmail$emailId&product_id=$productId&is_notification_sent=$isNotificationSent&device_token=$deviceID';
+    log('URL: $url');
+    try{
+      final response = await http.post(
+        Uri.parse(url),
+      );
+      log('API Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('Notification Sent Status Updated Successfully');
+        log(response.body);
+
+      } else {
+        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+
+      }
+
+    }catch (e) {
+      log('Exception Update Sent Notification Status API: ${e.toString()}');
+    }
+  }
+
   static Future<String> saveLikedProduct({
     required String emailId,
     required int productId,

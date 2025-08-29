@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
@@ -24,6 +25,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'notification_screen/notification_screen.dart';
 import 'package:minsellprice/services/work_manager_service.dart';
+import 'package:minsellprice/services/app_notification_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -59,6 +61,9 @@ class _HomePageState extends State<HomePage>
 
   bool isLoggedIn = false;
 
+  // App notification service for handling automatic notifications
+  late AppNotificationService _appNotificationService;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -70,6 +75,15 @@ class _HomePageState extends State<HomePage>
 
     super.initState();
     _initCall();
+
+    // Add app lifecycle listener to check for notifications when app comes to foreground
+    SystemChannels.lifecycle.setMessageHandler((msg) async {
+      if (msg == AppLifecycleState.resumed.toString()) {
+        log('🔄 App resumed - checking for notifications...');
+        await _checkForNotificationsOnAppResume();
+      }
+      return null;
+    });
   }
 
   void _initCall() async {
@@ -77,6 +91,9 @@ class _HomePageState extends State<HomePage>
 
     // Initialize WorkManager for background API calls
     await _initializeWorkManager();
+
+    // Initialize app notification service
+    await _initializeAppNotificationService();
 
     _authStateSubscription =
         FirebaseAuth.instance.authStateChanges().listen((User? user) {
@@ -91,7 +108,7 @@ class _HomePageState extends State<HomePage>
           _checkNotificationStatus(emailId);
 
           // Start WorkManager task when user is logged in
-       //   _startWorkManagerTask();
+          //   _startWorkManagerTask();
         } else {
           setState(() {
             isLoggedIn = false;
@@ -136,10 +153,41 @@ class _HomePageState extends State<HomePage>
   // Initialize WorkManager service
   Future<void> _initializeWorkManager() async {
     try {
-      await WorkManagerService.initialize();
-      log('WorkManager initialized in HomePage');
+      // Commented out WorkManager usage - using AppNotificationService instead
+      // await WorkManagerService.initialize();
+      // log('WorkManager initialized in HomePage');
+      log('WorkManager functionality commented out - using AppNotificationService instead');
     } catch (e) {
       log('Error initializing WorkManager in HomePage: $e');
+    }
+  }
+
+  /// Initialize app notification service
+  Future<void> _initializeAppNotificationService() async {
+    try {
+      _appNotificationService = AppNotificationService();
+      await _appNotificationService.initialize(context);
+
+      // Start automatic notification checking
+      await _appNotificationService.startAutoNotificationChecking();
+
+      log('✅ App notification service initialized successfully');
+    } catch (e) {
+      log('❌ Error initializing app notification service: $e');
+    }
+  }
+
+  /// Check for notifications when app comes to foreground
+  Future<void> _checkForNotificationsOnAppResume() async {
+    try {
+      log('🔍 Checking for notifications on app resume...');
+
+      // Check for new notifications from API when app comes to foreground
+      await _appNotificationService.checkForNotificationsOnAppOpen();
+
+      log('✅ App resume notification check completed');
+    } catch (e) {
+      log('❌ Error checking notifications on app resume: $e');
     }
   }
 
@@ -318,6 +366,11 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
+    _authStateSubscription?.cancel();
+
+    // Dispose the app notification service
+    _appNotificationService.dispose();
+
     super.dispose();
   }
 
