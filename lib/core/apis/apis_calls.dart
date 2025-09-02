@@ -182,8 +182,7 @@ class BrandsApi {
       required String emailId,
       required String price,
       required int productId,
-      required String deviceToken
-      }) async {
+      required String deviceToken}) async {
     try {
       final url =
           '$growthMatridUrl$kSaveProductData$kEmail$emailId&product_id=$productId&price=$price&device_token=$deviceToken';
@@ -238,6 +237,58 @@ class BrandsApi {
     }
   }
 
+
+  /// Unified method to fetch saved product data using either email or device token
+  static Future<String> fetchSavedProductDataUnified({
+    String? emailId,
+    String? deviceToken,
+    required BuildContext context,
+  }) async {
+    try {
+      String url;
+      String logMessage;
+
+      log('GET ALL NOTIFICATION API');
+      if (emailId != null && emailId.isNotEmpty) {
+        // LOGIN CASE: Use email
+        url = '$growthMatridUrl$kFetchProductData$kEmail$emailId';
+        logMessage = 'GetPriceAlert API (Email): $url';
+        log('✅ LOGIN CASE: Using email for API call: $emailId');
+      } else if (deviceToken != null && deviceToken.isNotEmpty) {
+        // LOGGED OUT CASE: Use device token
+        url = '$growthMatridUrl$kFetchProductData$kDeviceToken$deviceToken';
+        logMessage = 'GetPriceAlert API (Device Token): $url';
+        log('✅ LOGGED OUT CASE: Using device token for API call: $deviceToken');
+      } else {
+        log('❌ No email or device token provided for API call');
+        return 'error';
+      }
+
+      log(logMessage);
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+      log('API Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('API Successfully Run');
+        log(response.body);
+        return response.body;
+      } else {
+        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+        return 'error';
+      }
+    } catch (e) {
+      log('Exception in GetPriceAlert Unified API: ${e.toString()}');
+      onExceptionResponse(context: context, exception: e.toString());
+      return e.toString();
+    }
+  }
+
   static Future<String> deleteSavedProductData({
     required String emailId,
     required int productId,
@@ -270,11 +321,32 @@ class BrandsApi {
 
   static Future<String> updateReadStatus({
     required String emailId,
+    required String deviceToken,
     required int productId,
   }) async {
     try {
-      final url =
-          '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId';
+
+
+      String logMessage = '';
+      String url;
+
+      log('UPDATE READ STATUS API:');
+      if (emailId.isNotEmpty) {
+        url = '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId';
+        logMessage = 'GetPriceAlert API (Email): $url';
+        log('✅ LOGIN CASE: Using email for API call: $emailId');
+      } else if (deviceToken.isNotEmpty) {
+        url = '$growthMatridUrl$kReadProductData$kDeviceToken$deviceToken&product_id=$productId';
+        logMessage = 'GetPriceAlert API (Device Token): $url';
+        log('✅ LOGGED OUT CASE: Using device token for API call: $deviceToken');
+      } else {
+        log('❌ No email or device token provided for API call');
+        return 'error';
+      }
+
+
+      log(logMessage);
+    //  final url = '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId';
 
       log('Update Read Status API: $url');
       final response = await http.post(
@@ -302,28 +374,95 @@ class BrandsApi {
     required int productId,
     required int isNotificationSent,
   }) async {
-
     log('UPDATE NOTIFICATION SENT STATUS API:');
+    log('Parameters - emailId: $emailId, productId: $productId, isNotificationSent: $isNotificationSent, deviceID: $deviceID');
 
-    String url = '$growthMatridUrl/notification-sent?$kEmail$emailId&product_id=$productId&is_notification_sent=$isNotificationSent&device_token=$deviceID';
+    String url =
+        '$growthMatridUrl/notification-sent?$kEmail$emailId&product_id=$productId&is_notification_sent=$isNotificationSent&device_token=$deviceID';
     log('URL: $url');
-    try{
-      final response = await http.post(
-        Uri.parse(url),
+
+    try {
+      final response = await retry(
+        () async {
+          log('Attempting to update notification sent status...');
+          return await http.post(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+          ).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              log('Request timeout after 30 seconds');
+              throw TimeoutException(
+                  'Request timeout', const Duration(seconds: 30));
+            },
+          );
+        },
+        retryIf: (e) {
+          log('Retry condition check: ${e.runtimeType}');
+          return e is SocketException ||
+              e is TimeoutException ||
+              e is HttpException ||
+              (e is http.ClientException &&
+                  e.message.contains('Connection timed out'));
+        },
+        maxAttempts: 3,
+        onRetry: (e) {
+          log('Retrying updateSentNotificationStatus due to: ${e.runtimeType} - ${e.toString()}');
+        },
       );
-      log('API Response: ${response.statusCode}');
+
+      log('API Response Status: ${response.statusCode}');
+      log('API Response Headers: ${response.headers}');
 
       if (response.statusCode == 200) {
         log('Notification Sent Status Updated Successfully');
-        log(response.body);
-
+        log('Response body: ${response.body}');
       } else {
-        log('API Error - Status: ${response.statusCode}, Body: ${response.body}');
+        log('API Error - Status: ${response.statusCode}');
+        log('Error response body: ${response.body}');
 
+        // Log structured error information
+        log('Error Details: {'
+            '"statusCode": ${response.statusCode}, '
+            '"url": "$url", '
+            '"emailId": "$emailId", '
+            '"productId": $productId, '
+            '"isNotificationSent": $isNotificationSent, '
+            '"deviceID": "$deviceID"'
+            '}');
+      }
+    } catch (e) {
+      log('Exception Update Sent Notification Status API: ${e.toString()}');
+      log('Exception Type: ${e.runtimeType}');
+
+      // Log structured error information for better debugging
+      log('Error Details: {'
+          '"exception": "${e.toString()}", '
+          '"exceptionType": "${e.runtimeType}", '
+          '"url": "$url", '
+          '"emailId": "$emailId", '
+          '"productId": $productId, '
+          '"isNotificationSent": $isNotificationSent, '
+          '"deviceID": "$deviceID", '
+          '"timestamp": "${DateTime.now().toIso8601String()}"'
+          '}');
+
+      // Handle specific error types
+      if (e is SocketException) {
+        log('Network connectivity issue: ${e.message}');
+      } else if (e is TimeoutException) {
+        log('Request timeout: ${e.message}');
+      } else if (e is HttpException) {
+        log('HTTP error: ${e.message}');
+      } else if (e is http.ClientException) {
+        log('Client error: ${e.message}');
       }
 
-    }catch (e) {
-      log('Exception Update Sent Notification Status API: ${e.toString()}');
+      // Re-throw the exception to allow calling code to handle it if needed
+      rethrow;
     }
   }
 

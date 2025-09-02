@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +49,7 @@ class _HomePageState extends State<HomePage>
 
   String vendorName = '';
   String emailId = '';
+  String? _deviceId;
 
   bool hasUnreadNotifications = false;
   bool isWorkManagerRunning = false;
@@ -87,6 +90,7 @@ class _HomePageState extends State<HomePage>
   }
 
   void _initCall() async {
+    await _getDeviceId();
     await _initializeDatabase();
 
     // Initialize WorkManager for background API calls
@@ -94,6 +98,7 @@ class _HomePageState extends State<HomePage>
 
     // Initialize app notification service
     await _initializeAppNotificationService();
+
 
     _authStateSubscription =
         FirebaseAuth.instance.authStateChanges().listen((User? user) {
@@ -123,10 +128,32 @@ class _HomePageState extends State<HomePage>
     });
   }
 
-  Future<void> _checkNotificationStatus(String emailId) async {
+  Future<void> _getDeviceId() async {
+    if (_deviceId != null) return;
+
     try {
-      final response = await BrandsApi.fetchSavedProductData(
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+      if (Platform.isAndroid) {
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        _deviceId = androidInfo.id;
+        log('📱 Android Unique ID: $_deviceId');
+      } else if (Platform.isIOS) {
+        IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        _deviceId = iosInfo.identifierForVendor;
+        log('📱 iOS Unique ID: $_deviceId');
+      }
+    } catch (e) {
+      log('❌ Error getting device ID: $e');
+    }
+  }
+
+  Future<void> _checkNotificationStatus(String emailId) async {
+    log('DeviceID: $_deviceId');
+    try {
+      final response = await BrandsApi.fetchSavedProductDataUnified(
         emailId: emailId,
+        deviceToken: _deviceId,
         context: context,
       );
 

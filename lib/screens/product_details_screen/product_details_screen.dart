@@ -28,6 +28,8 @@ import 'package:minsellprice/services/app_notification_service.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'all_alert_product.dart';
+
 class ProductDetailsScreen extends StatefulWidget {
   final int productId;
   final String brandName;
@@ -64,6 +66,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool _isSubscribedToPriceAlert = false;
   bool _isLoadingPriceAlert = false;
   bool isLoggedIn = false;
+  bool isAlertAlreadySet = false;
 
   double _priceThreshold = 0;
 
@@ -78,6 +81,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   String loadingMessage = '';
   String wProductName = '';
   String? errorMessage;
+  String? emailId;
+  String? deviceId;
 
   int comparisonCount = 0;
   int vendorId = AppInfo.kVendorId;
@@ -94,10 +99,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _setupAuthStateListener();
 
     // Start background WorkManager for price monitoring
-    _startBackgroundWorkManager();
+    //_startBackgroundWorkManager();
 
     // Initialize app notification service
-    _initializeAppNotificationService();
+    //_initializeAppNotificationService();
 
     // Commented out - auto-notification logic now handled by AppNotificationService
     // // Check for auto-triggered notifications when screen loads
@@ -256,12 +261,120 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   void _initCall() async {
-    await _fetchProductDetails().whenComplete(() async {
+    const Duration(seconds: 10).inSeconds;
+    await _fetchProductDetails();
+    await _isAlreadySetAlert();
+    await _fetchBrandProducts();
+    await _checkIfLiked();
+    await _checkIfInComparison();
+  }
+
+  Future<void> _isAlreadySetAlert() async {
+    try {
+      log('🔍 Checking if price alert is already set for product ID: ${widget.productId}');
+
+      // Get current user credentials
+      await _getCurrentEmailId();
       await _getDeviceId();
-      await _fetchBrandProducts();
-      await _checkIfLiked();
-      await _checkIfInComparison();
-    });
+
+      // Call the unified API method
+      final responseBody = await BrandsApi.fetchSavedProductDataUnified(
+        emailId: emailId,
+        deviceToken: deviceId,
+        context: context,
+      );
+
+      if (responseBody != 'error' && responseBody.isNotEmpty) {
+        log('✅ API call successful for checking existing alerts');
+
+        try {
+          final data = json.decode(responseBody);
+          log('📊 API Response type: ${data.runtimeType}');
+          log('🔍 API Response data: $data');
+
+          if (data is List) {
+            log('📋 Response is a List with ${data.length} items');
+            for (int i = 0; i < data.length; i++) {
+              final item = data[i];
+              if (item is Map<String, dynamic>) {
+                final productId = item['product_id'];
+                log('🔍 Checking item $i - Product ID: $productId');
+
+                if (productId == widget.productId) {
+                  isAlertAlreadySet = true;
+                  log('✅ FOUND: Current product ID ${widget.productId} exists in saved alerts');
+                  log('📊 Alert details: ${item.toString()}');
+                  break;
+                }
+              }
+            }
+          } else if (data is Map<String, dynamic>) {
+            log('📋 Response is a Map with keys: ${data.keys.toList()}');
+            final productId = data['product_id'];
+            log('🔍 Checking single item - Product ID: $productId');
+
+            if (productId == widget.productId) {
+              isAlertAlreadySet = true;
+              log('✅ FOUND: Current product ID ${widget.productId} exists in saved alerts');
+              log('📊 Alert details: ${data.toString()}');
+            }
+          }
+
+          // Update UI state
+          if (mounted) {
+            setState(() {
+              _isSubscribedToPriceAlert = isAlertAlreadySet;
+            });
+
+            if (isAlertAlreadySet) {
+              log('🎯 Price alert is already set for product ID: ${widget.productId}');
+            } else {
+              log('❌ No price alert found for product ID: ${widget.productId}');
+            }
+          }
+        } catch (jsonError) {
+          log('❌ Error parsing JSON response: $jsonError');
+          log('📄 Raw response: $responseBody');
+        }
+      } else {
+        log('❌ API call failed or returned error');
+        log('📄 Response: $responseBody');
+
+        // Set to false if API call fails
+        if (mounted) {
+          setState(() {
+            _isSubscribedToPriceAlert = false;
+          });
+        }
+      }
+    } catch (e) {
+      log('❌ Error checking if alert is already set: $e');
+
+      // Set to false on error
+      if (mounted) {
+        setState(() {
+          _isSubscribedToPriceAlert = false;
+        });
+      }
+    }
+  }
+
+  /// Get user email from Firebase Auth
+  Future<void> _getCurrentEmailId() async {
+    log('Product Details Screen');
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && user.email != null && user.email!.isNotEmpty) {
+        emailId = user.email;
+        log('✅ User email: $emailId');
+      } else {
+        emailId = null;
+        log('❌ No authenticated user found');
+      }
+    } catch (e) {
+      log('❌ Error getting user email: $e');
+      emailId = null;
+    }
   }
 
   Future<void> _checkIfLiked() async {
@@ -509,7 +622,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 _emailController.text,
                                 widget.productPrice,
                                 widget.productId,
-                                deviceId);
+                                deviceId ?? '');
                           });
                         },
                         style: ElevatedButton.styleFrom(
@@ -1351,7 +1464,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               const SizedBox(height: 16),
               _buyAtDesign(),
               const SizedBox(height: 16),
-              _buildSubscribeButton(),
+              isAlertAlreadySet
+                  ? _buildAlreadySubscribe()
+                  : _buildSubscribeButton(),
               const SizedBox(height: 24),
               _buildProductActionsBar(),
               _buildMoreName(),
@@ -1830,6 +1945,456 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         // ),
       ],
     );
+  }
+
+  Widget _buildAlreadySubscribe() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.green.shade50,
+            Colors.green.shade100,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.green.shade200,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.shade100,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Success Icon
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade500,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.shade300,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.notifications_active,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Main Title
+          Text(
+            'Price Alert Active!',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade800,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 8),
+
+          // Subtitle
+          Text(
+            'You\'ll be notified when the price drops',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.green.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Action Buttons Row
+          Row(
+            children: [
+              // View Alerts Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // TODO: Navigate to alerts screen
+                    log('Navigate to alerts screen');
+                    Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (context) => const AlertProduct()
+                    ));
+                  },
+                  icon: Icon(
+                    Icons.list_alt,
+                    size: 18,
+                    color: Colors.green.shade700,
+                  ),
+                  label: Text(
+                    'View All Alerts',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.green.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: Colors.green.shade300,
+                        width: 1.5,
+                      ),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Manage Alert Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // TODO: Show alert management options
+                    log('Show alert management options');
+                    _showAlertManagementDialog();
+                  },
+                  icon: const Icon(
+                    Icons.settings,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                  label: const Text(
+                    'Manage Alert',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show alert management dialog
+  void _showAlertManagementDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.settings,
+                color: Colors.green.shade600,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Manage Alert',
+                  style: TextStyle(
+                    color: Colors.green.shade800,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              // Close icon in top right
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.grey.shade600,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'What would you like to do with this price alert?',
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Edit Alert Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    // TODO: Navigate to edit alert screen
+                    log('Edit alert');
+                  },
+                  icon: Icon(
+                    Icons.edit,
+                    size: 18,
+                    color: Colors.blue.shade700,
+                  ),
+                  label: Text(
+                    'Edit Alert Settings',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade50,
+                    foregroundColor: Colors.blue.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: Colors.blue.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Delete Alert Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showDeleteConfirmationDialog();
+                  },
+                  icon: Icon(
+                    Icons.delete,
+                    size: 18,
+                    color: Colors.red.shade700,
+                  ),
+                  label: Text(
+                    'Delete Alert',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red.shade700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade50,
+                    foregroundColor: Colors.red.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: Colors.red.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Show delete confirmation dialog
+  void _showDeleteConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning,
+                color: Colors.orange.shade600,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Delete Alert',
+                  style: TextStyle(
+                    color: Colors.red.shade800,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              // Close icon in top right
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.grey.shade600,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to delete this price alert? You will no longer receive notifications for price drops on this product.',
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deletePriceAlert();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Delete',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Delete price alert
+  Future<void> _deletePriceAlert() async {
+    try {
+      log('🗑️ Deleting price alert for product ID: ${widget.productId}');
+
+      // TODO: Implement delete API call
+      // await BrandsApi.deleteSavedProductData(
+      //   emailId: emailId ?? '',
+      //   productId: widget.productId,
+      //   context: context,
+      // );
+
+      // Update UI state
+      if (mounted) {
+        setState(() {
+          isAlertAlreadySet = false;
+          _isSubscribedToPriceAlert = false;
+        });
+      }
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text('Price alert deleted successfully'),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+
+      log('✅ Price alert deleted successfully');
+    } catch (e) {
+      log('❌ Error deleting price alert: $e');
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.error,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text('Failed to delete price alert'),
+            ],
+          ),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildSubscribeButton() {

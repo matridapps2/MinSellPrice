@@ -1,6 +1,8 @@
 import 'dart:developer';
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
@@ -27,11 +29,14 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  List<Map<String, dynamic>> notifications = [];
 
+  List<Map<String, dynamic>> notifications = [];
   List<SavedProductModel> savedProducts = [];
+
   bool isLoading = false;
   bool isLoggedIn = false;
+
+  String _deviceId = '';
   String emailId = '';
 
   @override
@@ -39,25 +44,27 @@ class _NotificationScreenState extends State<NotificationScreen> {
     super.initState();
     _initCall();
 
-    // Listen to Firebase Auth state changes
-    _authStateSubscription =
-        FirebaseAuth.instance.authStateChanges().listen((User? user) {
-      if (mounted) {
-        if (user != null && user.email != null) {
-          setState(() {
-            isLoggedIn = true;
-            emailId = user.email!;
-          });
-          log('User Logged ?');
-          _getProductData(emailId);
-        } else {
-          setState(() {
-            isLoggedIn = false;
-            emailId = '';
-          });
-        }
-      }
-    });
+
+    // // Listen to Firebase Auth state changes
+    // _authStateSubscription =
+    //     FirebaseAuth.instance.authStateChanges().listen((User? user) {
+    //   if (mounted) {
+    //     if (user != null && user.email != null) {
+    //       setState(() {
+    //         isLoggedIn = true;
+    //         emailId = user.email!;
+    //       });
+    //       log('User Logged ?');
+    //       _getProductData(emailId);
+    //     } else {
+    //       setState(() {
+    //         isLoggedIn = false;
+    //         emailId = '';
+    //       });
+    //       _getProductData(emailId);
+    //     }
+    //   }
+    // });
   }
 
   StreamSubscription<User?>? _authStateSubscription;
@@ -69,6 +76,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   void _initCall() async {
+    await _getEmail();
+    await _getDeviceId();
+    await  _getProductData();
+  }
+
+  Future<void> _getEmail() async{
     try {
       final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -76,7 +89,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         emailId = currentUser.email!;
         isLoggedIn = true;
         log('Email from Firebase Auth: $emailId');
-        await _getProductData(emailId);
+       // await _getProductData(emailId);
       } else {
         // No user logged in
         isLoggedIn = false;
@@ -92,15 +105,38 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
-  Future<void> _getProductData(String emailId) async {
+  Future<void> _getDeviceId() async {
+
+    try {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+      if (Platform.isAndroid) {
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        _deviceId = androidInfo.id;
+        log('📱 Notification Screen In Android Unique ID: $_deviceId');
+      } else if (Platform.isIOS) {
+        IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        _deviceId = iosInfo.identifierForVendor!;
+        log('📱 iOS Unique ID: $_deviceId');
+      }
+    } catch (e) {
+      log('❌ Error getting device ID: $e');
+    }
+  }
+
+  Future<void> _getProductData() async {
     setState(() {
       isLoading = true;
     });
-
+    log('In Notification Screen');
+    log('Device ID: $_deviceId');
+    log('EmailId: $emailId');
     try {
-      log('In Notification Screen');
-      final response = await BrandsApi.fetchSavedProductData(
-          emailId: emailId, context: context);
+      final response = await BrandsApi.fetchSavedProductDataUnified(
+          emailId: emailId,
+          deviceToken: _deviceId,
+          context: context
+      );
 
       if (response != 'error') {
         log('API Response: $response');
@@ -224,15 +260,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   fontWeight: FontWeight.w400,
                 ),
               ),
-            if (!isLoggedIn)
-              Text(
-                'Login to view notifications',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.8),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
           ],
         ),
         actions: [
@@ -335,9 +362,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
           // Notifications list
           Expanded(
-            child: !isLoggedIn
-                ? Constants.noLoginDesign(context, 'notification')
-                : isLoading
+            child: isLoading
                     ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -400,6 +425,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
     );
   }
+
+  // !isLoggedIn
+  // ? Constants.noLoginDesign(context, 'notification')
 
   Widget _buildNotificationCard(Map<String, dynamic> notification, int index) {
     final isUnread = !(notification['isRead'] as bool);
@@ -973,7 +1001,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         .then((response) async {
       if (response != 'error') {
         log('Product $productId deleted successfully');
-        await _getProductData(emailId);
+        await _getProductData();
       } else {
         log('Error deleting product $productId');
       }
@@ -986,7 +1014,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
     log('EmailId $emailId');
     log('productId $productId');
-    await BrandsApi.updateReadStatus(emailId: emailId, productId: productId)
+    await BrandsApi.updateReadStatus(emailId: emailId,deviceToken: _deviceId, productId: productId)
         .then((response) async {
       if (response != 'error') {
         log('Product $productId count update successfully');

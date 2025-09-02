@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+
 import 'package:minsellprice/services/notification_service.dart';
 import 'package:minsellprice/services/work_manager_service.dart';
 import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
@@ -73,15 +73,27 @@ class AppNotificationService {
     log('🔍 Checking for auto-notifications...');
 
     try {
-      final notificationData =
-          await WorkManagerService.checkAutoTriggeredNotification();
+      // Check for notifications in the queue system
+      final prefs = await SharedPreferences.getInstance();
+      final queueCount = prefs.getInt('notification_queue_count') ?? 0;
 
-      if (notificationData != null && _context != null && _context!.mounted) {
-        log('✅ Auto-notification found: $notificationData');
-        await _showAutoNotification(notificationData);
-        await WorkManagerService.clearAutoTriggeredNotification();
+      if (queueCount > 0 && _context != null && _context!.mounted) {
+        log('✅ Found $queueCount notifications in queue');
+        await _showAllNotificationsFromQueue();
       } else {
-        log('❌ No auto-notifications found');
+        log('❌ No notifications in queue');
+
+        // Fallback to old system for backward compatibility
+        final notificationData =
+            await WorkManagerService.checkAutoTriggeredNotification();
+
+        if (notificationData != null && _context != null && _context!.mounted) {
+          log('✅ Auto-notification found (fallback): $notificationData');
+          await _showAutoNotification(notificationData);
+          await WorkManagerService.clearAutoTriggeredNotification();
+        } else {
+          log('❌ No auto-notifications found');
+        }
       }
     } catch (e) {
       log('❌ Error checking for auto-notifications: $e');
@@ -125,6 +137,86 @@ class AppNotificationService {
     }
   }
 
+  /// Show all notifications from queue
+  Future<void> _showAllNotificationsFromQueue() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final queueJson = prefs.getString('notification_queue') ?? '[]';
+
+      List<Map<String, dynamic>> notificationQueue = [];
+      try {
+        final queue = json.decode(queueJson) as List;
+        notificationQueue = queue.cast<Map<String, dynamic>>();
+      } catch (e) {
+        log('⚠️ Error parsing notification queue: $e');
+        return;
+      }
+
+      if (notificationQueue.isEmpty) {
+        log('📭 No notifications in queue to display');
+        return;
+      }
+
+      log('📋 Displaying ${notificationQueue.length} notifications from queue');
+
+      final notificationService = NotificationService();
+      if (!notificationService.isInitialized) {
+        await notificationService.initialize();
+      }
+
+      // Show each notification in the queue
+      for (int i = 0; i < notificationQueue.length; i++) {
+        final notification = notificationQueue[i];
+
+        log('🔔 Showing notification ${i + 1}/${notificationQueue.length}: ${notification['product_name']}');
+
+        try {
+          await notificationService.showPriceDropNotification(
+            productName: notification['product_name'] ?? '---',
+            oldPrice: notification['old_price'] ?? '0.00',
+            newPrice:
+                double.tryParse(notification['new_price'] ?? '0.00') ?? 0.00,
+            productId: int.tryParse(notification['product_id'] ?? '0') ?? 0,
+            productImage: notification['product_image'] ?? '',
+          );
+
+          // Add a small delay between notifications to avoid overwhelming the user
+          if (i < notificationQueue.length - 1) {
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+        } catch (e) {
+          log('❌ Error showing notification ${i + 1}: $e');
+        }
+      }
+
+      if (_context != null && _context!.mounted) {
+        CommonToasts.centeredMobile(
+          context: _context!,
+          msg: '🚨 ${notificationQueue.length} price drop notifications sent!',
+        );
+      }
+
+      // Clear the queue after showing all notifications
+      await _clearNotificationQueue();
+
+      log('✅ All notifications from queue displayed successfully');
+    } catch (e) {
+      log('❌ Error showing notifications from queue: $e');
+    }
+  }
+
+  /// Clear notification queue
+  Future<void> _clearNotificationQueue() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('notification_queue');
+      await prefs.remove('notification_queue_count');
+      log('🗑️ Notification queue cleared');
+    } catch (e) {
+      log('❌ Error clearing notification queue: $e');
+    }
+  }
+
   /// Check for notifications from API when app opens
   Future<void> checkForNotificationsOnAppOpen() async {
     if (!_isInitialized) {
@@ -154,53 +246,37 @@ class AppNotificationService {
       await _getDeviceId();
       await _getUserEmail();
 
-      // Construct API URL based on authentication status
-      String apiUrl;
-      if (_userEmail != null && _userEmail!.isNotEmpty) {
-        // LOGIN CASE: Pass only email to API (device token will be empty)
-        apiUrl =
-            'https://growth.matridtech.net/api/fetch-product-data?email=$_userEmail';
-        log('✅ LOGIN CASE: Calling API with email only: $_userEmail');
-        log('📋 API will return notifications for this user - we will filter for null device tokens');
-        log('🔍 Response filtering: Only show notifications where device_token is null');
-      } else if (_deviceId != null && _deviceId!.isNotEmpty) {
-        // LOGGED OUT CASE: Pass only device token to API (email will be empty)
-        apiUrl =
-            'https://growth.matridtech.net/api/fetch-product-data?device_token=$_deviceId';
-        log('✅ LOGGED OUT CASE: Calling API with device token only: $_deviceId');
-        log('📋 API will return notifications for this device - showing response as-is');
+      if (_context != null && _context!.mounted) {
+        // Use unified method that handles both email and device token scenarios
+        final responseBody = await BrandsApi.fetchSavedProductDataUnified(
+          emailId: _userEmail,
+          deviceToken: _deviceId,
+          context: _context!,
+        );
+
+        if (responseBody != 'error' && responseBody.isNotEmpty) {
+          log('✅ API call successful using unified method!');
+          log('📏 Response body length: ${responseBody.length}');
+
+          try {
+            final data = json.decode(responseBody);
+            log('📊 Response type: ${data.runtimeType}');
+            log('🔍 Response data: $data');
+
+            // Process the data for notifications
+            await _processApiDataForNotifications(data);
+
+            log('✅ API data processing completed');
+          } catch (jsonError) {
+            log('❌ Error parsing JSON response: $jsonError');
+            log('📄 Raw response: $responseBody');
+          }
+        } else {
+          log('❌ API call failed or returned error');
+          log('📄 Response: $responseBody');
+        }
       } else {
-        log('❌ No email or device token available for API call');
-        return;
-      }
-
-      log('🌐 Making API call to: $apiUrl');
-
-      // Make the API call
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 30));
-
-      log('📥 API Response received');
-      log('📊 Status: ${response.statusCode}');
-      log('📏 Body length: ${response.body.length}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        log('✅ API call successful!');
-        log('📊 Response type: ${data.runtimeType}');
-        log('🔍 Response data: $data');
-
-        // Process the data for notifications
-        await _processApiDataForNotifications(data);
-
-        log('✅ API data processing completed');
-      } else {
-        log('❌ API call failed with status: ${response.statusCode}');
+        log('❌ Context not available for API call');
       }
     } catch (e) {
       log('❌ Error fetching notifications from API: $e');
@@ -352,24 +428,24 @@ class AppNotificationService {
       }
 
       // ✅ NEW: Check if prices are actually different
-      if (oldPrice == newPrice) {
-        log('❌ Validation failed: Prices are the same - no price drop');
-        log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
-        log('   New Price: \$${newPrice.toStringAsFixed(2)}');
-        log('   Price Difference: \$${(newPrice - oldPrice).toStringAsFixed(2)}');
-        log('   💡 Notification skipped - no actual price change detected');
-        return false;
-      }
+      // if (oldPrice == newPrice) {
+      //   log('❌ Validation failed: Prices are the same - no price drop');
+      //   log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
+      //   log('   New Price: \$${newPrice.toStringAsFixed(2)}');
+      //   log('   Price Difference: \$${(newPrice - oldPrice).toStringAsFixed(2)}');
+      //   log('   💡 Notification skipped - no actual price change detected');
+      //   return false;
+      // }
 
-      // ✅ NEW: Check if it's actually a price drop (new price < old price)
-      if (newPrice > oldPrice) {
-        log('❌ Validation failed: New price is higher than old price - not a drop');
-        log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
-        log('   New Price: \$${newPrice.toStringAsFixed(2)}');
-        log('   Price Difference: \$${(newPrice - oldPrice).toStringAsFixed(2)} (price increased)');
-        log('   💡 Notification skipped - price increased, not decreased');
-        return false;
-      }
+      // // ✅ NEW: Check if it's actually a price drop (new price < old price)
+      // if (newPrice > oldPrice) {
+      //   log('❌ Validation failed: New price is higher than old price - not a drop');
+      //   log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
+      //   log('   New Price: \$${newPrice.toStringAsFixed(2)}');
+      //   log('   Price Difference: \$${(newPrice - oldPrice).toStringAsFixed(2)} (price increased)');
+      //   log('   💡 Notification skipped - price increased, not decreased');
+      //   return false;
+      // }
 
       final productId = int.tryParse(data['product_id']?.toString() ?? '0');
       if (productId == null || productId <= 0) {
@@ -391,34 +467,34 @@ class AppNotificationService {
         return false;
       }
 
-      // ✅ Price drop detected - calculate savings
-      final priceDifference = oldPrice - newPrice;
-      final savingsPercentage = ((priceDifference / oldPrice) * 100);
-
-      log('✅ Price drop detected!');
-      log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
-      log('   New Price: \$${newPrice.toStringAsFixed(2)}');
-      log('   💰 Savings: \$${priceDifference.toStringAsFixed(2)}');
-      log('   📊 Savings Percentage: ${savingsPercentage.toStringAsFixed(1)}%');
-
-      // ✅ NEW: Check for minimum price difference (optional - prevents tiny price changes)
-      final minimumPriceDifference = 0.01; // $0.01 minimum difference
-      if (priceDifference < minimumPriceDifference) {
-        log('❌ Validation failed: Price difference too small');
-        log('   Price Difference: \$${priceDifference.toStringAsFixed(2)}');
-        log('   Minimum Required: \$${minimumPriceDifference.toStringAsFixed(2)}');
-        log('   💡 Notification skipped - price change too small to notify');
-        return false;
-      }
+      // // ✅ Price drop detected - calculate savings
+      // final priceDifference = oldPrice - newPrice;
+      // final savingsPercentage = ((priceDifference / oldPrice) * 100);
+      //
+      // log('✅ Price drop detected!');
+      // log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
+      // log('   New Price: \$${newPrice.toStringAsFixed(2)}');
+      // log('   💰 Savings: \$${priceDifference.toStringAsFixed(2)}');
+      // log('   📊 Savings Percentage: ${savingsPercentage.toStringAsFixed(1)}%');
+      //
+      // // ✅ NEW: Check for minimum price difference (optional - prevents tiny price changes)
+      // final minimumPriceDifference = 0.01; // $0.01 minimum difference
+      // if (priceDifference < minimumPriceDifference) {
+      //   log('❌ Validation failed: Price difference too small');
+      //   log('   Price Difference: \$${priceDifference.toStringAsFixed(2)}');
+      //   log('   Minimum Required: \$${minimumPriceDifference.toStringAsFixed(2)}');
+      //   log('   💡 Notification skipped - price change too small to notify');
+      //   return false;
+      // }
 
       // ✅ NEW: Check for zero or negative prices
-      if (oldPrice <= 0 || newPrice <= 0) {
-        log('❌ Validation failed: Invalid price values (zero or negative)');
-        log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
-        log('   New Price: \$${newPrice.toStringAsFixed(2)}');
-        log('   💡 Notification skipped - invalid price values');
-        return false;
-      }
+      // if (oldPrice <= 0 || newPrice <= 0) {
+      //   log('❌ Validation failed: Invalid price values (zero or negative)');
+      //   log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
+      //   log('   New Price: \$${newPrice.toStringAsFixed(2)}');
+      //   log('   💡 Notification skipped - invalid price values');
+      //   return false;
+      // }
 
       log('✅ All data validation checks passed');
       log('📊 Notification status: isNotificationSent = $isNotificationSent (0 = not sent, 1 = sent)');
@@ -434,21 +510,8 @@ class AppNotificationService {
     try {
       log('Auto-triggering notification for product: ${data['product_name']}');
 
-      // Store notification data for immediate UI consumption
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('auto_notification_triggered', true);
-      await prefs.setString(
-          'auto_notification_product_name', data['product_name'] ?? '---');
-      await prefs.setString('auto_notification_old_price',
-          data['OldPrice']?.toString() ?? '0.00');
-      await prefs.setString('auto_notification_new_price',
-          data['NewPrice']?.toString() ?? '0.00');
-      await prefs.setString('auto_notification_product_id',
-          data['product_id']?.toString() ?? '0');
-      await prefs.setString(
-          'auto_notification_product_image', data['product_image'] ?? '');
-      await prefs.setString('auto_notification_timestamp',
-          data['DataNTime'] ?? DateTime.now().toIso8601String());
+      // Store notification data in a queue system for multiple notifications
+      await _addNotificationToQueue(data);
 
       // Update notification sent status to 1 (sent) via API
       await _updateNotificationSentStatus(data);
@@ -456,6 +519,61 @@ class AppNotificationService {
       log('✅ Auto-notification data stored successfully');
     } catch (e) {
       log('❌ Error in auto-trigger notification: $e');
+    }
+  }
+
+  /// Add notification to queue system for multiple notifications
+  Future<void> _addNotificationToQueue(Map<String, dynamic> data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get existing notifications queue
+      final existingQueueJson = prefs.getString('notification_queue') ?? '[]';
+      List<Map<String, dynamic>> notificationQueue = [];
+
+      try {
+        final existingQueue = json.decode(existingQueueJson) as List;
+        notificationQueue = existingQueue.cast<Map<String, dynamic>>();
+      } catch (e) {
+        log('⚠️ Error parsing existing notification queue, starting fresh: $e');
+        notificationQueue = [];
+      }
+
+      // Create new notification data
+      final notificationData = {
+        'product_name': data['product_name'] ?? '---',
+        'old_price': data['OldPrice']?.toString() ?? '0.00',
+        'new_price': data['NewPrice']?.toString() ?? '0.00',
+        'product_id': data['product_id']?.toString() ?? '0',
+        'product_image': data['product_image'] ?? '',
+        'timestamp': data['DataNTime'] ?? DateTime.now().toIso8601String(),
+        'added_at': DateTime.now().toIso8601String(),
+      };
+
+      // Check if this notification already exists in queue (avoid duplicates)
+      final productId = data['product_id']?.toString() ?? '0';
+      final existingIndex = notificationQueue
+          .indexWhere((item) => item['product_id'] == productId);
+
+      if (existingIndex >= 0) {
+        log('🔄 Updating existing notification in queue for product: $productId');
+        notificationQueue[existingIndex] = notificationData;
+      } else {
+        log('➕ Adding new notification to queue for product: $productId');
+        notificationQueue.add(notificationData);
+      }
+
+      // Store updated queue
+      await prefs.setString(
+          'notification_queue', json.encode(notificationQueue));
+      await prefs.setBool('auto_notification_triggered', true);
+      await prefs.setInt('notification_queue_count', notificationQueue.length);
+
+      log('✅ Notification added to queue successfully');
+      log('📊 Total notifications in queue: ${notificationQueue.length}');
+      log('🔍 Queue contents: ${notificationQueue.map((n) => n['product_name']).toList()}');
+    } catch (e) {
+      log('❌ Error adding notification to queue: $e');
     }
   }
 

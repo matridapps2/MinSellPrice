@@ -7,10 +7,8 @@ import 'package:workmanager/workmanager.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 class WorkManagerService {
-  static const String _taskName = 'fetchProductDataTask';
   static const String _apiUrl =
       'https://growth.matridtech.net/api/fetch-product-data';
 
@@ -233,29 +231,67 @@ class WorkManagerService {
     try {
       log('Auto-triggering notification for product: ${data['product_name']}');
 
-      // Store notification data for immediate UI consumption
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('auto_notification_triggered', true);
-      await prefs.setString(
-          'auto_notification_product_name', data['product_name'] ?? '---');
-      await prefs.setString(
-          'auto_notification_old_price',
-          data['OldPrice']?.toString() ??
-              '0.00'); // Fixed: OldPrice not old_price
-      await prefs.setString(
-          'auto_notification_new_price',
-          data['NewPrice']?.toString() ??
-              '0.00'); // Fixed: NewPrice not new_price
-      await prefs.setString('auto_notification_product_id',
-          data['product_id']?.toString() ?? '0');
-      await prefs.setString(
-          'auto_notification_product_image', data['product_image'] ?? '');
-      await prefs.setString('auto_notification_timestamp',
-          data['DataNTime'] ?? DateTime.now().toIso8601String());
+      // Store notification data in queue system for multiple notifications
+      await _addNotificationToQueue(data);
 
       log('Auto-notification data stored successfully');
     } catch (e) {
       log('Error in auto-trigger notification: $e');
+    }
+  }
+
+  /// Add notification to queue system for multiple notifications
+  static Future<void> _addNotificationToQueue(Map<String, dynamic> data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get existing notifications queue
+      final existingQueueJson = prefs.getString('notification_queue') ?? '[]';
+      List<Map<String, dynamic>> notificationQueue = [];
+
+      try {
+        final existingQueue = json.decode(existingQueueJson) as List;
+        notificationQueue = existingQueue.cast<Map<String, dynamic>>();
+      } catch (e) {
+        log('⚠️ Error parsing existing notification queue, starting fresh: $e');
+        notificationQueue = [];
+      }
+
+      // Create new notification data
+      final notificationData = {
+        'product_name': data['product_name'] ?? '---',
+        'old_price': data['OldPrice']?.toString() ?? '0.00',
+        'new_price': data['NewPrice']?.toString() ?? '0.00',
+        'product_id': data['product_id']?.toString() ?? '0',
+        'product_image': data['product_image'] ?? '',
+        'timestamp': data['DataNTime'] ?? DateTime.now().toIso8601String(),
+        'added_at': DateTime.now().toIso8601String(),
+      };
+
+      // Check if this notification already exists in queue (avoid duplicates)
+      final productId = data['product_id']?.toString() ?? '0';
+      final existingIndex = notificationQueue
+          .indexWhere((item) => item['product_id'] == productId);
+
+      if (existingIndex >= 0) {
+        log('🔄 Updating existing notification in queue for product: $productId');
+        notificationQueue[existingIndex] = notificationData;
+      } else {
+        log('➕ Adding new notification to queue for product: $productId');
+        notificationQueue.add(notificationData);
+      }
+
+      // Store updated queue
+      await prefs.setString(
+          'notification_queue', json.encode(notificationQueue));
+      await prefs.setBool('auto_notification_triggered', true);
+      await prefs.setInt('notification_queue_count', notificationQueue.length);
+
+      log('✅ Notification added to queue successfully');
+      log('📊 Total notifications in queue: ${notificationQueue.length}');
+      log('🔍 Queue contents: ${notificationQueue.map((n) => n['product_name']).toList()}');
+    } catch (e) {
+      log('❌ Error adding notification to queue: $e');
     }
   }
 
@@ -307,96 +343,6 @@ class WorkManagerService {
       log('Auto-triggered notification data cleared successfully');
     } catch (e) {
       log('Error clearing auto-triggered notification: $e');
-    }
-  }
-
-  // Process individual notification item
-  static Future<void> _processNotificationItem(
-      Map<String, dynamic> item, String? deviceToken, String? email) async {
-    try {
-      log('🔍 Processing notification item: ${item.keys.toList()}');
-
-      // Check if this is a price drop notification
-      if (item.containsKey('device_token') && item.containsKey('product_id')) {
-        final responseDeviceToken = item['device_token'];
-        final responseEmail = item['email'];
-
-        log('🔍 Processing notification data:');
-        log('   Response device token: $responseDeviceToken');
-        log('   Response email: $responseEmail');
-        log('   Current device token: $deviceToken');
-        log('   Current user email: $email');
-        log('   User login status: ${email != null && email.isNotEmpty ? "LOGGED IN" : "NOT LOGGED IN"}');
-
-        bool shouldShowNotification = false;
-
-        if (email != null && email.isNotEmpty) {
-          // User is logged in - check email matches (device token can be anything)
-          if (responseEmail == email) {
-            shouldShowNotification = true;
-            log('✅ User logged in - email matches (showing notification)');
-          } else {
-            log('❌ User logged in - notification conditions not met:');
-            log('   Response email: $responseEmail, Current email: $email');
-          }
-        } else {
-          // User is not logged in - check device token matches
-          if (responseDeviceToken == deviceToken) {
-            shouldShowNotification = true;
-            log('✅ User not logged in - device token matches (showing notification)');
-          } else {
-            log('❌ User not logged in - device token does not match:');
-            log('   Response device token: $responseDeviceToken');
-            log('   Current device token: $deviceToken');
-          }
-        }
-
-        if (shouldShowNotification) {
-          log('🎉 NOTIFICATION APPROVED! Auto-triggering for product: ${item['product_name']}');
-          log('📊 Notification details:');
-          log('   Product: ${item['product_name']}');
-          log('   Old Price: ${item['OldPrice']}');
-          log('   New Price: ${item['NewPrice']}');
-          log('   Product ID: ${item['product_id']}');
-
-          // Check if data is not empty before showing notification
-          bool isDataValid = WorkManagerService._validateNotificationData(item);
-
-          if (isDataValid) {
-            log('✅ Data validation passed - showing notification on device');
-
-            // Auto-trigger notification when conditions are met
-            await WorkManagerService._autoTriggerNotification(item);
-
-            // Also store the notification data in SharedPreferences for UI handling
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('show_price_drop_notification', true);
-            await prefs.setString(
-                'notification_product_name', item['product_name'] ?? '---');
-            await prefs.setString('notification_old_price',
-                item['OldPrice']?.toString() ?? '0.00');
-            await prefs.setString('notification_new_price',
-                item['NewPrice']?.toString() ?? '0.00');
-            await prefs.setString('notification_product_id',
-                item['product_id']?.toString() ?? '0');
-            await prefs.setString(
-                'notification_product_image', item['product_image'] ?? '');
-            await prefs.setString('notification_timestamp',
-                item['DataNTime'] ?? DateTime.now().toIso8601String());
-
-            log('✅ Notification data stored successfully in SharedPreferences');
-          } else {
-            log('❌ Data validation failed - notification data is empty or invalid');
-            log('⚠️ Skipping notification due to invalid data');
-          }
-        } else {
-          log('❌ Notification conditions not met, skipping');
-        }
-      } else {
-        log('❌ Invalid item format - missing required fields');
-      }
-    } catch (e) {
-      log('❌ Error processing notification item: $e');
     }
   }
 
@@ -485,48 +431,14 @@ class WorkManagerService {
     try {
       log('🎯 Showing notification from WorkManager for: ${item['product_name']}');
 
-      // Store notification data for immediate UI consumption
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('auto_notification_triggered', true);
-      await prefs.setString(
-          'auto_notification_product_name', item['product_name'] ?? '---');
-      await prefs.setString('auto_notification_old_price',
-          item['OldPrice']?.toString() ?? '0.00');
-      await prefs.setString('auto_notification_new_price',
-          item['NewPrice']?.toString() ?? '0.00');
-      await prefs.setString('auto_notification_product_id',
-          item['product_id']?.toString() ?? '0');
-      await prefs.setString(
-          'auto_notification_product_image', item['product_image'] ?? '');
-      await prefs.setString('auto_notification_timestamp',
-          item['DataNTime'] ?? DateTime.now().toIso8601String());
-
-      // Also store in the main notification system
-      await prefs.setBool('show_price_drop_notification', true);
-      await prefs.setString(
-          'notification_product_name', item['product_name'] ?? '---');
-      await prefs.setString(
-          'notification_old_price', item['OldPrice']?.toString() ?? '0.00');
-      await prefs.setString(
-          'notification_new_price', item['NewPrice']?.toString() ?? '0.00');
-      await prefs.setString(
-          'notification_product_id', item['product_id']?.toString() ?? '0');
-      await prefs.setString(
-          'notification_product_image', item['product_image'] ?? '');
-      await prefs.setString('notification_timestamp',
-          item['DataNTime'] ?? DateTime.now().toIso8601String());
+      // Store notification data in queue system for multiple notifications
+      await _addNotificationToQueue(item);
 
       log('✅ Notification data stored successfully from WorkManager');
       log('📱 Notification should now appear in UI');
     } catch (e) {
       log('❌ Error showing notification from WorkManager: $e');
     }
-  }
-
-  // Validation method for WorkManager
-  static bool _validateNotificationDataForWorkManager(
-      Map<String, dynamic> data) {
-    return _validateNotificationData(data);
   }
 
   // Trigger background notification for WorkManager
@@ -786,24 +698,7 @@ Future<void> _fetchProductData() async {
             if (isDataValid) {
               log('✅ Data validation passed - showing notification on device');
               await WorkManagerService._autoTriggerNotification(item);
-
-              // Also store in SharedPreferences for UI
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('show_price_drop_notification', true);
-              await prefs.setString(
-                  'notification_product_name', item['product_name'] ?? '---');
-              await prefs.setString('notification_old_price',
-                  item['OldPrice']?.toString() ?? '0.00');
-              await prefs.setString('notification_new_price',
-                  item['NewPrice']?.toString() ?? '0.00');
-              await prefs.setString('notification_product_id',
-                  item['product_id']?.toString() ?? '0');
-              await prefs.setString(
-                  'notification_product_image', item['product_image'] ?? '');
-              await prefs.setString('notification_timestamp',
-                  item['DataNTime'] ?? DateTime.now().toIso8601String());
-
-              log('✅ Notification data stored successfully in SharedPreferences');
+              log('✅ Notification data stored successfully in queue');
             } else {
               log('❌ Data validation failed - skipping notification');
             }
@@ -817,24 +712,7 @@ Future<void> _fetchProductData() async {
         if (isDataValid) {
           log('✅ Data validation passed - showing notification on device');
           await WorkManagerService._autoTriggerNotification(data);
-
-          // Also store in SharedPreferences for UI
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('show_price_drop_notification', true);
-          await prefs.setString(
-              'notification_product_name', data['product_name'] ?? '---');
-          await prefs.setString(
-              'notification_old_price', data['OldPrice']?.toString() ?? '0.00');
-          await prefs.setString(
-              'notification_new_price', data['NewPrice']?.toString() ?? '0.00');
-          await prefs.setString(
-              'notification_product_id', data['product_id']?.toString() ?? '0');
-          await prefs.setString(
-              'notification_product_image', data['product_image'] ?? '');
-          await prefs.setString('notification_timestamp',
-              data['DataNTime'] ?? DateTime.now().toIso8601String());
-
-          log('✅ Notification data stored successfully in SharedPreferences');
+          log('✅ Notification data stored successfully in queue');
         } else {
           log('❌ Data validation failed - skipping notification');
         }

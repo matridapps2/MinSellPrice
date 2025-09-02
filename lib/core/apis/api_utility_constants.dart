@@ -6,6 +6,7 @@ const kFetchProductData = '/fetch-product-data?';
 const kDeleteProductData = '/delete-product-data?';
 const kReadProductData = '/read-product-data?';
 const kEmail = 'email=';
+const kDeviceToken = 'device_token=';
 const kSaveLikedProduct = '/save-liked-product?';
 const kLikedProduct = '/liked-products?';
 const kSearchProduct = '/search?q=';
