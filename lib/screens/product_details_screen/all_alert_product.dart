@@ -15,8 +15,8 @@ class AlertProduct extends StatefulWidget {
 class _AlertProductState extends State<AlertProduct> {
   List<Map<String, dynamic>> _alertProducts = [];
   bool _isLoading = true;
-  String? _userEmail;
-  String? _deviceId;
+  String _userEmail = '';
+  String _deviceId = '';
   String _errorMessage = '';
 
   @override
@@ -38,7 +38,7 @@ class _AlertProductState extends State<AlertProduct> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         setState(() {
-          _userEmail = user.email;
+          _userEmail = user.email!;
         });
         log('✅ User email: $_userEmail');
       } else {
@@ -74,7 +74,7 @@ class _AlertProductState extends State<AlertProduct> {
 
     try {
       log('🔄 Fetching alert products...');
-      final response = await BrandsApi.fetchSavedProductDataUnified(
+      final response = await BrandsApi.fetchPriceAlertProduct(
         emailId: _userEmail,
         deviceToken: _deviceId,
         context: context,
@@ -194,9 +194,10 @@ class _AlertProductState extends State<AlertProduct> {
 
       if (shouldDelete == true) {
         // Call delete API
-        final result = await BrandsApi.deleteSavedProductData(
-          emailId: _userEmail ?? '',
+        final result = await BrandsApi.deleteSavedPriceAlertProduct(
+          emailId: _userEmail,
           productId: productId,
+          deviceToken: _deviceId,
           context: context,
         );
 
@@ -295,31 +296,31 @@ class _AlertProductState extends State<AlertProduct> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Status row
-          Row(
-            children: [
-              Icon(
-                hasPriceDrop ? Icons.trending_down : Icons.monitor,
-                color:
-                    hasPriceDrop ? Colors.green.shade600 : Colors.blue.shade600,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                hasPriceDrop ? 'Price Drop!' : 'Watching',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: hasPriceDrop
-                      ? Colors.green.shade700
-                      : Colors.blue.shade700,
-                ),
-              ),
-              const Spacer(),
-              if (isNotificationSent == 1)
-                Icon(Icons.notifications_active,
-                    size: 25, color: Colors.orange.shade600),
-            ],
-          ),
+          // Row(
+          //   children: [
+          //     Icon(
+          //       hasPriceDrop ? Icons.trending_down : Icons.monitor,
+          //       color:
+          //           hasPriceDrop ? Colors.green.shade600 : Colors.blue.shade600,
+          //       size: 20,
+          //     ),
+          //     const SizedBox(width: 8),
+          //     Text(
+          //       hasPriceDrop ? 'Price Drop!' : 'Watching',
+          //       style: TextStyle(
+          //         fontSize: 14,
+          //         fontWeight: FontWeight.w600,
+          //         color: hasPriceDrop
+          //             ? Colors.green.shade700
+          //             : Colors.blue.shade700,
+          //       ),
+          //     ),
+          //     const Spacer(),
+          //     if (isNotificationSent == 1)
+          //       Icon(Icons.notifications_active,
+          //           size: 25, color: Colors.orange.shade600),
+          //   ],
+          // ),
           const SizedBox(height: 12),
           // Product info
           Row(
@@ -403,10 +404,25 @@ class _AlertProductState extends State<AlertProduct> {
                 ),
               ],
               const Spacer(),
+              // Improved delete button
               GestureDetector(
                 onTap: () => _deleteAlert(product),
-                child: Icon(Icons.delete_outline,
-                    color: Colors.red.shade500, size: 25),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.red.shade200,
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Colors.red.shade600,
+                    size: 20,
+                  ),
+                ),
               ),
             ],
           ),
@@ -451,7 +467,7 @@ class _AlertProductState extends State<AlertProduct> {
               color: Colors.grey.shade500,
             ),
           ),
-          const SizedBox(height: 32),
+       /*   const SizedBox(height: 32),
           ElevatedButton.icon(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.add),
@@ -464,7 +480,7 @@ class _AlertProductState extends State<AlertProduct> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ),
+          ),*/
         ],
       ),
     );

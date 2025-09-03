@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
@@ -14,6 +15,30 @@ import 'api_utility_constants.dart';
 
 class BrandsApi {
   BrandsApi._();
+
+  // static String emailId = '';
+  // static String deviceId = '';
+  //
+  // Future<String> _getEmail() async{
+  //   try {
+  //     final User? currentUser = FirebaseAuth.instance.currentUser;
+  //
+  //     if (currentUser != null && currentUser.email != null) {
+  //       emailId = currentUser.email!;
+  //       log('Email from Firebase Auth: $emailId');
+  //       return emailId;
+  //     } else {
+  //       // No user logged in
+  //       emailId = '';
+  //       log('No Firebase user found - user not logged in');
+  //       return emailId;
+  //     }
+  //   } catch (e) {
+  //     log('Error getting email: $e');
+  //     emailId = '';
+  //     return emailId;
+  //   }
+  // }
 
   static Future<Map<String, List<dynamic>>> fetchAllBrands(
       [BuildContext? context]) async {
@@ -56,8 +81,7 @@ class BrandsApi {
     }
   }
 
-  static Future<String?> getProductListByBrandName(
-      String brandName, int pageNumber, BuildContext context) async {
+  static Future<String?> getProductListByBrandName(String brandName, int pageNumber, BuildContext context) async {
     try {
       String uri = '$brandUrl/brands/$brandName?page_no=$pageNumber';
 
@@ -89,8 +113,7 @@ class BrandsApi {
     }
   }
 
-  static Future<Map<String, dynamic>?> fetchSearchProduct(
-      BuildContext context, String searchQuery) async {
+  static Future<Map<String, dynamic>?> fetchSearchProduct(BuildContext context, String searchQuery) async {
     try {
       // Build the search URL with proper encoding
       final encodedQuery = Uri.encodeComponent(searchQuery.trim());
@@ -239,7 +262,7 @@ class BrandsApi {
 
 
   /// Unified method to fetch saved product data using either email or device token
-  static Future<String> fetchSavedProductDataUnified({
+  static Future<String> fetchPriceAlertProduct({
     String? emailId,
     String? deviceToken,
     required BuildContext context,
@@ -289,14 +312,36 @@ class BrandsApi {
     }
   }
 
-  static Future<String> deleteSavedProductData({
+  static Future<String> deleteSavedPriceAlertProduct({
     required String emailId,
+    required String deviceToken,
     required int productId,
     required BuildContext context,
   }) async {
     try {
-      final url =
-          '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
+
+      String logMessage = '';
+      String url;
+
+      log('Delete ProductData API:');
+      if (emailId.isNotEmpty) {
+        url = '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
+        logMessage = 'GetPriceAlert API (Email): $url';
+        log('✅ LOGIN CASE: Using email for API call: $emailId');
+      } else if (deviceToken.isNotEmpty) {
+        url = '$growthMatridUrl$kDeleteProductData$kDeviceToken$deviceToken&product_id=$productId';
+        logMessage = 'GetPriceAlert API (Device Token): $url';
+        log('✅ LOGGED OUT CASE: Using device token for API call: $deviceToken');
+      } else {
+        log('❌ No email or device token provided for API call');
+        return 'error';
+      }
+
+
+      log('Update Read Status API: $logMessage');
+
+
+    ///  final url = '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
 
       log('Delete ProductData API: $url');
       final response = await http.post(
@@ -323,20 +368,20 @@ class BrandsApi {
     required String emailId,
     required String deviceToken,
     required int productId,
+    required int isRead,
   }) async {
     try {
-
 
       String logMessage = '';
       String url;
 
       log('UPDATE READ STATUS API:');
       if (emailId.isNotEmpty) {
-        url = '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId';
+        url = '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId&is_read=$isRead';
         logMessage = 'GetPriceAlert API (Email): $url';
         log('✅ LOGIN CASE: Using email for API call: $emailId');
       } else if (deviceToken.isNotEmpty) {
-        url = '$growthMatridUrl$kReadProductData$kDeviceToken$deviceToken&product_id=$productId';
+        url = '$growthMatridUrl$kReadProductData$kDeviceToken$deviceToken&product_id=$productId&is_read=$isRead';
         logMessage = 'GetPriceAlert API (Device Token): $url';
         log('✅ LOGGED OUT CASE: Using device token for API call: $deviceToken');
       } else {
@@ -345,10 +390,7 @@ class BrandsApi {
       }
 
 
-      log(logMessage);
-    //  final url = '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId';
-
-      log('Update Read Status API: $url');
+      log('Update Read Status API: $logMessage');
       final response = await http.post(
         Uri.parse(url),
       );

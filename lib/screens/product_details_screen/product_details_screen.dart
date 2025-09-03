@@ -14,6 +14,7 @@ import 'package:minsellprice/core/utils/constants/app.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/constants.dart';
 import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
+import 'package:minsellprice/core/utils/toast_messages/toast_utils.dart';
 import 'package:minsellprice/model/product_details_model.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/screens/comparison_screen/comparison_screen.dart';
@@ -82,7 +83,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   String wProductName = '';
   String? errorMessage;
   String? emailId;
-  String? deviceId;
+  String deviceId = '';
 
   int comparisonCount = 0;
   int vendorId = AppInfo.kVendorId;
@@ -278,7 +279,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       await _getDeviceId();
 
       // Call the unified API method
-      final responseBody = await BrandsApi.fetchSavedProductDataUnified(
+      final responseBody = await BrandsApi.fetchPriceAlertProduct(
         emailId: emailId,
         deviceToken: deviceId,
         context: context,
@@ -610,20 +611,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           Navigator.of(context).pop();
-
-                          // Show welcome notification after successfully setting price alert
-
-                          // await _testNotificationTap(context)
-                          await _showWelcomeNotification(context,
-                                  widget.productId, widget.productPrice)
-                              .whenComplete(() async {
-                            await saveProductData(
-                                context,
-                                _emailController.text,
-                                widget.productPrice,
-                                widget.productId,
-                                deviceId ?? '');
-                          });
+                          await saveAlertedProductData();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -651,6 +639,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         );
       },
     );
+  }
+
+  Future<void> saveAlertedProductData() async{
+    setState(() {
+      isLoading = true;
+    });
+    // await _testNotificationTap(context)
+    await _showWelcomeNotification(context, widget.productId, widget.productPrice).whenComplete(() async {
+      await saveProductData(
+          context,
+          _emailController.text,
+          widget.productPrice,
+          widget.productId,
+          deviceId ?? '');
+    });
   }
 
   Future<void> saveProductData(BuildContext context, String emailId,
@@ -684,6 +687,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         log('Data Successfully Saved');
         preferences.setString('email_id', emailId);
         preferences.setString('brand_name', widget.brandName);
+        _initCall();
       } else {
         log('Error');
       }
@@ -691,8 +695,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   // Show welcome notification when price alert is set
-  Future<void> _showWelcomeNotification(
-      BuildContext context, int productId, String price) async {
+  Future<void> _showWelcomeNotification(BuildContext context, int productId, String price) async {
     try {
       final notificationService = NotificationService();
 
@@ -2165,46 +2168,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Edit Alert Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    // TODO: Navigate to edit alert screen
-                    log('Edit alert');
-                  },
-                  icon: Icon(
-                    Icons.edit,
-                    size: 18,
-                    color: Colors.blue.shade700,
-                  ),
-                  label: Text(
-                    'Edit Alert Settings',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade50,
-                    foregroundColor: Colors.blue.shade700,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color: Colors.blue.shade200,
-                        width: 1,
-                      ),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
               // Delete Alert Button
               SizedBox(
                 width: double.infinity,
@@ -2305,6 +2268,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
+
                 _deletePriceAlert();
               },
               style: ElevatedButton.styleFrom(
@@ -2329,15 +2293,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   /// Delete price alert
   Future<void> _deletePriceAlert() async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       log('🗑️ Deleting price alert for product ID: ${widget.productId}');
 
       // TODO: Implement delete API call
-      // await BrandsApi.deleteSavedProductData(
-      //   emailId: emailId ?? '',
-      //   productId: widget.productId,
-      //   context: context,
-      // );
+      await BrandsApi.deleteSavedPriceAlertProduct(
+        emailId: emailId ?? '',
+        deviceToken: deviceId,
+        productId: widget.productId,
+        context: context,
+      );
 
       // Update UI state
       if (mounted) {
@@ -2347,54 +2315,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         });
       }
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text('Price alert deleted successfully'),
-            ],
-          ),
-          backgroundColor: Colors.green.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
+       _initCall();
+
+      CommonToasts.centeredMobile(msg: 'Price alert deleted successfully', context: context);
+
 
       log('✅ Price alert deleted successfully');
     } catch (e) {
       log('❌ Error deleting price alert: $e');
 
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                Icons.error,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text('Failed to delete price alert'),
-            ],
-          ),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
+      CommonToasts.centeredMobile(msg: 'Failed to delete price alert', context: context);
+
     }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Widget _buildSubscribeButton() {

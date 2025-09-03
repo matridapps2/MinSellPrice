@@ -132,7 +132,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     log('Device ID: $_deviceId');
     log('EmailId: $emailId');
     try {
-      final response = await BrandsApi.fetchSavedProductDataUnified(
+      final response = await BrandsApi.fetchPriceAlertProduct(
           emailId: emailId,
           deviceToken: _deviceId,
           context: context
@@ -263,43 +263,45 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ],
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Stack(
-              children: [
-                const Icon(
-                  Icons.notifications_rounded,
-                  color: Colors.white,
-                  size: 24,
+          Visibility(
+            visible: !isLoading,
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
                 ),
-                if (isLoggedIn &&
-                    notifications.where((n) => !n['isRead']).isNotEmpty)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primary,
-                          width: 1.5,
+              ),
+              child: Stack(
+                children: [
+                  const Icon(
+                    Icons.notifications_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  if (notifications.where((n) => !n['isRead']).isNotEmpty)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primary,
+                            width: 1.5,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -978,7 +980,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 });
 
                 await _deleteNotifications(
-                    emailId: notification['emailId'],
                     productId: notification['productId']);
               },
             ),
@@ -989,15 +990,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<void> _deleteNotifications(
-      {required String emailId, required int productId}) async {
+      {required int productId}) async {
     setState(() {
       isLoading = true;
     });
     log('EmailId $emailId');
     log('productId $productId');
 
-    await BrandsApi.deleteSavedProductData(
-            emailId: emailId, productId: productId, context: context)
+    await BrandsApi.deleteSavedPriceAlertProduct(
+            emailId: emailId, deviceToken: _deviceId, productId: productId, context: context)
         .then((response) async {
       if (response != 'error') {
         log('Product $productId deleted successfully');
@@ -1014,7 +1015,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
     log('EmailId $emailId');
     log('productId $productId');
-    await BrandsApi.updateReadStatus(emailId: emailId,deviceToken: _deviceId, productId: productId)
+    await BrandsApi.updateReadStatus(emailId: emailId,deviceToken: _deviceId, productId: productId, isRead: 1)
         .then((response) async {
       if (response != 'error') {
         log('Product $productId count update successfully');

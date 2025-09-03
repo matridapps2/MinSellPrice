@@ -91,6 +91,8 @@ class _HomePageState extends State<HomePage>
 
   void _initCall() async {
     await _getDeviceId();
+    await _getEmail();
+    await _checkNotificationStatus();
     await _initializeDatabase();
 
     // Initialize WorkManager for background API calls
@@ -99,33 +101,56 @@ class _HomePageState extends State<HomePage>
     // Initialize app notification service
     await _initializeAppNotificationService();
 
+    // _authStateSubscription =
+    //     FirebaseAuth.instance.authStateChanges().listen((User? user) {
+    //   if (mounted) {
+    //     if (user != null && user.email != null) {
+    //       setState(() {
+    //         isLoggedIn = true;
+    //         emailId = user.email!;
+    //       });
+    //       log('Home Screen');
+    //       log('User Logged ?');
+    //       _checkNotificationStatus(emailId);
+    //
+    //       // Start WorkManager task when user is logged in
+    //       //   _startWorkManagerTask();
+    //     } else {
+    //       setState(() {
+    //         isLoggedIn = false;
+    //         emailId = '';
+    //       });
+    //       log('User Not Login');
+    //
+    //       // Stop WorkManager task when user logs out
+    //       _stopWorkManagerTask();
+    //     }
+    //   }
+    // });
+  }
 
-    _authStateSubscription =
-        FirebaseAuth.instance.authStateChanges().listen((User? user) {
-      if (mounted) {
-        if (user != null && user.email != null) {
-          setState(() {
-            isLoggedIn = true;
-            emailId = user.email!;
-          });
-          log('Home Screen');
-          log('User Logged ?');
-          _checkNotificationStatus(emailId);
+  Future<void> _getEmail() async{
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
 
-          // Start WorkManager task when user is logged in
-          //   _startWorkManagerTask();
-        } else {
-          setState(() {
-            isLoggedIn = false;
-            emailId = '';
-          });
-          log('User Not Login');
-
-          // Stop WorkManager task when user logs out
-          _stopWorkManagerTask();
-        }
+      if (currentUser != null && currentUser.email != null) {
+        emailId = currentUser.email!;
+        isLoggedIn = true;
+        log('Email from Firebase Auth: $emailId');
+        // await _getProductData(emailId);
+      } else {
+        // No user logged in
+        isLoggedIn = false;
+        emailId = '';
+        log('No Firebase user found - user not logged in');
+        setState(() {});
       }
-    });
+    } catch (e) {
+      log('Error getting email: $e');
+      isLoggedIn = false;
+      emailId = '';
+      setState(() {});
+    }
   }
 
   Future<void> _getDeviceId() async {
@@ -148,10 +173,11 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<void> _checkNotificationStatus(String emailId) async {
-    log('DeviceID: $_deviceId');
+  Future<void> _checkNotificationStatus() async {
+    log('Home Page DeviceID: $_deviceId');
+    log('Home Page EmailID: $emailId');
     try {
-      final response = await BrandsApi.fetchSavedProductDataUnified(
+      final response = await BrandsApi.fetchPriceAlertProduct(
         emailId: emailId,
         deviceToken: _deviceId,
         context: context,
@@ -169,7 +195,7 @@ class _HomePageState extends State<HomePage>
             hasUnreadNotifications = hasUnread;
           });
         }
-
+        log('Home Screen');
         log('Notification status: ${hasUnread ? 'Has unread' : 'All read'}');
       }
     } catch (e) {
@@ -542,112 +568,6 @@ class _HomePageState extends State<HomePage>
                           // Action Buttons
                           Row(
                             children: [
-                              // WorkManager Status Indicator
-                              // if (isLoggedIn) ...[
-                              //   Container(
-                              //     margin: const EdgeInsets.only(right: 12),
-                              //     decoration: BoxDecoration(
-                              //       color: isWorkManagerRunning
-                              //           ? Colors.green
-                              //           : Colors.orange,
-                              //       borderRadius: BorderRadius.circular(8),
-                              //       boxShadow: [
-                              //         BoxShadow(
-                              //           color: Colors.grey.withOpacity(0.1),
-                              //           spreadRadius: 1,
-                              //           blurRadius: 3,
-                              //           offset: const Offset(0, 1),
-                              //         ),
-                              //       ],
-                              //     ),
-                              //     child: Material(
-                              //       color: Colors.transparent,
-                              //       child: InkWell(
-                              //         borderRadius: BorderRadius.circular(8),
-                              //         onTap: _refreshWorkManagerStatus,
-                              //         child: Container(
-                              //           padding: const EdgeInsets.symmetric(
-                              //               horizontal: 8, vertical: 4),
-                              //           child: Row(
-                              //             mainAxisSize: MainAxisSize.min,
-                              //             children: [
-                              //               Icon(
-                              //                 isWorkManagerRunning
-                              //                     ? Icons.sync
-                              //                     : Icons.sync_disabled,
-                              //                 color: Colors.white,
-                              //                 size: 16,
-                              //               ),
-                              //               const SizedBox(width: 4),
-                              //               Text(
-                              //                 isWorkManagerRunning
-                              //                     ? 'API Active'
-                              //                     : 'API Inactive',
-                              //                 style: const TextStyle(
-                              //                   color: Colors.white,
-                              //                   fontSize: 10,
-                              //                   fontWeight: FontWeight.w600,
-                              //                 ),
-                              //               ),
-                              //             ],
-                              //           ),
-                              //         ),
-                              //       ),
-                              //     ),
-                              //   ),
-                              //
-                              //   // Manual Test Button
-                              //   Container(
-                              //     margin: const EdgeInsets.only(right: 12),
-                              //     decoration: BoxDecoration(
-                              //       color: Colors.blue,
-                              //       borderRadius: BorderRadius.circular(8),
-                              //       boxShadow: [
-                              //         BoxShadow(
-                              //           color: Colors.grey.withOpacity(0.1),
-                              //           spreadRadius: 1,
-                              //           blurRadius: 3,
-                              //           offset: const Offset(0, 1),
-                              //         ),
-                              //       ],
-                              //     ),
-                              //     child: Material(
-                              //       color: Colors.transparent,
-                              //       child: InkWell(
-                              //         borderRadius: BorderRadius.circular(8),
-                              //         onTap: () async {
-                              //           // Manually trigger API call for testing
-                              //           await _manualTestApiCall();
-                              //         },
-                              //         child: Container(
-                              //           padding: const EdgeInsets.symmetric(
-                              //               horizontal: 8, vertical: 4),
-                              //           child: Row(
-                              //             mainAxisSize: MainAxisSize.min,
-                              //             children: [
-                              //               Icon(
-                              //                 Icons.play_arrow,
-                              //                 color: Colors.white,
-                              //                 size: 16,
-                              //               ),
-                              //               const SizedBox(width: 4),
-                              //               Text(
-                              //                 'Test API',
-                              //                 style: const TextStyle(
-                              //                   color: Colors.white,
-                              //                   fontSize: 10,
-                              //                   fontWeight: FontWeight.w600,
-                              //                 ),
-                              //               ),
-                              //             ],
-                              //           ),
-                              //         ),
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ],
-
-                              // Notifications
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.white,
@@ -673,7 +593,7 @@ class _HomePageState extends State<HomePage>
                                               const NotificationScreen(),
                                         ),
                                       );
-                                      await _checkNotificationStatus(emailId);
+                                      await _checkNotificationStatus();
                                     },
                                     child: Container(
                                       padding: const EdgeInsets.all(10),

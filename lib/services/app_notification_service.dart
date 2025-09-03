@@ -248,7 +248,7 @@ class AppNotificationService {
 
       if (_context != null && _context!.mounted) {
         // Use unified method that handles both email and device token scenarios
-        final responseBody = await BrandsApi.fetchSavedProductDataUnified(
+        final responseBody = await BrandsApi.fetchPriceAlertProduct(
           emailId: _userEmail,
           deviceToken: _deviceId,
           context: _context!,
