@@ -2077,7 +2077,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   onPressed: () {
                     // TODO: Show alert management options
                     log('Show alert management options');
-                    _showAlertManagementDialog();
+                    _showDeleteConfirmationDialog();
+                    //_showAlertManagementDialog();
                   },
                   icon: const Icon(
                     Icons.settings,

@@ -16,6 +16,7 @@ import 'package:minsellprice/screens/loging_page/loging_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/screens/register_page/register_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:minsellprice/core/mixins/notification_mixin.dart';
 
 import '../../../core/utils/common_screen_widget/login_reqiure_design.dart';
 
@@ -28,8 +29,8 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
-
+class _NotificationScreenState extends State<NotificationScreen>
+    with NotificationMixin {
   List<Map<String, dynamic>> notifications = [];
   List<SavedProductModel> savedProducts = [];
 
@@ -43,7 +44,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   void initState() {
     super.initState();
     _initCall();
-
 
     // // Listen to Firebase Auth state changes
     // _authStateSubscription =
@@ -78,10 +78,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
   void _initCall() async {
     await _getEmail();
     await _getDeviceId();
-    await  _getProductData();
+    await _getProductData();
   }
 
-  Future<void> _getEmail() async{
+  Future<void> _getEmail() async {
     try {
       final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -89,7 +89,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         emailId = currentUser.email!;
         isLoggedIn = true;
         log('Email from Firebase Auth: $emailId');
-       // await _getProductData(emailId);
+        // await _getProductData(emailId);
       } else {
         // No user logged in
         isLoggedIn = false;
@@ -106,7 +106,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<void> _getDeviceId() async {
-
     try {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
@@ -133,10 +132,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     log('EmailId: $emailId');
     try {
       final response = await BrandsApi.fetchPriceAlertProduct(
-          emailId: emailId,
-          deviceToken: _deviceId,
-          context: context
-      );
+          emailId: emailId, deviceToken: _deviceId, context: context);
 
       if (response != 'error') {
         log('API Response: $response');
@@ -224,7 +220,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         leading: Container(
           margin: const EdgeInsets.only(left: 8),
           decoration: BoxDecoration(
-          //color: Colors.white.withOpacity(0.2),
+            //color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(5),
           ),
           child: IconButton(
@@ -365,63 +361,62 @@ class _NotificationScreenState extends State<NotificationScreen> {
           // Notifications list
           Expanded(
             child: isLoading
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Loading your saved products...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : notifications.isEmpty
                     ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            CircularProgressIndicator(
-                              color: AppColors.primary,
+                            Icon(
+                              Icons.notifications_none,
+                              size: 64,
+                              color: Colors.grey,
                             ),
                             SizedBox(height: 16),
                             Text(
-                              'Loading your saved products...',
+                              'No notifications yet',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 18,
                                 color: Colors.grey,
                                 fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'You\'ll see your notifications here',
+                              style: TextStyle(
+                                color: Colors.grey,
                               ),
                             ),
                           ],
                         ),
                       )
-                    : notifications.isEmpty
-                        ? const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.notifications_none,
-                                  size: 64,
-                                  color: Colors.grey,
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'No notifications yet',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'You\'ll see your notifications here',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: notifications.length,
-                            itemBuilder: (context, index) {
-                              final notification = notifications[index];
-                              return _buildNotificationCard(
-                                  notification, index);
-                            },
-                          ),
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: notifications.length,
+                        itemBuilder: (context, index) {
+                          final notification = notifications[index];
+                          return _buildNotificationCard(notification, index);
+                        },
+                      ),
           ),
         ],
       ),
@@ -989,8 +984,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Future<void> _deleteNotifications(
-      {required int productId}) async {
+  Future<void> _deleteNotifications({required int productId}) async {
     setState(() {
       isLoading = true;
     });
@@ -998,7 +992,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
     log('productId $productId');
 
     await BrandsApi.deleteSavedPriceAlertProduct(
-            emailId: emailId, deviceToken: _deviceId, productId: productId, context: context)
+            emailId: emailId,
+            deviceToken: _deviceId,
+            productId: productId,
+            context: context)
         .then((response) async {
       if (response != 'error') {
         log('Product $productId deleted successfully');
@@ -1015,7 +1012,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
     log('EmailId $emailId');
     log('productId $productId');
-    await BrandsApi.updateReadStatus(emailId: emailId,deviceToken: _deviceId, productId: productId, isRead: 1)
+    await BrandsApi.updateReadStatus(
+            emailId: emailId,
+            deviceToken: _deviceId,
+            productId: productId,
+            isRead: 1)
         .then((response) async {
       if (response != 'error') {
         log('Product $productId count update successfully');

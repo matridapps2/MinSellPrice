@@ -305,10 +305,26 @@ class NotificationService {
     required int productId,
     String? productImage,
   }) async {
+    // Calculate savings and validate
+    final oldPriceValue = double.parse(oldPrice);
+    final savings = oldPriceValue - newPrice;
+
+    // Don't show notification if savings is zero or negative
+    if (savings <= 0) {
+      log('❌ Notification skipped: No savings detected (savings: \$${savings.toStringAsFixed(2)})');
+      return;
+    }
+
+    // Don't show notification if savings is too small (less than $0.01)
+    if (savings < 0.01) {
+      log('❌ Notification skipped: Savings too small (savings: \$${savings.toStringAsFixed(2)})');
+      return;
+    }
+
     // Create formatted title and body with price details
     const title = 'Price Drop Alert!';
     final body =
-        '$productName price dropped from \$${oldPrice} to \$${newPrice.toStringAsFixed(2)} - Save \$${(double.parse(oldPrice) - newPrice).toStringAsFixed(2)}!';
+        '$productName price dropped from \$${oldPrice} to \$${newPrice.toStringAsFixed(2)} - Save \$${savings.toStringAsFixed(2)}!';
 
     // Create detailed notification with product image
     await _showDetailedPriceDropNotification(
@@ -585,7 +601,7 @@ Tap to view product details and manage your alerts.
       final notificationId =
           DateTime.now().millisecondsSinceEpoch.remainder(100000);
 
-      // Show the welcome notification
+      // // Show the welcome notification
       await _localNotifications.show(
         notificationId,
         title,

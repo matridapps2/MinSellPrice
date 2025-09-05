@@ -9,13 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:minsellprice/core/utils/constants/constants.dart';
 import 'package:minsellprice/screens/categories_provider/product_list_provider.dart';
 import 'package:minsellprice/screens/home_page/notification_screen/notification_screen.dart';
-import 'package:minsellprice/services/work_manager_service.dart';
-import 'package:minsellprice/services/app_notification_service.dart';
+import 'package:minsellprice/services/app_lifecycle_service.dart';
 import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:minsellprice/services/background_service.dart';
 import 'package:minsellprice/services/notification_service.dart';
 import 'package:minsellprice/services/notification_permission_service.dart';
@@ -127,8 +124,8 @@ void main() async {
   // Request notification permission after app is running
   _requestNotificationPermission();
 
-  // Start automatic notification checking after app is running
-  _startAutomaticNotificationChecking();
+  // Initialize app lifecycle service
+  _initializeAppLifecycleService();
 }
 
 // Initialize everything in background
@@ -225,33 +222,18 @@ Future<void> _requestNotificationPermission() async {
   }
 }
 
-// Start automatic notification checking
-Future<void> _startAutomaticNotificationChecking() async {
+// Initialize app lifecycle service
+Future<void> _initializeAppLifecycleService() async {
   try {
-    // Wait for the app to fully load and get context
-    await Future.delayed(const Duration(seconds: 5));
+    // Wait for the app to fully load
+    await Future.delayed(const Duration(seconds: 3));
 
-    // Get the global navigator key context
-    final context = NavigationService().getNavigatorKey().currentContext;
-    if (context != null) {
-      log('Starting automatic notification checking with context...');
+    // Initialize the lifecycle service
+    await AppLifecycleService().initialize();
 
-      // Initialize the notification service
-      final appNotificationService = AppNotificationService();
-      await appNotificationService.initialize(context);
-
-      // Start automatic notification checking
-      await appNotificationService.startAutoNotificationChecking();
-
-      // Check for notifications on app open
-      await appNotificationService.checkForNotificationsOnAppOpen();
-
-      log('✅ Automatic notification checking started successfully');
-    } else {
-      log('❌ No context available for notification service initialization');
-    }
+    log('✅ App lifecycle service initialized successfully');
   } catch (e) {
-    log('❌ Error starting automatic notification checking: $e');
+    log('❌ Error initializing app lifecycle service: $e');
   }
 }
 

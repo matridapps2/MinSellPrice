@@ -28,6 +28,7 @@ import 'package:sqflite/sqflite.dart';
 import 'notification_screen/notification_screen.dart';
 import 'package:minsellprice/services/work_manager_service.dart';
 import 'package:minsellprice/services/app_notification_service.dart';
+import 'package:minsellprice/core/mixins/notification_mixin.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -39,7 +40,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        NotificationMixin {
   int vendorId = 0;
   int _activeIndex = 0;
 
@@ -78,15 +82,6 @@ class _HomePageState extends State<HomePage>
 
     super.initState();
     _initCall();
-
-    // Add app lifecycle listener to check for notifications when app comes to foreground
-    SystemChannels.lifecycle.setMessageHandler((msg) async {
-      if (msg == AppLifecycleState.resumed.toString()) {
-        log('🔄 App resumed - checking for notifications...');
-        await _checkForNotificationsOnAppResume();
-      }
-      return null;
-    });
   }
 
   void _initCall() async {
@@ -96,40 +91,13 @@ class _HomePageState extends State<HomePage>
     await _initializeDatabase();
 
     // Initialize WorkManager for background API calls
-    await _initializeWorkManager();
+    //  await _initializeWorkManager();
 
     // Initialize app notification service
-    await _initializeAppNotificationService();
-
-    // _authStateSubscription =
-    //     FirebaseAuth.instance.authStateChanges().listen((User? user) {
-    //   if (mounted) {
-    //     if (user != null && user.email != null) {
-    //       setState(() {
-    //         isLoggedIn = true;
-    //         emailId = user.email!;
-    //       });
-    //       log('Home Screen');
-    //       log('User Logged ?');
-    //       _checkNotificationStatus(emailId);
-    //
-    //       // Start WorkManager task when user is logged in
-    //       //   _startWorkManagerTask();
-    //     } else {
-    //       setState(() {
-    //         isLoggedIn = false;
-    //         emailId = '';
-    //       });
-    //       log('User Not Login');
-    //
-    //       // Stop WorkManager task when user logs out
-    //       _stopWorkManagerTask();
-    //     }
-    //   }
-    // });
+//    await _initializeAppNotificationService();
   }
 
-  Future<void> _getEmail() async{
+  Future<void> _getEmail() async {
     try {
       final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -241,103 +209,6 @@ class _HomePageState extends State<HomePage>
       log('✅ App resume notification check completed');
     } catch (e) {
       log('❌ Error checking notifications on app resume: $e');
-    }
-  }
-
-  // Start WorkManager periodic task
-  Future<void> _startWorkManagerTask() async {
-    try {
-      await WorkManagerService.startPeriodicTask();
-      log('WorkManager task started in HomePage');
-
-      // Check status after starting
-      await Future.delayed(const Duration(seconds: 2));
-      await _checkWorkManagerStatus();
-      _showWelcomeNotification(context, 22, '454');
-    } catch (e) {
-      log('Error starting WorkManager task in HomePage: $e');
-    }
-  }
-
-  // Stop WorkManager periodic task
-  Future<void> _stopWorkManagerTask() async {
-    try {
-      await WorkManagerService.stopPeriodicTask();
-      log('WorkManager task stopped in HomePage');
-    } catch (e) {
-      log('Error stopping WorkManager task in HomePage: $e');
-    }
-  }
-
-  // Check WorkManager status and update UI
-  Future<void> _checkWorkManagerStatus() async {
-    try {
-      final isRunning = await WorkManagerService.isTaskRunning();
-      final lastExecution = await WorkManagerService.getLastExecutionTime();
-      final nextExecution = await WorkManagerService.getNextExecutionTime();
-
-      if (mounted) {
-        setState(() {
-          isWorkManagerRunning = isRunning;
-          lastApiExecution = lastExecution;
-          nextApiExecution = nextExecution;
-        });
-      }
-    } catch (e) {
-      log('Error checking WorkManager status: $e');
-    }
-  }
-
-  // Refresh WorkManager status
-  Future<void> _refreshWorkManagerStatus() async {
-    await _checkWorkManagerStatus();
-  }
-
-  // Manual test API call for debugging
-  Future<void> _manualTestApiCall() async {
-    try {
-      log('Manual API test triggered');
-
-      // Show a simple toast or snackbar to indicate the test
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Manual API test triggered - check logs for details'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-
-      // You can add actual API call logic here if needed
-      // For now, just log the action
-      log('Manual API test completed');
-    } catch (e) {
-      log('Error in manual API test: $e');
-    }
-  }
-
-  Future<void> _showWelcomeNotification(
-      BuildContext context, int productId, String price) async {
-    log('test notification');
-    try {
-      final notificationService = NotificationService();
-
-      if (!notificationService.isInitialized) {
-        await notificationService.initialize();
-      }
-
-      // Show welcome notification with product details
-      await notificationService.showWelcomeDropNotification(
-        productName: 'Product',
-        productImage: '',
-        productId: productId,
-        currentPrice: price,
-      );
-
-      log('Welcome notification sent successfully for product: $productId');
-    } catch (e) {
-      log('Error showing welcome notification: $e');
-      // Don't show error to user as this is just a welcome notification
     }
   }
 

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
@@ -44,8 +43,18 @@ class BrandsApi {
       [BuildContext? context]) async {
     try {
       log('Fetching brands from API');
-      final response = await http.get(
-        Uri.parse('$brandUrl$kMinSellBrands'),
+      final response = await retry(
+        () async => await http.get(
+          Uri.parse('$brandUrl$kMinSellBrands'),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
       );
       log('Fetching brands from API2');
       log('Brand API: $brandUrl/minsell-brand');
@@ -81,7 +90,8 @@ class BrandsApi {
     }
   }
 
-  static Future<String?> getProductListByBrandName(String brandName, int pageNumber, BuildContext context) async {
+  static Future<String?> getProductListByBrandName(
+      String brandName, int pageNumber, BuildContext context) async {
     try {
       String uri = '$brandUrl/brands/$brandName?page_no=$pageNumber';
 
@@ -113,7 +123,8 @@ class BrandsApi {
     }
   }
 
-  static Future<Map<String, dynamic>?> fetchSearchProduct(BuildContext context, String searchQuery) async {
+  static Future<Map<String, dynamic>?> fetchSearchProduct(
+      BuildContext context, String searchQuery) async {
     try {
       // Build the search URL with proper encoding
       final encodedQuery = Uri.encodeComponent(searchQuery.trim());
@@ -162,17 +173,26 @@ class BrandsApi {
     log('Parameters - brandName: $brandName, productMPN: $productMPN, productId: $productId');
 
     try {
-      final cleanBrandName = brandName.toLowerCase().replaceAll(' ', '-');
       final url =
-          '$brandUrl/brands/$cleanBrandName/$productMPN?product_id=$productId';
+          '$brandUrl/brands/$brandName/$productMPN?product_id=$productId';
 
       log('Single Product API: $url');
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+      final response = await retry(
+        () async => await http.get(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
         },
       );
 
@@ -211,8 +231,18 @@ class BrandsApi {
           '$growthMatridUrl$kSaveProductData$kEmail$emailId&product_id=$productId&price=$price&device_token=$deviceToken';
 
       log('SavePriceAlert API: $url');
-      final response = await http.post(
-        Uri.parse(url),
+      final response = await retry(
+        () async => await http.post(
+          Uri.parse(url),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
       );
       log('API Response Status: ${response.statusCode}');
 
@@ -240,8 +270,18 @@ class BrandsApi {
       final url = '$growthMatridUrl$kFetchProductData$kEmail$emailId';
 
       log('GetPriceAlert API: $url');
-      final response = await http.post(
-        Uri.parse(url),
+      final response = await retry(
+        () async => await http.post(
+          Uri.parse(url),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
       );
       log('API Response Status: ${response.statusCode}');
 
@@ -259,7 +299,6 @@ class BrandsApi {
       return e.toString();
     }
   }
-
 
   /// Unified method to fetch saved product data using either email or device token
   static Future<String> fetchPriceAlertProduct({
@@ -288,11 +327,21 @@ class BrandsApi {
       }
 
       log(logMessage);
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+      final response = await retry(
+        () async => await http.post(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
         },
       );
       log('API Response Status: ${response.statusCode}');
@@ -319,17 +368,18 @@ class BrandsApi {
     required BuildContext context,
   }) async {
     try {
-
       String logMessage = '';
       String url;
 
       log('Delete ProductData API:');
       if (emailId.isNotEmpty) {
-        url = '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
+        url =
+            '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
         logMessage = 'GetPriceAlert API (Email): $url';
         log('✅ LOGIN CASE: Using email for API call: $emailId');
       } else if (deviceToken.isNotEmpty) {
-        url = '$growthMatridUrl$kDeleteProductData$kDeviceToken$deviceToken&product_id=$productId';
+        url =
+            '$growthMatridUrl$kDeleteProductData$kDeviceToken$deviceToken&product_id=$productId';
         logMessage = 'GetPriceAlert API (Device Token): $url';
         log('✅ LOGGED OUT CASE: Using device token for API call: $deviceToken');
       } else {
@@ -337,15 +387,23 @@ class BrandsApi {
         return 'error';
       }
 
-
       log('Update Read Status API: $logMessage');
 
-
-    ///  final url = '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
+      ///  final url = '$growthMatridUrl$kDeleteProductData$kEmail$emailId&product_id=$productId';
 
       log('Delete ProductData API: $url');
-      final response = await http.post(
-        Uri.parse(url),
+      final response = await retry(
+        () async => await http.post(
+          Uri.parse(url),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
       );
       log('API Response Status: ${response.statusCode}');
 
@@ -371,17 +429,18 @@ class BrandsApi {
     required int isRead,
   }) async {
     try {
-
       String logMessage = '';
       String url;
 
       log('UPDATE READ STATUS API:');
       if (emailId.isNotEmpty) {
-        url = '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId&is_read=$isRead';
+        url =
+            '$growthMatridUrl$kReadProductData$kEmail$emailId&product_id=$productId&is_read=$isRead';
         logMessage = 'GetPriceAlert API (Email): $url';
         log('✅ LOGIN CASE: Using email for API call: $emailId');
       } else if (deviceToken.isNotEmpty) {
-        url = '$growthMatridUrl$kReadProductData$kDeviceToken$deviceToken&product_id=$productId&is_read=$isRead';
+        url =
+            '$growthMatridUrl$kReadProductData$kDeviceToken$deviceToken&product_id=$productId&is_read=$isRead';
         logMessage = 'GetPriceAlert API (Device Token): $url';
         log('✅ LOGGED OUT CASE: Using device token for API call: $deviceToken');
       } else {
@@ -389,10 +448,19 @@ class BrandsApi {
         return 'error';
       }
 
-
       log('Update Read Status API: $logMessage');
-      final response = await http.post(
-        Uri.parse(url),
+      final response = await retry(
+        () async => await http.post(
+          Uri.parse(url),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
       );
       log('API Response Status: ${response.statusCode}');
 
@@ -519,8 +587,18 @@ class BrandsApi {
           '$brandUrl$kSaveLikedProduct$kEmail$emailId&product_id=$productId&status=$status';
 
       log('Saved Liked Product API: $url');
-      final response = await http.post(
-        Uri.parse(url),
+      final response = await retry(
+        () async => await http.post(
+          Uri.parse(url),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
       );
       log('API Response Status: ${response.statusCode}');
 
@@ -546,8 +624,18 @@ class BrandsApi {
       final url = '$brandUrl$kLikedProduct$kEmail$emailId';
 
       log('Get Liked Product API: $url');
-      final response = await http.get(
-        Uri.parse(url),
+      final response = await retry(
+        () async => await http.get(
+          Uri.parse(url),
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
       );
       log('API Response Status: ${response.statusCode}');
 

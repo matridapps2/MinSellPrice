@@ -1,7 +1,7 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/screens/splash_screen/splash_screen.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
+import 'package:minsellprice/services/app_lifecycle_service.dart';
 
 class BridgeClass extends StatefulWidget {
   const BridgeClass({super.key});
@@ -22,6 +22,11 @@ class _BridgeClassState extends State<BridgeClass> {
       if (mounted) {
         setState(() {
           _showSplash = true;
+        });
+
+        // Set context for lifecycle service after splash screen is shown
+        Future.delayed(const Duration(milliseconds: 100), () {
+          AppLifecycleService().setCurrentContext(context);
         });
       }
     });

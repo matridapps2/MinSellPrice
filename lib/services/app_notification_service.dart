@@ -5,11 +5,10 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import 'package:minsellprice/services/notification_service.dart';
 import 'package:minsellprice/services/work_manager_service.dart';
-import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
+import 'package:minsellprice/services/navigation_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service to handle automatic notification checking when app opens and comes to foreground
@@ -77,7 +76,7 @@ class AppNotificationService {
       final prefs = await SharedPreferences.getInstance();
       final queueCount = prefs.getInt('notification_queue_count') ?? 0;
 
-      if (queueCount > 0 && _context != null && _context!.mounted) {
+      if (queueCount > 0) {
         log('✅ Found $queueCount notifications in queue');
         await _showAllNotificationsFromQueue();
       } else {
@@ -87,7 +86,7 @@ class AppNotificationService {
         final notificationData =
             await WorkManagerService.checkAutoTriggeredNotification();
 
-        if (notificationData != null && _context != null && _context!.mounted) {
+        if (notificationData != null) {
           log('✅ Auto-notification found (fallback): $notificationData');
           await _showAutoNotification(notificationData);
           await WorkManagerService.clearAutoTriggeredNotification();
@@ -118,22 +117,10 @@ class AppNotificationService {
         productImage: notificationData['product_image'] ?? '',
       );
 
-      if (_context != null && _context!.mounted) {
-        CommonToasts.centeredMobile(
-          context: _context!,
-          msg: '🚨 Price drop detected! Notification sent automatically!',
-        );
-      }
-
+      log('🚨 Price drop detected! Notification sent automatically!');
       log('✅ Auto-notification shown successfully');
     } catch (e) {
       log('❌ Error showing auto-notification: $e');
-      if (_context != null && _context!.mounted) {
-        CommonToasts.centeredMobile(
-          context: _context!,
-          msg: 'Error showing auto-notification: $e',
-        );
-      }
     }
   }
 
@@ -173,9 +160,9 @@ class AppNotificationService {
         try {
           await notificationService.showPriceDropNotification(
             productName: notification['product_name'] ?? '---',
-            oldPrice: notification['old_price'] ?? '0.00',
+            oldPrice: notification['old_price'] ?? '---',
             newPrice:
-                double.tryParse(notification['new_price'] ?? '0.00') ?? 0.00,
+                double.tryParse(notification['new_price'] ?? '---') ?? 0.00,
             productId: int.tryParse(notification['product_id'] ?? '0') ?? 0,
             productImage: notification['product_image'] ?? '',
           );
@@ -189,12 +176,7 @@ class AppNotificationService {
         }
       }
 
-      if (_context != null && _context!.mounted) {
-        CommonToasts.centeredMobile(
-          context: _context!,
-          msg: '🚨 ${notificationQueue.length} price drop notifications sent!',
-        );
-      }
+      log('🚨 ${notificationQueue.length} price drop notifications sent!');
 
       // Clear the queue after showing all notifications
       await _clearNotificationQueue();
@@ -227,10 +209,7 @@ class AppNotificationService {
     log('🔍 Checking for notifications on app open...');
 
     try {
-      // Wait a bit for the app to fully load
-      await Future.delayed(const Duration(seconds: 3));
-
-      // Make API call to check for notifications
+      // Make API call to check for notifications immediately
       await _fetchNotificationsFromAPI();
 
       log('✅ App open notification check completed');
@@ -246,37 +225,42 @@ class AppNotificationService {
       await _getDeviceId();
       await _getUserEmail();
 
-      if (_context != null && _context!.mounted) {
-        // Use unified method that handles both email and device token scenarios
-        final responseBody = await BrandsApi.fetchPriceAlertProduct(
-          emailId: _userEmail,
-          deviceToken: _deviceId,
-          context: _context!,
-        );
+      // Use unified method that handles both email and device token scenarios
+      // Get current context from NavigationService if not available
+      BuildContext? apiContext =
+          _context ?? NavigationService().getNavigatorKey().currentContext;
 
-        if (responseBody != 'error' && responseBody.isNotEmpty) {
-          log('✅ API call successful using unified method!');
-          log('📏 Response body length: ${responseBody.length}');
+      if (apiContext == null) {
+        log('❌ No context available for API call - skipping notification check');
+        return;
+      }
 
-          try {
-            final data = json.decode(responseBody);
-            log('📊 Response type: ${data.runtimeType}');
-            log('🔍 Response data: $data');
+      final responseBody = await BrandsApi.fetchPriceAlertProduct(
+        emailId: _userEmail,
+        deviceToken: _deviceId,
+        context: apiContext,
+      );
 
-            // Process the data for notifications
-            await _processApiDataForNotifications(data);
+      if (responseBody != 'error' && responseBody.isNotEmpty) {
+        log('✅ API call successful using unified method!');
+        log('📏 Response body length: ${responseBody.length}');
 
-            log('✅ API data processing completed');
-          } catch (jsonError) {
-            log('❌ Error parsing JSON response: $jsonError');
-            log('📄 Raw response: $responseBody');
-          }
-        } else {
-          log('❌ API call failed or returned error');
-          log('📄 Response: $responseBody');
+        try {
+          final data = json.decode(responseBody);
+          log('📊 Response type: ${data.runtimeType}');
+          log('🔍 Response data: $data');
+
+          // Process the data for notifications
+          await _processApiDataForNotifications(data);
+
+          log('✅ API data processing completed');
+        } catch (jsonError) {
+          log('❌ Error parsing JSON response: $jsonError');
+          log('📄 Raw response: $responseBody');
         }
       } else {
-        log('❌ Context not available for API call');
+        log('❌ API call failed or returned error');
+        log('📄 Response: $responseBody');
       }
     } catch (e) {
       log('❌ Error fetching notifications from API: $e');
@@ -427,25 +411,25 @@ class AppNotificationService {
         return false;
       }
 
-      // ✅ NEW: Check if prices are actually different
-      // if (oldPrice == newPrice) {
-      //   log('❌ Validation failed: Prices are the same - no price drop');
-      //   log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
-      //   log('   New Price: \$${newPrice.toStringAsFixed(2)}');
-      //   log('   Price Difference: \$${(newPrice - oldPrice).toStringAsFixed(2)}');
-      //   log('   💡 Notification skipped - no actual price change detected');
-      //   return false;
-      // }
+      // ✅ Check if prices are actually different
+      if (oldPrice == newPrice) {
+        log('❌ Validation failed: Prices are the same - no price drop');
+        log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
+        log('   New Price: \$${newPrice.toStringAsFixed(2)}');
+        log('   Price Difference: \$${(newPrice - oldPrice).toStringAsFixed(2)}');
+        log('   💡 Notification skipped - no actual price change detected');
+        return false;
+      }
 
-      // // ✅ NEW: Check if it's actually a price drop (new price < old price)
-      // if (newPrice > oldPrice) {
-      //   log('❌ Validation failed: New price is higher than old price - not a drop');
-      //   log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
-      //   log('   New Price: \$${newPrice.toStringAsFixed(2)}');
-      //   log('   Price Difference: \$${(newPrice - oldPrice).toStringAsFixed(2)} (price increased)');
-      //   log('   💡 Notification skipped - price increased, not decreased');
-      //   return false;
-      // }
+      // ✅ Check if it's actually a price drop (new price < old price)
+      if (newPrice > oldPrice) {
+        log('❌ Validation failed: New price is higher than old price - not a drop');
+        log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
+        log('   New Price: \$${newPrice.toStringAsFixed(2)}');
+        log('   Price Difference: \$${(newPrice - oldPrice).toStringAsFixed(2)} (price increased)');
+        log('   💡 Notification skipped - price increased, not decreased');
+        return false;
+      }
 
       final productId = int.tryParse(data['product_id']?.toString() ?? '0');
       if (productId == null || productId <= 0) {
@@ -467,34 +451,34 @@ class AppNotificationService {
         return false;
       }
 
-      // // ✅ Price drop detected - calculate savings
-      // final priceDifference = oldPrice - newPrice;
-      // final savingsPercentage = ((priceDifference / oldPrice) * 100);
-      //
-      // log('✅ Price drop detected!');
-      // log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
-      // log('   New Price: \$${newPrice.toStringAsFixed(2)}');
-      // log('   💰 Savings: \$${priceDifference.toStringAsFixed(2)}');
-      // log('   📊 Savings Percentage: ${savingsPercentage.toStringAsFixed(1)}%');
-      //
-      // // ✅ NEW: Check for minimum price difference (optional - prevents tiny price changes)
-      // final minimumPriceDifference = 0.01; // $0.01 minimum difference
-      // if (priceDifference < minimumPriceDifference) {
-      //   log('❌ Validation failed: Price difference too small');
-      //   log('   Price Difference: \$${priceDifference.toStringAsFixed(2)}');
-      //   log('   Minimum Required: \$${minimumPriceDifference.toStringAsFixed(2)}');
-      //   log('   💡 Notification skipped - price change too small to notify');
-      //   return false;
-      // }
+      // ✅ Price drop detected - calculate savings
+      final priceDifference = oldPrice - newPrice;
+      final savingsPercentage = ((priceDifference / oldPrice) * 100);
 
-      // ✅ NEW: Check for zero or negative prices
-      // if (oldPrice <= 0 || newPrice <= 0) {
-      //   log('❌ Validation failed: Invalid price values (zero or negative)');
-      //   log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
-      //   log('   New Price: \$${newPrice.toStringAsFixed(2)}');
-      //   log('   💡 Notification skipped - invalid price values');
-      //   return false;
-      // }
+      log('✅ Price drop detected!');
+      log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
+      log('   New Price: \$${newPrice.toStringAsFixed(2)}');
+      log('   💰 Savings: \$${priceDifference.toStringAsFixed(2)}');
+      log('   📊 Savings Percentage: ${savingsPercentage.toStringAsFixed(1)}%');
+
+      // ✅ Check for minimum price difference (prevents $0.00 savings notifications)
+      final minimumPriceDifference = 0.01; // $0.01 minimum difference
+      if (priceDifference < minimumPriceDifference) {
+        log('❌ Validation failed: Price difference too small');
+        log('   Price Difference: \$${priceDifference.toStringAsFixed(2)}');
+        log('   Minimum Required: \$${minimumPriceDifference.toStringAsFixed(2)}');
+        log('   💡 Notification skipped - price change too small to notify');
+        return false;
+      }
+
+      // ✅ Check for zero or negative prices
+      if (oldPrice <= 0 || newPrice <= 0) {
+        log('❌ Validation failed: Invalid price values (zero or negative)');
+        log('   Old Price: \$${oldPrice.toStringAsFixed(2)}');
+        log('   New Price: \$${newPrice.toStringAsFixed(2)}');
+        log('   💡 Notification skipped - invalid price values');
+        return false;
+      }
 
       log('✅ All data validation checks passed');
       log('📊 Notification status: isNotificationSent = $isNotificationSent (0 = not sent, 1 = sent)');
