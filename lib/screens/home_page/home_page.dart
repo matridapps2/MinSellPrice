@@ -20,6 +20,7 @@ import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_api.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_screen.dart';
 import 'package:minsellprice/services/notification_service.dart';
+import 'package:minsellprice/widgets/category_shimmer.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -75,9 +76,10 @@ class _HomePageState extends State<HomePage>
   void initState() {
     // TODO: implement initState
     _screens = [
-      const Center(
-        child: CircularProgressIndicator(),
-      )
+      const SingleChildScrollView(
+          child: Column(children: [
+        Center(child: ShimmerDesign(isDone: true)),
+      ]))
     ];
 
     super.initState();
@@ -302,7 +304,14 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     super.build(context);
     if (_screens.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ShimmerDesign(isDone: true),
+          SizedBox(height: 25),
+          ShimmerDesign(isDone: true),
+        ],
+      );
     }
 
     return GestureDetector(

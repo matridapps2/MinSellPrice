@@ -308,9 +308,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       return const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ShimmerDesign(),
+          ShimmerDesign(isDone: false),
           SizedBox(height: 25),
-          ShimmerDesign(),
+          ShimmerDesign(isDone: false),
         ],
       );
     } else if (brandsProvider.state == BrandsState.error) {
