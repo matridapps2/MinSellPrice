@@ -25,8 +25,7 @@ class DashboardScreenWidget extends StatefulWidget {
 }
 
 class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
-    with KeepAliveParentDataMixin {
-  List<Map<String, dynamic>> databaseData = [];
+    with KeepAliveParentDataMixin {List<Map<String, dynamic>> databaseData = [];
 
   final _brandSearchController = TextEditingController();
   final _productSearchController = TextEditingController();
