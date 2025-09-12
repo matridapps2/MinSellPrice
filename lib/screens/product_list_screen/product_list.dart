@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'dart:developer';
+import 'package:intl/intl.dart';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:http/http.dart';
 import 'package:minsellprice/widgets/product_list_shimmer.dart';
 import 'package:provider/provider.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
@@ -15,7 +14,6 @@ import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/screens/categories_provider/product_list_provider.dart';
 import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
-import 'package:minsellprice/widgets/stylish_loader.dart';
 
 class ProductList extends StatefulWidget {
   const ProductList({
@@ -34,38 +32,37 @@ class ProductList extends StatefulWidget {
 }
 
 class _ProductList extends State<ProductList> {
+
   bool _hasUserScrolled = false;
   bool _isUserActivelyScrolling = false; // Track if user is actively scrolling
-  bool _hasUserSeenLastProduct =
-      false; // Track if user has seen the last product
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  final ScrollController _scrollController = ScrollController();
-
-  final FocusNode _focusNode = FocusNode();
-
-  final TextEditingController iconController = TextEditingController();
+  bool _hasUserSeenLastProduct = false; // Track if user has seen the last product
+  bool currentInStockOnly = false;
+  bool currentOnSaleOnly = false;
+  bool hasMoreData = true;
+  bool filterSubmitted = true;
+  bool _isLoadingMore = false; // Flag to prevent multiple simultaneous load more calls
+  bool _isSearching = false;
 
   int? priceSorting;
   int currentApiPage = 1;
   int totalProductCount = 0;
 
-  bool currentInStockOnly = false;
-  bool currentOnSaleOnly = false;
-  bool hasMoreData = true;
-  bool filterSubmitted = true;
-  bool _isLoading = false;
-  bool _isError = false;
-  bool _isLoadingMore =
-      false; // Flag to prevent multiple simultaneous load more calls
-  DateTime? _lastLoadMoreTime; // Track when we last loaded more products
-
-  // Unlimited product storage (no memory limits)
+  List<VendorProduct> _searchResults = [];
   List<VendorProduct> allProducts = [];
   List<String> filterVendor = [];
   List<String> uniqueVendors = [];
   List<VendorProduct> brandProducts = [];
   List<VendorProduct> tempProductList = [];
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final ScrollController _scrollController = ScrollController();
+
+  final FocusNode _focusNode = FocusNode();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  final TextEditingController iconController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   RangeValues currentPriceRange = const RangeValues(0, 1000);
 
@@ -74,7 +71,6 @@ class _ProductList extends State<ProductList> {
   @override
   void initState() {
     super.initState();
-    // _initCall();
     _addScrollListener();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -89,8 +85,7 @@ class _ProductList extends State<ProductList> {
 
   void _addScrollListener() {
     _scrollListener = () {
-      if (_scrollController.position.userScrollDirection !=
-          ScrollDirection.idle) {
+      if (_scrollController.position.userScrollDirection != ScrollDirection.idle) {
         _hasUserScrolled = true; // User scrolled at least once
         _isUserActivelyScrolling = true; // User is actively scrolling
 
@@ -101,21 +96,16 @@ class _ProductList extends State<ProductList> {
       }
 
       // Check if user has seen the last product
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 20) {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 20) {
         _hasUserSeenLastProduct = true;
         log('Scroll detection: User has seen last product');
       }
 
       // Only trigger API call when user is at the VERY bottom AND has seen the last product
       final productProvider = context.read<ProductProvider>();
-      if (_hasUserScrolled &&
-          _isUserActivelyScrolling &&
-          _hasUserSeenLastProduct &&
-          hasMoreData &&
-          !_isLoadingMore &&
-          _scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 10) {
+      if (_hasUserScrolled && _isUserActivelyScrolling
+          && _hasUserSeenLastProduct && hasMoreData
+          && !_isLoadingMore && _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 10) {
         // Very strict threshold
         log('Scroll detection: User at very bottom and has seen last product - triggering API call');
         //_loadMoreProducts();
@@ -132,191 +122,102 @@ class _ProductList extends State<ProductList> {
     _scrollController.dispose();
     _focusNode.dispose();
     iconController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
 
     super.dispose();
   }
 
-  void _initCall() async {
-    log('Brand Name: ${widget.brandName}');
-    await _fetchBrandProducts().whenComplete(() async {});
-  }
-
-  Future<void> _fetchBrandProducts() async {
-    setState(() => _isLoading = true);
-    try {
-      final allProductsResponse = await BrandsApi.getProductListByBrandName(
-          widget.brandName.toString(), currentApiPage, context);
-
-      final Map<String, dynamic> decoded =
-          jsonDecode(allProductsResponse ?? '{}');
-
-      final List<dynamic> jsonList = decoded['brand_product'] ?? [];
-      final List<VendorProduct> fetchedProducts =
-          jsonList.map((e) => VendorProduct.fromJson(e)).toList();
-
-      // Get total product count from API response
-      totalProductCount = decoded['productCount'] ?? 0;
-      // totalPages = (totalProductCount / itemsPerPage).ceil(); // Removed as per edit
-
-      log('Total products from API: $totalProductCount');
-      log('Total pages calculated: 0'); // Modified as per edit
-
-      // Add fetched products to allProducts list
-      allProducts.addAll(fetchedProducts);
-
-      // Check if we have more data to load
-      hasMoreData =
-          allProducts.length < totalProductCount && fetchedProducts.isNotEmpty;
-
-      // If no more products were fetched, we're done
-      if (fetchedProducts.isEmpty) {
-        hasMoreData = false;
-      }
-
-      log('_fetchBrandProducts: Initial load - products: ${fetchedProducts.length}, total: $totalProductCount, hasMoreData: $hasMoreData');
-
-      double calculatedMaxPrice = 1000.0;
-      if (allProducts.isNotEmpty) {
-        final validPrices = allProducts
-            .map((product) => double.tryParse(product.vendorpricePrice))
-            .where((price) => price != null && price > 0)
-            .cast<double>()
-            .toList();
-
-        if (validPrices.isNotEmpty) {
-          calculatedMaxPrice = validPrices.reduce((a, b) => a > b ? a : b);
-          calculatedMaxPrice =
-              ((calculatedMaxPrice / 50).ceil() * 50).toDouble();
-        }
-      }
-
+  /// Perform search using the API with the given query
+  Future<void> _performApiSearch(String query) async {
+    if (query.trim().isEmpty) {
       setState(() {
-        brandProducts = List.from(allProducts);
-        tempProductList = List.from(allProducts);
-        maxPriceFromAPI = calculatedMaxPrice;
-
-        if (currentPriceRange.end == 1000.0) {
-          currentPriceRange = RangeValues(0, maxPriceFromAPI);
-        }
-
-        filterVendor = [];
-        priceSorting = null;
-        _isLoading = false;
-        _isError = false;
+        _searchResults = [];
+        _isSearching = false;
       });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _isError = true;
-      });
-      log('Error in fetching Brand Product list: $e');
-    }
-  }
-
-  Future<void> _loadMoreProducts() async {
-    if (!hasMoreData || _isLoadingMore) {
-      log('_loadMoreProducts: Skipping - hasMoreData: $hasMoreData, _isLoadingMore: $_isLoadingMore');
       return;
     }
 
-    // Additional safety check: ensure we haven't already loaded all products
-    if (allProducts.length >= totalProductCount) {
-      log('_loadMoreProducts: All products already loaded - current: ${allProducts.length}, total: $totalProductCount');
-      hasMoreData = false;
-      return;
-    }
-
-    // More strict rate limiting to prevent API spam
-    final now = DateTime.now();
-    if (_lastLoadMoreTime != null &&
-        now.difference(_lastLoadMoreTime!) <
-            const Duration(milliseconds: 1000)) {
-      // Increased to 1 second
-      log('_loadMoreProducts: Rate limiting - waiting for cooldown');
-      return;
-    }
-
-    // Additional check: ensure user is actually at the bottom
-    if (!_isUserActivelyScrolling) {
-      log('_loadMoreProducts: Skipping - user not actively scrolling');
-      return;
-    }
-
-    // Additional check: ensure user has seen the last product
-    if (!_hasUserSeenLastProduct) {
-      log('_loadMoreProducts: Skipping - user has not seen the last product yet');
-      return;
-    }
-
-    log('_loadMoreProducts: Starting to load more products - current count: ${allProducts.length}, total available: $totalProductCount, page: $currentApiPage');
-    setState(() => _isLoadingMore = true);
+    setState(() {
+      _isSearching = true;
+    });
 
     try {
-      currentApiPage++;
-      log('Loading page $currentApiPage');
+      log('Performing API search for query: "$query" within brand: "${widget.brandName}"');
 
-      final allProductsResponse = await BrandsApi.getProductListByBrandName(
-          widget.brandName.toString(), currentApiPage, context);
-      final Map<String, dynamic> decoded =
-          jsonDecode(allProductsResponse ?? '{}');
+      final searchData = await BrandsApi.fetchSearchProduct(context, query);
 
-      final List<dynamic> jsonList = decoded['brand_product'] ?? [];
-      final List<VendorProduct> fetchedProducts =
-          jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+      if (searchData != null) {
+        final List<dynamic> jsonList = searchData['brand_product'] ?? [];
+        final List<VendorProduct> allResults =
+            jsonList.map((e) => VendorProduct.fromJson(e)).toList();
 
-      // Add new products to the list
-      allProducts.addAll(fetchedProducts);
+        // Filter out products with invalid or null key values AND filter by current brand
+        final List<VendorProduct> validResults = allResults.where((product) {
+          // Check if essential fields have valid values
+          final productId = product.productId;
+          final productMpn = product.productMpn;
+          final productName = product.productName;
+          final brandName = product.brandName;
 
-      // Check if we have more data to load
-      hasMoreData =
-          allProducts.length < totalProductCount && fetchedProducts.isNotEmpty;
+          // Product ID should be a valid number greater than 0
+          final isValidProductId = productId > 0;
 
-      // If no more products were fetched, we're done
-      if (fetchedProducts.isEmpty) {
-        hasMoreData = false;
-        log('_loadMoreProducts: No more products fetched, setting hasMoreData to false');
-      }
+          // Product MPN should not be null, empty, or "0"
+          final isValidMpn = productMpn.isNotEmpty && productMpn != "0";
 
-      // Additional check: if we received fewer products than expected, we might be at the last page
-      if (fetchedProducts.length < 100 && hasMoreData) {
-        log('_loadMoreProducts: Received ${fetchedProducts.length} products (less than 100), might be at last page');
+          // Product name should not be null or empty
+          final isValidProductName = productName.isNotEmpty;
 
-        // If we received very few products, we're likely at the last page
-        if (fetchedProducts.length < 50) {
-          hasMoreData = false;
-          log('_loadMoreProducts: Set hasMoreData to false - likely at last page');
+          // Brand name should not be null, empty, or "0"
+          final isValidBrandName = brandName.isNotEmpty && brandName != "0";
+
+          // Check if product belongs to current brand
+          final isCurrentBrand =
+              brandName.toLowerCase() == widget.brandName?.toLowerCase();
+
+          final isValid = isValidProductId &&
+              isValidMpn &&
+              isValidProductName &&
+              isValidBrandName &&
+              isCurrentBrand;
+
+          if (!isValid) {
+            if (!isCurrentBrand) {
+              log('Filtering out product from different brand: ${brandName} (current: ${widget.brandName})');
+            } else {
+              log('Filtering out invalid product: ID=$productId, MPN=$productMpn, Name=$productName, Brand=$brandName');
+            }
+          }
+
+          return isValid;
+        }).toList();
+
+        log('API search returned ${allResults.length} total results, ${validResults.length} valid results for brand "${widget.brandName}" and query: "$query"');
+
+        if (mounted) {
+          setState(() {
+            _searchResults = validResults;
+            _isSearching = false;
+          });
+        }
+      } else {
+        log('No results found for query: "$query"');
+        if (mounted) {
+          setState(() {
+            _searchResults = [];
+            _isSearching = false;
+          });
         }
       }
-
-      log('_loadMoreProducts: Loaded ${fetchedProducts.length} new products. Total now: ${allProducts.length}, hasMoreData: $hasMoreData, totalProductCount: $totalProductCount');
-
-      // Reset cooldown after successful load
-      _lastLoadMoreTime = DateTime.now();
-
-      // Single setState call to update everything at once
-      setState(() {
-        brandProducts = List.from(allProducts);
-        tempProductList = List.from(allProducts);
-        _isLoadingMore = false;
-      });
-
-      // Reset the "seen last product" flag since new products were loaded
-      _hasUserSeenLastProduct = false;
-      log('_loadMoreProducts: Reset _hasUserSeenLastProduct flag');
-
-      // Simple scroll position maintenance - no complex animations
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients && mounted) {
-          // Just maintain the user's current view position
-          // No jumping or complex calculations
-          log('Products loaded - maintaining scroll position');
-        }
-      });
     } catch (e) {
-      setState(() {
-        _isLoadingMore = false;
-      });
-      log('Error loading more products: $e');
+      log('Error performing API search: $e');
+      if (mounted) {
+        setState(() {
+          _searchResults = [];
+          _isSearching = false;
+        });
+      }
     }
   }
 
@@ -381,7 +282,7 @@ class _ProductList extends State<ProductList> {
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       surfaceTintColor: Colors.white,
-      toolbarHeight: .18 * w,
+      toolbarHeight: .25 * w,
       backgroundColor: Colors.white,
       centerTitle: false,
       title: Padding(
@@ -413,6 +314,124 @@ class _ProductList extends State<ProductList> {
           ),
         ),
       ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(color: Colors.grey[200]!, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextFormField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              textInputAction: TextInputAction.search,
+              onChanged: (value) {
+                log('Search text changed: "$value"');
+                if (value.trim().isNotEmpty) {
+                  log('Performing API search for: "$value"');
+                  _performApiSearch(value.trim());
+                } else {
+                  setState(() {
+                    _searchResults.clear();
+                    _isSearching = false;
+                  });
+                  log('Cleared search results');
+                }
+              },
+              onFieldSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  _performApiSearch(value.trim());
+                }
+              },
+              cursorColor: AppColors.primary,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+              decoration: InputDecoration(
+                hintText:
+                    'Search ${widget.brandName} products by name or MPN...',
+                hintStyle: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
+                prefixIcon: Container(
+                  margin: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.search_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? Container(
+                        margin: const EdgeInsets.all(8),
+                        child: IconButton(
+                          icon: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.grey[600],
+                              size: 16,
+                            ),
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchResults.clear();
+                              _isSearching = false;
+                            });
+                          },
+                        ),
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.grey[50],
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 16.0,
+                ),
+                border: OutlineInputBorder(
+                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -439,73 +458,109 @@ class _ProductList extends State<ProductList> {
   }
 
   Widget _buildProductCountBadge(ProductProvider productProvider) {
-    if (productProvider.totalProductCount == 0) return const SizedBox.shrink();
+    bool isSearching = _searchController.text.isNotEmpty;
+    int productCount =
+        isSearching ? _searchResults.length : productProvider.totalProductCount;
+    String title = isSearching ? 'Search Results' : 'Total Products';
+    String subtitle = isSearching
+        ? '${_searchResults.length} items found for "${_searchController.text}"'
+        : '${productProvider.totalProductCount} items available';
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!, width: 1),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+    if (productCount == 0 && !isSearching) return const SizedBox.shrink();
+
+    return Visibility(
+      visible: !isSearching,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSearching
+                      ? AppColors.primary.withOpacity(0.05)
+                      : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: isSearching
+                          ? AppColors.primary.withOpacity(0.2)
+                          : Colors.grey[200]!,
+                      width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isSearching
+                            ? AppColors.primary.withOpacity(0.15)
+                            : AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        isSearching ? Icons.search : Icons.shopping_bag_outlined,
+                        color: AppColors.primary,
+                        size: w * .06,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.shopping_bag_outlined,
-                      color: AppColors.primary,
-                      size: w * .06,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Total Products',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: w * .045,
-                            fontFamily: 'Segoe UI',
-                            fontWeight: FontWeight.w500,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: isSearching
+                                  ? AppColors.primary
+                                  : Colors.grey[600],
+                              fontSize: w * .045,
+                              fontFamily: 'Segoe UI',
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${productProvider.totalProductCount} items available',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: w * .039,
-                            fontFamily: 'Segoe UI',
-                            fontWeight: FontWeight.bold,
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: w * .039,
+                              fontFamily: 'Segoe UI',
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildProductList(ProductProvider productProvider) {
-    if (productProvider.allProducts.isEmpty) {
-      return _buildEmptyState();
+    // Determine which products to display
+    List<VendorProduct> productsToDisplay;
+    bool isSearching = _searchController.text.isNotEmpty;
+
+    if (isSearching) {
+      if (_isSearching) {
+        return _buildSearchLoadingState();
+      } else if (_searchResults.isEmpty) {
+        return _buildSearchEmptyState();
+      } else {
+        productsToDisplay = _searchResults;
+      }
+    } else {
+      if (productProvider.allProducts.isEmpty) {
+        return _buildEmptyState();
+      }
+      productsToDisplay = productProvider.allProducts;
     }
 
     return Expanded(
@@ -524,13 +579,152 @@ class _ProductList extends State<ProductList> {
               child: Wrap(
                 runSpacing: 10,
                 children: List.generate(
-                  productProvider.allProducts.length,
-                  (index) =>
-                      _buildProductCard(productProvider.allProducts[index]),
+                  productsToDisplay.length,
+                  (index) => _buildProductCard(productsToDisplay[index]),
                 ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchLoadingState() {
+    return Flexible(
+      child: Container(
+        width: w,
+        height: h / 1.1,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                strokeWidth: 3,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Searching products...',
+              style: TextStyle(
+                fontSize: w * 0.05,
+                fontFamily: 'Futura BdCn BT Bold',
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchEmptyState() {
+    return Flexible(
+      child: Container(
+        width: w,
+        height: h / 1.1,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: w * 0.3,
+              height: w * 0.3,
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 2,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.search_off_rounded,
+                size: w * 0.15,
+                color: AppColors.primary.withOpacity(0.7),
+              ),
+            ),
+            SizedBox(height: h * 0.03),
+            Text(
+              'No Search Results Found',
+              style: TextStyle(
+                fontSize: w * 0.06,
+                fontFamily: 'Futura BdCn BT Bold',
+                fontWeight: FontWeight.w600,
+                color: AppColors.text,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: h * 0.015),
+            Text(
+              'We couldn\'t find any products matching "${_searchController.text}" in ${widget.brandName}.\nTry searching with different keywords.',
+              style: TextStyle(
+                fontSize: w * 0.035,
+                fontFamily: 'Futura BdCn BT Bold',
+                fontWeight: FontWeight.w300,
+                color: Colors.grey[600],
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: h * 0.04),
+            GestureDetector(
+              onTap: () {
+                _searchController.clear();
+                setState(() {
+                  _searchResults.clear();
+                  _isSearching = false;
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: w * 0.06,
+                  vertical: h * 0.018,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.clear_rounded,
+                      size: w * 0.035,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: w * 0.015),
+                    Text(
+                      'Clear Search',
+                      style: TextStyle(
+                        fontSize: w * 0.035,
+                        fontFamily: 'Futura BdCn BT Bold',
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -638,6 +832,11 @@ class _ProductList extends State<ProductList> {
   }
 
   Widget _buildLoadingMoreIndicator(ProductProvider productProvider) {
+    // Don't show loading more indicator when searching
+    if (_searchController.text.isNotEmpty) {
+      return const SizedBox.shrink();
+    }
+
     if (!productProvider.isLoadingMore || productProvider.allProducts.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -789,23 +988,26 @@ class _ProductList extends State<ProductList> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Text(
-                '\$${product.vendorpricePrice}',
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontFamily: 'Segoe UI',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+          Padding(
+            padding: const EdgeInsets.only(right: 10.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  '\$${_formatPrice(product.vendorpricePrice)}',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontFamily: 'Segoe UI',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 10),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Container(
                 padding: EdgeInsets.symmetric(
@@ -847,9 +1049,9 @@ class _ProductList extends State<ProductList> {
                       ),
                     ),
                     const SizedBox(width: 2),
-                    const Text(
-                      'vendors',
-                      style: TextStyle(
+                    Text(
+                      product.vendorIdCount == 1 ? 'vendor' : 'vendors',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.w500,
@@ -1682,5 +1884,25 @@ class _ProductList extends State<ProductList> {
       return 'https://$imageUrl';
     }
     return imageUrl;
+  }
+
+  /// Format price with comma separators for thousands
+  String _formatPrice(String price) {
+    try {
+      // Remove any existing formatting and parse the number
+      final cleanPrice = price.replaceAll(RegExp(r'[^\d.]'), '');
+      final double? priceValue = double.tryParse(cleanPrice);
+
+      if (priceValue == null) {
+        return price; // Return original if parsing fails
+      }
+
+      // Format with commas for thousands
+      final formatter = NumberFormat('#,###.##');
+      return formatter.format(priceValue);
+    } catch (e) {
+      log('Error formatting price: $e');
+      return price; // Return original if formatting fails
+    }
   }
 }
