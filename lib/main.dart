@@ -11,12 +11,16 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:minsellprice/screens/categories_provider/product_list_provider.dart';
 import 'package:minsellprice/screens/home_page/notification_screen/notification_screen.dart';
+import 'package:minsellprice/screens/notification_settings_screen.dart';
+import 'package:minsellprice/screens/notification_test_screen.dart';
 import 'package:minsellprice/services/app_lifecycle_service.dart';
 import 'package:minsellprice/widgets/bridge_class/bridge_class.dart';
 import 'package:minsellprice/services/background_service.dart';
 import 'package:minsellprice/services/notification_service.dart';
 import 'package:minsellprice/services/notification_permission_service.dart';
 import 'package:minsellprice/services/navigation_service.dart';
+import 'package:minsellprice/services/firebase_push_notification_service.dart';
+import 'package:minsellprice/services/notification_manager.dart';
 import 'package:minsellprice/core/utils/firebase/firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'core/utils/firebase/auth_provider.dart' as my_auth;
@@ -28,6 +32,12 @@ const Color primaryColor = AppColors.primary;
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   log('Handling a background message: ${message.messageId}');
+
+  // Initialize Firebase Push Notification Service
+  await FirebasePushNotificationService().initialize();
+
+  // Handle the message
+  await FirebasePushNotificationService().handleBackgroundMessage(message);
 }
 
 // Immediate loading screen to prevent white screen
@@ -87,6 +97,9 @@ void main() async {
           debugShowCheckedModeBanner: false,
           routes: {
             '/notifications': (context) => const NotificationScreen(),
+            '/notification-settings': (context) =>
+                const NotificationSettingsScreen(),
+            '/notification-test': (context) => const NotificationTestScreen(),
           },
           theme: ThemeData(
             fontFamily: 'Segoe UI',
@@ -157,8 +170,8 @@ Future<void> _initializeEverythingInBackground() async {
       log('Error getting device token: $e');
     }
 
-    // Initialize notification service
-    await NotificationService().initialize();
+    // Initialize notification manager (handles both local and Firebase notifications)
+    await NotificationManager().initialize();
 
     // Initialize background service
     FlutterBackgroundService().invoke("setAsBackground");
