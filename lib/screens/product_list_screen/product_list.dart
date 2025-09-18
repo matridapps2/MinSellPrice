@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'package:intl/intl.dart';
-
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -32,15 +31,11 @@ class ProductList extends StatefulWidget {
 }
 
 class _ProductList extends State<ProductList> {
-
   bool _hasUserScrolled = false;
-  bool _isUserActivelyScrolling = false; // Track if user is actively scrolling
-  bool _hasUserSeenLastProduct = false; // Track if user has seen the last product
   bool currentInStockOnly = false;
   bool currentOnSaleOnly = false;
   bool hasMoreData = true;
   bool filterSubmitted = true;
-  bool _isLoadingMore = false; // Flag to prevent multiple simultaneous load more calls
   bool _isSearching = false;
 
   int? priceSorting;
@@ -85,30 +80,19 @@ class _ProductList extends State<ProductList> {
 
   void _addScrollListener() {
     _scrollListener = () {
-      if (_scrollController.position.userScrollDirection != ScrollDirection.idle) {
+      if (_scrollController.position.userScrollDirection !=
+          ScrollDirection.idle) {
         _hasUserScrolled = true; // User scrolled at least once
-        _isUserActivelyScrolling = true; // User is actively scrolling
-
-        // Reset active scrolling flag after a short delay
-        Future.delayed(const Duration(milliseconds: 500), () {
-          _isUserActivelyScrolling = false;
-        });
       }
 
-      // Check if user has seen the last product
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 20) {
-        _hasUserSeenLastProduct = true;
-        log('Scroll detection: User has seen last product');
-      }
-
-      // Only trigger API call when user is at the VERY bottom AND has seen the last product
+      // Simplified scroll detection - trigger when near bottom
       final productProvider = context.read<ProductProvider>();
-      if (_hasUserScrolled && _isUserActivelyScrolling
-          && _hasUserSeenLastProduct && hasMoreData
-          && !_isLoadingMore && _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 10) {
-        // Very strict threshold
-        log('Scroll detection: User at very bottom and has seen last product - triggering API call');
-        //_loadMoreProducts();
+      if (_hasUserScrolled &&
+          productProvider.hasMoreData &&
+          !productProvider.isLoadingMore &&
+          _scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 100) {
+        log('Scroll detection: Triggering load more products');
         productProvider.loadMoreProducts(widget.brandName.toString(), context);
       }
     };
@@ -439,20 +423,16 @@ class _ProductList extends State<ProductList> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          SafeArea(
-              child: Column(
-            children: [
-              const SizedBox(height: 5),
-              _buildProductCountBadge(productProvider),
-              const SizedBox(height: 5),
-              _buildProductList(productProvider),
-              const SizedBox(height: 10),
-              _buildLoadingMoreIndicator(productProvider),
-            ],
-          ))
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 5),
+            _buildProductCountBadge(productProvider),
+            const SizedBox(height: 5),
+            _buildProductList(productProvider),
+            const SizedBox(height: 10),
+          ],
+        ),
       ),
     );
   }
@@ -477,7 +457,8 @@ class _ProductList extends State<ProductList> {
             const SizedBox(width: 12),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSearching
                       ? AppColors.primary.withOpacity(0.05)
@@ -500,7 +481,9 @@ class _ProductList extends State<ProductList> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        isSearching ? Icons.search : Icons.shopping_bag_outlined,
+                        isSearching
+                            ? Icons.search
+                            : Icons.shopping_bag_outlined,
                         color: AppColors.primary,
                         size: w * .06,
                       ),
@@ -576,12 +559,20 @@ class _ProductList extends State<ProductList> {
             controller: _scrollController,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: Wrap(
-                runSpacing: 10,
-                children: List.generate(
-                  productsToDisplay.length,
-                  (index) => _buildProductCard(productsToDisplay[index]),
-                ),
+              child: Column(
+                children: [
+                  Wrap(
+                    runSpacing: 10,
+                    children: List.generate(
+                      productsToDisplay.length,
+                      (index) => _buildProductCard(productsToDisplay[index]),
+                    ),
+                  ),
+                  // Loading indicator inside the scrollable area
+                  _buildLoadingMoreIndicator(productProvider),
+                  // No more products indicator
+                  _buildNoMoreProductsIndicator(productProvider),
+                ],
               ),
             ),
           ),
@@ -843,15 +834,102 @@ class _ProductList extends State<ProductList> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: const Center(
-        child: Column(
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: Column(
+        children: [
+          // Loading spinner with better design
+          Container(
+            width: 50,
+            height: 50,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            child: const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              strokeWidth: 3,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Loading text
+          Text(
+            'Loading more products...',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Segoe UI',
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Progress indicator dots
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              3,
+              (index) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoMoreProductsIndicator(ProductProvider productProvider) {
+    // Don't show when searching or loading
+    if (_searchController.text.isNotEmpty ||
+        productProvider.isLoadingMore ||
+        productProvider.allProducts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Only show when no more data is available
+    if (productProvider.hasMoreData) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      child: Column(
+        children: [
+          // Divider line
+          Container(
+            height: 1,
+            width: 60,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 16),
+          // No more products text
+          Text(
+            'You\'ve reached the end!',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Segoe UI',
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'No more products to load',
+            style: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Segoe UI',
+              fontWeight: FontWeight.w400,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
       ),
     );
   }
