@@ -60,6 +60,7 @@ class ProductDetailsData {
   final int? productId;
   final String? productName;
   final String? productSku;
+  final String? msrp;
   final String? brandName;
   final String? category;
   final String? description;
@@ -83,6 +84,7 @@ class ProductDetailsData {
     this.productId,
     this.productName,
     this.productSku,
+    this.msrp,
     this.brandName,
     this.category,
     this.description,
@@ -108,6 +110,7 @@ class ProductDetailsData {
       productId: json['product_id'],
       productName: json['product_name'],
       productSku: json['product_sku'],
+      msrp: json['msrp'],
       brandName: json['brand_name'],
       category: json['category'],
       description: json['description'],
@@ -142,6 +145,7 @@ class ProductDetailsData {
       'product_id': productId,
       'product_name': productName,
       'product_sku': productSku,
+      'msrp': msrp,
       'brand_name': brandName,
       'category': category,
       'description': description,

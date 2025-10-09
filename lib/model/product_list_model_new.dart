@@ -65,6 +65,7 @@ class VendorProduct {
   final String vendorpricePrice;
   final String brandName;
   final String vendorName;
+  final String msrp;
   final int vendorIdCount;
   final String vendorpriceDate;
   final String vendorUrl;
@@ -81,6 +82,7 @@ class VendorProduct {
     required this.productId,
     required this.vendorpricePrice,
     required this.vendorName,
+    required this.msrp,
     required this.vendorIdCount,
     required this.vendorpriceDate,
     required this.vendorUrl,
@@ -103,6 +105,7 @@ class VendorProduct {
         vendorName: json["vendor_name"] ?? '--',
         vendorIdCount: json["vendorIdCount"] ?? 0,
         vendorpriceDate: json["vendorprice_date"] ?? '--',
+        msrp: json['msrp'] ?? '--',
         brandName: json["brand_name"] ?? '--',
         vendorUrl: json["vendor_url"] ?? '--',
         productMpn: json["product_mpn"] ?? '--',
@@ -119,6 +122,7 @@ class VendorProduct {
       "vendor_name": vendorName,
       "vendorIdCount": vendorIdCount,
       "vendorprice_date": vendorpriceDate,
+      'msrp': msrp,
       "brand_name": brandName,
       "vendor_url": vendorUrl,
       "product_mpn": productMpn,
@@ -129,3 +133,120 @@ class VendorProduct {
     };
   }
 }
+
+
+/*Widget _buildPriceSection(VendorProduct product) {
+  // Check if MSRP is null or empty
+  bool hasMsrp = product.msrp != '--' &&
+      product.msrp != 'null' &&
+      product.msrp.isNotEmpty;
+
+  return Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Show MSRP with line-through only if MSRP is available
+        if (hasMsrp)
+          Padding(
+            padding: const EdgeInsets.only(right: 10.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  '\$${_formatPrice(product.msrp)}',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontFamily: 'Segoe UI',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.lineThrough,
+                    decorationThickness: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        // Show vendor price
+        Padding(
+          padding: const EdgeInsets.only(right: 10.0, top: 5),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                '\$${_formatPrice(product.vendorpricePrice)}',
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontFamily: 'Segoe UI',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: w * .02,
+                vertical: w * .015,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.storefront_outlined,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    '${product.vendorIdCount}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    product.vendorIdCount == 1 ? 'vendor' : 'vendors',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}*/

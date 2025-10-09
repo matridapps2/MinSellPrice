@@ -26,6 +26,7 @@ import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../categories_menu_screen.dart';
 import 'notification_screen/notification_screen.dart';
 import 'package:minsellprice/services/work_manager_service.dart';
 import 'package:minsellprice/services/app_notification_service.dart';
@@ -244,7 +245,7 @@ class _HomePageState extends State<HomePage>
                 });
                 return provider;
               },
-              child: CategoriesScreen(database: db),
+              child: CategoriesMenuScreen(),
             ),
             AccountScreen(),
           ];
@@ -271,7 +272,7 @@ class _HomePageState extends State<HomePage>
                 provider.fetchBrands();
                 return provider;
               },
-              child: CategoriesScreen(database: database),
+              child: CategoriesMenuScreen(),
             ),
             AccountScreen(),
           ];

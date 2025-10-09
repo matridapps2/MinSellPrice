@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'package:intl/intl.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -49,6 +50,13 @@ class _ProductList extends State<ProductList> {
   List<VendorProduct> brandProducts = [];
   List<VendorProduct> tempProductList = [];
 
+  // Add vendor filtering variables
+  Map<String, int> vendorProductCounts = {};
+  Map<String, String> vendorCodes = {}; // Store vendor codes for API calls
+  bool isVendorFiltered = false;
+  RangeValues currentPriceRange = const RangeValues(0, 1000);
+  double maxPriceFromAPI = 1000.0;
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final ScrollController _scrollController = ScrollController();
@@ -59,9 +67,7 @@ class _ProductList extends State<ProductList> {
   final TextEditingController iconController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
-  RangeValues currentPriceRange = const RangeValues(0, 1000);
-
-  double maxPriceFromAPI = 1000.0;
+  bool isCartPrice = true;
 
   @override
   void initState() {
@@ -213,10 +219,285 @@ class _ProductList extends State<ProductList> {
       },
       child: Consumer<ProductProvider>(
         builder: (context, productProvider, child) {
+          // Update local data when ProductProvider data changes
+          if (productProvider.allProducts.isNotEmpty && allProducts.isEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _updateLocalData(productProvider);
+            });
+          }
           return _buildScaffold(productProvider);
         },
       ),
     );
+  }
+
+  void _updateLocalData(ProductProvider productProvider) async {
+    setState(() {
+      allProducts = List.from(productProvider.allProducts);
+      tempProductList = List.from(allProducts);
+      totalProductCount = allProducts.length;
+    });
+
+    log('Updated local data: ${allProducts.length} products from ProductProvider');
+    log('ProductProvider has ${productProvider.allProducts.length} products');
+
+    // Fetch vendor data from main brand API response
+    await _fetchVendorDataFromBrandAPI();
+
+    // Calculate price range from products
+    if (allProducts.isNotEmpty) {
+      final validPrices = allProducts
+          .map((product) => _parsePrice(product.vendorpricePrice))
+          .where((price) => price != null)
+          .cast<double>()
+          .toList();
+
+      if (validPrices.isNotEmpty) {
+        final minPrice = validPrices.reduce((a, b) => a < b ? a : b);
+        final maxPrice = validPrices.reduce((a, b) => a > b ? a : b);
+
+        setState(() {
+          // Round max price up to nearest 50 for better UX
+          maxPriceFromAPI = ((maxPrice / 50).ceil() * 50).toDouble();
+
+          // Always set price range to start from 0 and go to max price
+          currentPriceRange = RangeValues(0, maxPriceFromAPI);
+        });
+
+        log('Price range calculated: \$${minPrice.toStringAsFixed(2)} - \$${maxPriceFromAPI.toStringAsFixed(2)}');
+        log('Filter price range set to: \$${currentPriceRange.start.toStringAsFixed(2)} - \$${currentPriceRange.end.toStringAsFixed(2)}');
+        log('Valid prices found: ${validPrices.length}/${allProducts.length} products');
+      }
+    }
+
+    log('Final local data: ${allProducts.length} products, ${vendorProductCounts.length} vendors');
+  }
+
+  Future<void> _fetchVendorDataFromBrandAPI() async {
+    try {
+      log('Fetching vendor data from main brand API: ${widget.brandName}');
+      final response = await BrandsApi.getProductListByBrandName(
+          widget.brandName.toString(),
+          1, // Use page 1 to get vendor data
+          context);
+
+      if (response != null) {
+        final Map<String, dynamic> decoded = jsonDecode(response);
+
+        // Parse vendor data from API response
+        final List<dynamic> vendorDataList = decoded['vendor_data'] ?? [];
+        vendorProductCounts.clear();
+        vendorCodes.clear();
+
+        for (var vendor in vendorDataList) {
+          String vendorName = vendor['vendor_name'] ?? '';
+          String vendorCode = vendor['vendor_code'] ?? '';
+          // Handle both int and String product_count values
+          dynamic productCountRaw = vendor['product_count'];
+          int productCount = 0;
+
+          if (productCountRaw is int) {
+            productCount = productCountRaw;
+          } else if (productCountRaw is String) {
+            productCount = int.tryParse(productCountRaw) ?? 0;
+          }
+
+          if (vendorName.isNotEmpty) {
+            vendorProductCounts[vendorName] = productCount;
+            if (vendorCode.isNotEmpty) {
+              vendorCodes[vendorName] = vendorCode;
+            }
+            log('Added vendor: "$vendorName" with $productCount products (code: $vendorCode)');
+          } else {
+            log('⚠️ Skipping vendor with empty name: $vendor');
+          }
+        }
+
+        log('Fetched vendor data from main brand API: ${vendorProductCounts.length} vendors');
+        log('API vendor names: ${vendorProductCounts.keys.toList()}');
+        log('Complete vendor data map: $vendorProductCounts');
+
+        // Debug specific vendor
+        if (vendorProductCounts.containsKey('AllSouth Appliance Group, Inc.')) {
+          log('✅ AllSouth Appliance Group, Inc. found with ${vendorProductCounts['AllSouth Appliance Group, Inc.']} products');
+        } else {
+          log('❌ AllSouth Appliance Group, Inc. NOT found in vendor data');
+        }
+
+        // Cross-check with actual product data
+        if (allProducts.isNotEmpty) {
+          Set<String> actualVendorNames =
+              allProducts.map((p) => p.vendorName).toSet();
+          log('Actual vendor names in products: $actualVendorNames');
+
+          // Find mismatches
+          Set<String> apiVendors = vendorProductCounts.keys.toSet();
+          Set<String> missingInProducts =
+              apiVendors.difference(actualVendorNames);
+          Set<String> missingInAPI = actualVendorNames.difference(apiVendors);
+
+          if (missingInProducts.isNotEmpty) {
+            log('⚠️ Vendors in API but not in products: $missingInProducts');
+          }
+          if (missingInAPI.isNotEmpty) {
+            log('⚠️ Vendors in products but not in API: $missingInAPI');
+          }
+
+          // Keep API data for vendor counts, but validate consistency
+          log('Using API vendor data for filtering (${vendorProductCounts.length} vendors)');
+          log('API data will be used for vendor counts in filter menu');
+        }
+
+        setState(() {
+          // Update the UI with vendor data
+        });
+      } else {
+        log('Failed to fetch vendor data from main brand API');
+        // Fallback: extract vendor data from products
+        _extractVendorDataFromProducts();
+      }
+    } catch (e) {
+      log('Error fetching vendor data from main brand API: $e');
+      // Fallback: extract vendor data from products
+      _extractVendorDataFromProducts();
+    }
+
+    // Final validation
+    log('Final vendor data: ${vendorProductCounts.length} vendors');
+    if (vendorProductCounts.isNotEmpty) {
+      log('Sample vendor: ${vendorProductCounts.keys.first} = ${vendorProductCounts.values.first} products');
+    }
+  }
+
+  Future<void> _fetchFilteredProducts(List<String> selectedVendors) async {
+    try {
+      // Get vendor codes for selected vendors
+      List<String> vendorCodesToSend = [];
+      for (String vendorName in selectedVendors) {
+        if (vendorCodes.containsKey(vendorName)) {
+          vendorCodesToSend.add(vendorCodes[vendorName]!);
+          log('Selected vendor: "$vendorName" with code: ${vendorCodes[vendorName]}');
+        }
+      }
+
+      if (vendorCodesToSend.isEmpty) {
+        log('⚠️ No vendor codes found for selected vendors');
+        return;
+      }
+
+      // Make API call with vendor codes
+      String vendorCodesParam = vendorCodesToSend.join(',');
+
+      log('Making filtered API call with vendor codes: $vendorCodesParam');
+
+      // Use the new API method that supports vendor codes
+      final response = await BrandsApi.getProductListByBrandNameWithVendor(
+          widget.brandName.toString(), 1, vendorCodesParam, context);
+
+      if (response != null) {
+        final Map<String, dynamic> decoded = jsonDecode(response);
+        final List<dynamic> jsonList = decoded['brand_product'] ?? [];
+        final List<VendorProduct> filteredProducts =
+            jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+
+        log('Filtered API returned ${filteredProducts.length} products for selected vendors');
+
+        // Update the product list with filtered results
+        setState(() {
+          allProducts = filteredProducts;
+          tempProductList = List.from(filteredProducts);
+          totalProductCount = filteredProducts.length;
+        });
+
+        log('Updated tempProductList with ${tempProductList.length} products from API');
+      }
+    } catch (e) {
+      log('Error fetching filtered products: $e');
+    }
+  }
+
+  void _extractVendorDataFromProducts() {
+    vendorProductCounts.clear();
+    for (var product in allProducts) {
+      if (product.vendorName.isNotEmpty) {
+        vendorProductCounts[product.vendorName] =
+            (vendorProductCounts[product.vendorName] ?? 0) + 1;
+      }
+    }
+    log('Extracted vendor data from products: ${vendorProductCounts.length} vendors');
+    log('Vendor counts from products: $vendorProductCounts');
+
+    // Validate data consistency
+    _validateVendorDataConsistency();
+  }
+
+  void _validateVendorDataConsistency() {
+    if (allProducts.isEmpty) {
+      log('⚠️ No products available for vendor validation');
+      return;
+    }
+
+    Set<String> actualVendors = allProducts.map((p) => p.vendorName).toSet();
+    Set<String> vendorDataVendors = vendorProductCounts.keys.toSet();
+
+    log('=== VENDOR DATA VALIDATION ===');
+    log('Products loaded: ${allProducts.length}');
+    log('Actual vendors in products: ${actualVendors.length}');
+    log('Vendor data entries: ${vendorDataVendors.length}');
+
+    if (actualVendors.length != vendorDataVendors.length) {
+      log('⚠️ Mismatch: ${actualVendors.length} actual vendors vs ${vendorDataVendors.length} vendor data entries');
+    }
+
+    // Check for empty vendor names
+    int emptyVendorCount =
+        allProducts.where((p) => p.vendorName.isEmpty).length;
+    if (emptyVendorCount > 0) {
+      log('⚠️ Found $emptyVendorCount products with empty vendor names');
+    }
+
+    log('=== END VALIDATION ===');
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      // Clear vendor filters
+      filterVendor.clear();
+      isVendorFiltered = false;
+
+      // Clear price filters
+      currentPriceRange = RangeValues(0, maxPriceFromAPI);
+
+      // Clear sorting
+      priceSorting = null;
+
+      // Clear other filters
+      currentInStockOnly = false;
+      currentOnSaleOnly = false;
+
+      // Reset product list to show all products
+      tempProductList = List.from(allProducts);
+      totalProductCount = allProducts.length;
+    });
+
+    log('Cleared all filters: Showing ${allProducts.length} products');
+  }
+
+  bool _isAnyFilterActive() {
+    // Check vendor filters
+    bool hasVendorFilter = isVendorFiltered || filterVendor.isNotEmpty;
+
+    // Check price range filter (only if it's not the full range)
+    // Since we always start at 0, only check if end is not at max
+    bool hasPriceFilter = currentPriceRange.end < maxPriceFromAPI;
+
+    // Check sorting
+    bool hasSorting = priceSorting != null;
+
+    // Check other filters
+    bool hasOtherFilters = currentInStockOnly || currentOnSaleOnly;
+
+    return hasVendorFilter || hasPriceFilter || hasSorting || hasOtherFilters;
   }
 
   Widget _buildScaffold(ProductProvider productProvider) {
@@ -235,7 +516,7 @@ class _ProductList extends State<ProductList> {
 
   Widget _buildErrorScaffold(ProductProvider productProvider) {
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(productProvider),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -263,7 +544,10 @@ class _ProductList extends State<ProductList> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(ProductProvider productProvider) {
+    // Check if there are any products to show search bar
+    bool hasProducts = productProvider.allProducts.isNotEmpty;
+
     return AppBar(
       surfaceTintColor: Colors.white,
       toolbarHeight: .25 * w,
@@ -298,131 +582,152 @@ class _ProductList extends State<ProductList> {
           ),
         ),
       ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.grey[200]!, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: TextFormField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              textInputAction: TextInputAction.search,
-              onChanged: (value) {
-                log('Search text changed: "$value"');
-                if (value.trim().isNotEmpty) {
-                  log('Performing API search for: "$value"');
-                  _performApiSearch(value.trim());
-                } else {
-                  setState(() {
-                    _searchResults.clear();
-                    _isSearching = false;
-                  });
-                  log('Cleared search results');
-                }
-              },
-              onFieldSubmitted: (value) {
-                if (value.trim().isNotEmpty) {
-                  _performApiSearch(value.trim());
-                }
-              },
-              cursorColor: AppColors.primary,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-              decoration: InputDecoration(
-                hintText:
-                    'Search ${widget.brandName} products by name or MPN...',
-                hintStyle: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                ),
-                prefixIcon: Container(
-                  margin: const EdgeInsets.all(8),
-                  padding: const EdgeInsets.all(8),
+      bottom: hasProducts
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(80),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.grey[200]!, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Icon(
-                    Icons.search_rounded,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                ),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? Container(
+                  child: TextFormField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    textInputAction: TextInputAction.search,
+                    onChanged: (value) {
+                      log('Search text changed: "$value"');
+                      if (value.trim().isNotEmpty) {
+                        log('Performing API search for: "$value"');
+                        _performApiSearch(value.trim());
+                      } else {
+                        setState(() {
+                          _searchResults.clear();
+                          _isSearching = false;
+                        });
+                        log('Cleared search results');
+                      }
+                    },
+                    onFieldSubmitted: (value) {
+                      if (value.trim().isNotEmpty) {
+                        _performApiSearch(value.trim());
+                      }
+                    },
+                    cursorColor: AppColors.primary,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      hintText:
+                          'Search ${widget.brandName} products by name or MPN...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      prefixIcon: Container(
                         margin: const EdgeInsets.all(8),
-                        child: IconButton(
-                          icon: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.grey[600],
-                              size: 16,
-                            ),
-                          ),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchResults.clear();
-                              _isSearching = false;
-                            });
-                          },
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20.0,
-                  vertical: 16.0,
-                ),
-                border: OutlineInputBorder(
-                  borderSide: BorderSide.none,
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide.none,
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.primary, width: 2),
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                disabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide.none,
-                  borderRadius: BorderRadius.circular(25),
+                        child: Icon(
+                          Icons.search_rounded,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? Container(
+                              margin: const EdgeInsets.all(8),
+                              child: IconButton(
+                                icon: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.close,
+                                    color: Colors.grey[600],
+                                    size: 16,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchResults.clear();
+                                    _isSearching = false;
+                                  });
+                                },
+                              ),
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 16.0,
+                      ),
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide:
+                            BorderSide(color: AppColors.primary, width: 2),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      disabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
+            )
+          : null,
     );
   }
 
   Widget _buildMainScaffold(ProductProvider productProvider) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: _buildAppBar(),
+      endDrawer: FilterMenu(
+        filterProductDetails: productProvider.allProducts,
+        brandName: widget.brandName ?? 'Unknown',
+        maxPriceFromAPI: maxPriceFromAPI,
+        currentVendorFilters: filterVendor,
+        currentPriceSorting: priceSorting,
+        currentPriceRange: currentPriceRange,
+        currentInStockOnly: currentInStockOnly,
+        currentOnSaleOnly: currentOnSaleOnly,
+        vendorProductCounts: vendorProductCounts,
+        vendorCodes: vendorCodes,
+        onFiltersApplied:
+            (vendors, priceSorting, priceRange, inStockOnly, onSaleOnly) {
+          _applyFilters(vendors, priceSorting, priceRange, inStockOnly,
+              onSaleOnly, productProvider.allProducts);
+        },
+      ),
+      appBar: _buildAppBar(productProvider),
       body: SafeArea(
         child: Column(
           children: [
@@ -439,12 +744,26 @@ class _ProductList extends State<ProductList> {
 
   Widget _buildProductCountBadge(ProductProvider productProvider) {
     bool isSearching = _searchController.text.isNotEmpty;
-    int productCount =
-        isSearching ? _searchResults.length : productProvider.totalProductCount;
-    String title = isSearching ? 'Search Results' : 'Total Products';
-    String subtitle = isSearching
-        ? '${_searchResults.length} items found for "${_searchController.text}"'
-        : '${productProvider.totalProductCount} items available';
+    bool isFiltered = _isAnyFilterActive();
+
+    int productCount;
+    String title;
+    String subtitle;
+
+    if (isSearching) {
+      productCount = _searchResults.length;
+      title = 'Search Results';
+      subtitle =
+          '${_searchResults.length} items found for "${_searchController.text}"';
+    } else if (isFiltered) {
+      productCount = tempProductList.length;
+      title = 'Filtered Products';
+      subtitle = '${tempProductList.length} items match your filters';
+    } else {
+      productCount = productProvider.totalProductCount;
+      title = 'Total Products';
+      subtitle = '${productProvider.totalProductCount} items available';
+    }
 
     if (productCount == 0 && !isSearching) return const SizedBox.shrink();
 
@@ -454,18 +773,53 @@ class _ProductList extends State<ProductList> {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
+            // Filters Icon Button
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    _scaffoldKey.currentState!.openEndDrawer();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.filter_alt,
+                      color: Colors.white,
+                      size: w * .05,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             const SizedBox(width: 12),
+
+            // Product Count Badge
             Expanded(
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSearching
+                  color: isFiltered
                       ? AppColors.primary.withOpacity(0.05)
                       : Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: isSearching
+                      color: isFiltered
                           ? AppColors.primary.withOpacity(0.2)
                           : Colors.grey[200]!,
                       width: 1),
@@ -475,14 +829,14 @@ class _ProductList extends State<ProductList> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: isSearching
+                        color: isFiltered
                             ? AppColors.primary.withOpacity(0.15)
                             : AppColors.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        isSearching
-                            ? Icons.search
+                        isFiltered
+                            ? Icons.filter_list
                             : Icons.shopping_bag_outlined,
                         color: AppColors.primary,
                         size: w * .06,
@@ -496,7 +850,7 @@ class _ProductList extends State<ProductList> {
                           Text(
                             title,
                             style: TextStyle(
-                              color: isSearching
+                              color: isFiltered
                                   ? AppColors.primary
                                   : Colors.grey[600],
                               fontSize: w * .045,
@@ -530,6 +884,7 @@ class _ProductList extends State<ProductList> {
     // Determine which products to display
     List<VendorProduct> productsToDisplay;
     bool isSearching = _searchController.text.isNotEmpty;
+    bool isFiltered = _isAnyFilterActive();
 
     if (isSearching) {
       if (_isSearching) {
@@ -539,6 +894,11 @@ class _ProductList extends State<ProductList> {
       } else {
         productsToDisplay = _searchResults;
       }
+    } else if (isFiltered) {
+      if (tempProductList.isEmpty) {
+        return _buildFilteredEmptyState();
+      }
+      productsToDisplay = tempProductList;
     } else {
       if (productProvider.allProducts.isEmpty) {
         return _buildEmptyState();
@@ -822,6 +1182,158 @@ class _ProductList extends State<ProductList> {
     );
   }
 
+  Widget _buildFilteredEmptyState() {
+    return Flexible(
+      child: Container(
+        width: w,
+        height: h / 1.1,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: w * 0.3,
+              height: w * 0.3,
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 2,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.filter_list_off_rounded,
+                size: w * 0.15,
+                color: AppColors.primary.withOpacity(0.7),
+              ),
+            ),
+            SizedBox(height: h * 0.03),
+            Text(
+              'No Products Match Your Filters',
+              style: TextStyle(
+                fontSize: w * 0.06,
+                fontFamily: 'Futura BdCn BT Bold',
+                fontWeight: FontWeight.w600,
+                color: AppColors.text,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: h * 0.015),
+            Text(
+              'Try adjusting your filters or clear them to see all products.',
+              style: TextStyle(
+                fontSize: w * 0.035,
+                fontFamily: 'Futura BdCn BT Bold',
+                fontWeight: FontWeight.w300,
+                color: Colors.grey[600],
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: h * 0.04),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    _scaffoldKey.currentState!.openEndDrawer();
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: w * 0.06,
+                      vertical: h * 0.018,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.3),
+                          spreadRadius: 1,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.filter_alt,
+                          size: w * 0.035,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: w * 0.015),
+                        Text(
+                          'Adjust Filters',
+                          style: TextStyle(
+                            fontSize: w * 0.035,
+                            fontFamily: 'Futura BdCn BT Bold',
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: w * 0.03),
+                GestureDetector(
+                  onTap: () {
+                    _clearAllFilters();
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: w * 0.06,
+                      vertical: h * 0.018,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[600],
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          spreadRadius: 1,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.clear_all,
+                          size: w * 0.035,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: w * 0.015),
+                        Text(
+                          'Clear Filters',
+                          style: TextStyle(
+                            fontSize: w * 0.035,
+                            fontFamily: 'Futura BdCn BT Bold',
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLoadingMoreIndicator(ProductProvider productProvider) {
     // Don't show loading more indicator when searching
     if (_searchController.text.isNotEmpty) {
@@ -1059,6 +1571,10 @@ class _ProductList extends State<ProductList> {
   }
 
   Widget _buildPriceSection(VendorProduct product) {
+    // Check if MSRP is null or empty
+    bool hasMsrp =
+        product.msrp != null && product.msrp != '--' && product.msrp.isNotEmpty;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
@@ -1066,8 +1582,56 @@ class _ProductList extends State<ProductList> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Show MSRP with strikethrough if it exists
+          if (hasMsrp) ...[
+            Padding(
+              padding: const EdgeInsets.only(right: 10.0),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          '\$${_formatPrice(product.msrp)}',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontFamily: 'Segoe UI',
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.lineThrough,
+                            decorationThickness: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(right: 0.0, top: 5),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Add to Cart Price:',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontFamily: 'Segoe UI',
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 5),
+          ],
+
+          // Show vendor price
           Padding(
-            padding: const EdgeInsets.only(right: 10.0),
+            padding: const EdgeInsets.only(right: 10.0, top: 5),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -1964,12 +2528,31 @@ class _ProductList extends State<ProductList> {
     return imageUrl;
   }
 
-  /// Format price with comma separators for thousands
-  String _formatPrice(String price) {
+  /// Parse price consistently for filtering and display
+  double? _parsePrice(String price) {
     try {
+      if (price.isEmpty) return null;
+
       // Remove any existing formatting and parse the number
       final cleanPrice = price.replaceAll(RegExp(r'[^\d.]'), '');
       final double? priceValue = double.tryParse(cleanPrice);
+
+      // Validate price is positive and reasonable
+      if (priceValue == null || priceValue < 0 || priceValue > 1000000) {
+        return null;
+      }
+
+      return priceValue;
+    } catch (e) {
+      log('Error parsing price "$price": $e');
+      return null;
+    }
+  }
+
+  /// Format price with comma separators for thousands
+  String _formatPrice(String price) {
+    try {
+      final double? priceValue = _parsePrice(price);
 
       if (priceValue == null) {
         return price; // Return original if parsing fails
@@ -1981,6 +2564,492 @@ class _ProductList extends State<ProductList> {
     } catch (e) {
       log('Error formatting price: $e');
       return price; // Return original if formatting fails
+    }
+  }
+
+  void _applyFilters(
+      List<String> vendors,
+      int? priceSorting,
+      RangeValues priceRange,
+      bool inStockOnly,
+      bool onSaleOnly,
+      List<VendorProduct> productProviderProducts) async {
+    setState(() {
+      filterVendor = vendors;
+      this.priceSorting = priceSorting;
+      currentPriceRange = priceRange;
+      currentInStockOnly = inStockOnly;
+      currentOnSaleOnly = onSaleOnly;
+      isVendorFiltered = vendors.isNotEmpty;
+    });
+
+    // If vendors are selected, make API call with vendor codes
+    if (vendors.isNotEmpty) {
+      await _fetchFilteredProducts(vendors);
+      // After API call, products are already filtered by vendor
+      // Apply only price range and sorting filters
+      _applyPriceAndSortingFilters();
+      return;
+    }
+
+    // No vendor filter - use ProductProvider data for filtering
+    setState(() {
+      List<VendorProduct> productsToFilter = productProviderProducts;
+      tempProductList = List.from(productsToFilter);
+      log('No vendor filter applied, showing all ${productsToFilter.length} products');
+    });
+
+    // Apply price range and sorting filters
+    _applyPriceAndSortingFilters();
+  }
+
+  void _applyPriceAndSortingFilters() {
+    setState(() {
+      // Apply price range filter
+      tempProductList = tempProductList.where((product) {
+        double? price = _parsePrice(product.vendorpricePrice);
+        return price != null &&
+            price >= currentPriceRange.start &&
+            price <= currentPriceRange.end;
+      }).toList();
+
+      log('Price range filtering: ${currentPriceRange.start.toStringAsFixed(2)} - ${currentPriceRange.end.toStringAsFixed(2)}');
+      log('Products after price filtering: ${tempProductList.length}');
+
+      // Apply sorting
+      if (priceSorting != null) {
+        if (priceSorting == 1) {
+          // Price: Low to High
+          tempProductList.sort((a, b) {
+            double priceA = _parsePrice(a.vendorpricePrice) ?? 0;
+            double priceB = _parsePrice(b.vendorpricePrice) ?? 0;
+            return priceA.compareTo(priceB);
+          });
+          log('Applied sorting: Price Low to High');
+        } else if (priceSorting == 2) {
+          // Price: High to Low
+          tempProductList.sort((a, b) {
+            double priceA = _parsePrice(a.vendorpricePrice) ?? 0;
+            double priceB = _parsePrice(b.vendorpricePrice) ?? 0;
+            return priceB.compareTo(priceA);
+          });
+          log('Applied sorting: Price High to Low');
+        } else if (priceSorting == 3) {
+          // Name: A to Z
+          tempProductList
+              .sort((a, b) => (a.productName).compareTo(b.productName));
+          log('Applied sorting: Name A to Z');
+        } else if (priceSorting == 4) {
+          // Name: Z to A
+          tempProductList
+              .sort((a, b) => (b.productName).compareTo(a.productName));
+          log('Applied sorting: Name Z to A');
+        }
+      }
+
+      // Update total product count for filtered results
+      totalProductCount = tempProductList.length;
+
+      // Log final filter results
+      log('=== FILTER RESULTS ===');
+      log('Total products after all filters: ${tempProductList.length}');
+      log('Vendor filter active: ${filterVendor.isNotEmpty}');
+      log('Price range: \$${currentPriceRange.start.toStringAsFixed(2)} - \$${currentPriceRange.end.toStringAsFixed(2)}');
+      log('Sorting: ${priceSorting != null ? "Active (${priceSorting})" : "None"}');
+      log('In stock only: $currentInStockOnly');
+      log('On sale only: $currentOnSaleOnly');
+      log('=== END FILTER RESULTS ===');
+    });
+  }
+}
+
+/* FILTER MENU */
+
+class FilterMenu extends StatefulWidget {
+  final List<VendorProduct> filterProductDetails;
+  final String brandName;
+  final double maxPriceFromAPI;
+  final Function(
+      List<String> vendors,
+      int? priceSorting,
+      RangeValues priceRange,
+      bool inStockOnly,
+      bool onSaleOnly)? onFiltersApplied;
+
+  final List<String> currentVendorFilters;
+  final int? currentPriceSorting;
+  final RangeValues currentPriceRange;
+  final bool currentInStockOnly;
+  final bool currentOnSaleOnly;
+  final Map<String, int> vendorProductCounts;
+  final Map<String, String> vendorCodes;
+
+  const FilterMenu({
+    super.key,
+    required this.filterProductDetails,
+    required this.brandName,
+    required this.maxPriceFromAPI,
+    this.onFiltersApplied,
+    this.currentVendorFilters = const [],
+    this.currentPriceSorting,
+    this.currentPriceRange =
+        const RangeValues(0, 1000), // Will be updated dynamically
+    this.currentInStockOnly = false,
+    this.currentOnSaleOnly = false,
+    this.vendorProductCounts = const {},
+    this.vendorCodes = const {},
+  });
+
+  @override
+  State<FilterMenu> createState() => _FilterMenuState();
+}
+
+class _FilterMenuState extends State<FilterMenu> {
+  int? tempPriceSorting;
+  List<String> tempFilterVendor = [];
+  RangeValues priceRange = const RangeValues(0, 1000);
+  bool showInStockOnly = false;
+  bool showOnSaleOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    tempPriceSorting = widget.currentPriceSorting;
+    tempFilterVendor = List.from(widget.currentVendorFilters);
+    priceRange = widget.currentPriceRange;
+    showInStockOnly = widget.currentInStockOnly;
+    showOnSaleOnly = widget.currentOnSaleOnly;
+
+    // Ensure price range starts from 0
+    if (priceRange.start > 0) {
+      priceRange = RangeValues(0, priceRange.end);
+    }
+
+    if (priceRange.end > widget.maxPriceFromAPI) {
+      priceRange = RangeValues(priceRange.start, widget.maxPriceFromAPI);
+    }
+
+    // Debug vendor data
+    log('FilterMenu initialized with ${widget.vendorProductCounts.length} vendors');
+    log('FilterMenu vendor data: ${widget.vendorProductCounts}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      width: w * .9,
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          AppBar(
+            elevation: 2,
+            leading: InkWell(
+              onTap: () => Navigator.pop(context),
+              child: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+            ),
+            surfaceTintColor: Colors.white,
+            toolbarHeight: .14 * w,
+            backgroundColor: Colors.white,
+            centerTitle: false,
+            title: Text(
+              'Filters',
+              style: TextStyle(
+                fontSize: w * .05,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            automaticallyImplyLeading: false,
+            actionsPadding: EdgeInsets.only(right: 15),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  setState(() {
+                    tempPriceSorting = null;
+                    tempFilterVendor.clear();
+                    priceRange = RangeValues(0, widget.maxPriceFromAPI);
+                    showInStockOnly = false;
+                    showOnSaleOnly = false;
+                  });
+
+                  log('Reset filters: Price range reset to 0 - ${widget.maxPriceFromAPI}');
+                },
+                child: Text(
+                  'Reset',
+                  style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: w * .05),
+                ),
+              ),
+            ],
+          ),
+
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle('Price Range'),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          RangeSlider(
+                            values: priceRange,
+                            min: 0,
+                            max: widget.maxPriceFromAPI,
+                            divisions: (widget.maxPriceFromAPI / 50)
+                                .round()
+                                .clamp(10, 40),
+                            activeColor: AppColors.primary,
+                            labels: RangeLabels(
+                              '\$${priceRange.start.round()}',
+                              '\$${priceRange.end.round()}',
+                            ),
+                            onChanged: (values) {
+                              setState(() {
+                                priceRange = values;
+                              });
+                            },
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('\$${priceRange.start.round()}',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                              Text('\$${priceRange.end.round()}',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Sort By Section
+                  _buildSectionTitle('Sort By'),
+                  Card(
+                    child: Column(
+                      children: [
+                        _buildSortOption('Price: Low to High', 1),
+                        const Divider(height: 1),
+                        _buildSortOption('Price: High to Low', 2),
+                        const Divider(height: 1),
+                        _buildSortOption('Name: A to Z', 3),
+                        const Divider(height: 1),
+                        _buildSortOption('Name: Z to A', 4),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  // Vendor Section
+                  _buildSectionTitle('Vendors'),
+                  Card(
+                    child: Column(
+                      children: List.generate(
+                        _getUniqueVendorsFromProducts().length,
+                        (index) {
+                          final vendor = _getUniqueVendorsFromProducts()[index];
+                          final productCount =
+                              _getProductCountForVendor(vendor);
+                          final isSelected = tempFilterVendor.contains(vendor);
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withOpacity(0.1)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            child: CheckboxListTile(
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 2),
+                              activeColor: AppColors.primary,
+                              title: Text(
+                                vendor.isNotEmpty ? vendor : 'Unknown Vendor',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.black87,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                productCount > 0
+                                    ? '$productCount ${productCount == 1 ? 'product' : 'products'}'
+                                    : 'No products',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSelected
+                                      ? AppColors.primary.withOpacity(0.8)
+                                      : Colors.grey,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w500
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              value: isSelected,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  if (value == true) {
+                                    tempFilterVendor.add(vendor);
+                                  } else {
+                                    tempFilterVendor.remove(vendor);
+                                  }
+                                });
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _applyFilters();
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text(
+                      'Apply Filters',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: w * .045,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortOption(String title, int value) {
+    return RadioListTile<int>(
+      dense: true,
+      activeColor: AppColors.primary,
+      title: Text(title, style: const TextStyle(fontSize: 14)),
+      value: value,
+      groupValue: tempPriceSorting,
+      onChanged: (int? newValue) {
+        setState(() {
+          tempPriceSorting = newValue;
+        });
+      },
+    );
+  }
+
+  List<String> _getUniqueVendorsFromProducts() {
+    // Use vendor data from API instead of current page products
+    if (widget.vendorProductCounts.isEmpty) {
+      log('⚠️ No vendor data available in FilterMenu');
+      return [];
+    }
+
+    List<String> vendorList = widget.vendorProductCounts.keys.toList();
+    vendorList.sort();
+
+    log('FilterMenu: Displaying ${vendorList.length} vendors');
+    log('FilterMenu vendor list: $vendorList');
+
+    return vendorList;
+  }
+
+  int _getProductCountForVendor(String vendorName) {
+    // Use complete vendor data from API
+    int count = widget.vendorProductCounts[vendorName] ?? 0;
+    log('FilterMenu: Vendor "$vendorName" has $count products');
+    return count;
+  }
+
+  void _applyFilters() {
+    if (widget.onFiltersApplied != null) {
+      widget.onFiltersApplied!(
+        tempFilterVendor,
+        tempPriceSorting,
+        priceRange,
+        showInStockOnly,
+        showOnSaleOnly,
+      );
     }
   }
 }

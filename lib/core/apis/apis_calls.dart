@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:minsellprice/core/utils/constants/base_url.dart';
+import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/model/product_details_model.dart';
 import 'package:retry/retry.dart';
 
@@ -114,6 +115,72 @@ class BrandsApi {
         return response.body;
       } else {
         log('getProductListByBrandID failed with status code: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      log('Exception: ${e.toString()}');
+      onExceptionResponse(context: context, exception: e.toString());
+      return null;
+    }
+  }
+
+  static Future<String?> getProductListByBrandNameWithVendor(String brandName,
+      int pageNumber, String vendorCodes, BuildContext context) async {
+    try {
+      String uri =
+          '$brandUrl/brands/$brandName?page_no=$pageNumber&vendor=$vendorCodes';
+
+      log('Brand Product List with Vendor API: $uri');
+      final response = await retry(
+        () async => await http.get(Uri.parse(uri)),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
+      );
+
+      log('getProductListByBrandWithVendor Status code - ${response.statusCode}');
+      if (response.statusCode == 200) {
+        log('getProductListByBrandWithVendor response - ${response.body}');
+        return response.body;
+      } else {
+        log('getProductListByBrandWithVendor failed with status code: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      log('Exception: ${e.toString()}');
+      onExceptionResponse(context: context, exception: e.toString());
+      return null;
+    }
+  }
+
+  static Future<String?> getFilterProduct(
+      String brandName, int pageNumber, BuildContext context) async {
+    const vendorId = 'U25vdyBCcm90aGVycyBhcHBsaWFuY2U=';
+    try {
+      String uri = '$brandUrl/brands/$brandName?vendor=$vendorId';
+
+      log('Filtered Product List API:');
+      log(uri);
+      final response = await retry(
+        () async => await http.get(Uri.parse(uri)),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          CommonToasts.centeredMobile(
+              msg: 'Retrying due to: $e', context: context);
+        },
+      );
+
+      log('Filtered API Status code: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        log('Filtered API RESPONSE: ${response.body}');
+        return response.body;
+      } else {
+        log('Filtered API RESPONSE: ${response.body}');
         return null;
       }
     } catch (e) {

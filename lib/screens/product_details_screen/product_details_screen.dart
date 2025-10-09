@@ -641,18 +641,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Future<void> saveAlertedProductData() async{
+  Future<void> saveAlertedProductData() async {
     setState(() {
       isLoading = true;
     });
     // await _testNotificationTap(context)
-    await _showWelcomeNotification(context, widget.productId, widget.productPrice).whenComplete(() async {
-      await saveProductData(
-          context,
-          _emailController.text,
-          widget.productPrice,
-          widget.productId,
-          deviceId ?? '');
+    await _showWelcomeNotification(
+            context, widget.productId, widget.productPrice)
+        .whenComplete(() async {
+      await saveProductData(context, _emailController.text, widget.productPrice,
+          widget.productId, deviceId ?? '');
     });
   }
 
@@ -695,7 +693,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   // Show welcome notification when price alert is set
-  Future<void> _showWelcomeNotification(BuildContext context, int productId, String price) async {
+  Future<void> _showWelcomeNotification(
+      BuildContext context, int productId, String price) async {
     try {
       final notificationService = NotificationService();
 
@@ -1234,6 +1233,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         setState(() {
           productDetails = details;
           vendorProductData = details.vendorProductData ?? [];
+          isLoading = false; // Set loading to false after successful API call
         });
         log('Single API Data is');
         log('${productDetails?.toJson()}');
@@ -2037,8 +2037,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     // TODO: Navigate to alerts screen
                     log('Navigate to alerts screen');
                     Navigator.pushReplacement(
-                      context, MaterialPageRoute(builder: (context) => const AlertProduct()
-                    ));
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const AlertProduct()));
                   },
                   icon: Icon(
                     Icons.list_alt,
@@ -2316,17 +2317,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         });
       }
 
-       _initCall();
+      _initCall();
 
-      CommonToasts.centeredMobile(msg: 'Price alert deleted successfully', context: context);
-
+      CommonToasts.centeredMobile(
+          msg: 'Price alert deleted successfully', context: context);
 
       log('✅ Price alert deleted successfully');
     } catch (e) {
       log('❌ Error deleting price alert: $e');
 
-      CommonToasts.centeredMobile(msg: 'Failed to delete price alert', context: context);
-
+      CommonToasts.centeredMobile(
+          msg: 'Failed to delete price alert', context: context);
     }
     setState(() {
       isLoading = false;

@@ -7,13 +7,11 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
-import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/filter_preferences_db.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
-import 'package:sqflite/sqflite.dart';
 
 class BrandProductListScreen extends StatefulWidget {
   const BrandProductListScreen({
@@ -32,7 +30,6 @@ class BrandProductListScreen extends StatefulWidget {
 }
 
 class _BrandProductListScreen extends State<BrandProductListScreen> {
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final ScrollController _scrollController = ScrollController();
@@ -64,6 +61,10 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
   List<VendorProduct> tempProductList = [];
   List<VendorProduct> finalList = [];
   List<ProductListModelNew> brandDetails = [];
+
+  // Add vendor data storage
+  Map<String, int> vendorProductCounts = {};
+  bool isVendorFiltered = false;
 
   RangeValues currentPriceRange = const RangeValues(0, 1000);
 
@@ -113,7 +114,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
       final allProductsResponse = await BrandsApi.getProductListByBrandName(
           widget.brandName.toString(), currentApiPage, context);
 
-      final Map<String, dynamic> decoded = jsonDecode(allProductsResponse ?? '{}');
+      final Map<String, dynamic> decoded =
+          jsonDecode(allProductsResponse ?? '{}');
 
       final List<dynamic> jsonList = decoded['brand_product'] ?? [];
       final List<VendorProduct> fetchedProducts =
@@ -122,6 +124,17 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
       // Get total product count from API response
       totalProductCount = decoded['productCount'] ?? 0;
       totalPages = (totalProductCount / itemsPerPage).ceil();
+
+      // Parse vendor data from API response (only on first load)
+      if (currentApiPage == 1 && !isVendorFiltered) {
+        final List<dynamic> vendorDataList = decoded['vendor_data'] ?? [];
+        vendorProductCounts.clear();
+
+        for (var vendor in vendorDataList) {
+          vendorProductCounts[vendor['vendor_name']] = vendor['product_count'];
+        }
+        log('Loaded vendor data: ${vendorProductCounts.length} vendors');
+      }
 
       log('Total products from API: $totalProductCount');
       log('Total pages calculated: $totalPages');
@@ -164,6 +177,8 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
         _isLoading = false;
         _isError = false;
       });
+      await BrandsApi.getFilterProduct(
+          widget.brandName.toString(), currentApiPage, context);
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -204,7 +219,20 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
 
       setState(() {
         brandProducts = List.from(allProducts);
-        tempProductList = List.from(allProducts);
+
+        // If vendor filtering is active, reapply filters to new products
+        if (isVendorFiltered && filterVendor.isNotEmpty) {
+          tempProductList = allProducts.where((product) {
+            return filterVendor.contains(product.vendorName);
+          }).toList();
+
+          // Update pagination for filtered results
+          totalProductCount = tempProductList.length;
+          totalPages = (totalProductCount / itemsPerPage).ceil();
+        } else {
+          tempProductList = List.from(allProducts);
+        }
+
         _updateCurrentPageDisplay();
         _isLoading = false;
       });
@@ -379,6 +407,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                       currentPriceRange: currentPriceRange,
                       currentInStockOnly: currentInStockOnly,
                       currentOnSaleOnly: currentOnSaleOnly,
+                      vendorProductCounts: vendorProductCounts,
                       onFiltersApplied: (vendors, priceSorting, priceRange,
                           inStockOnly, onSaleOnly) {
                         _applyFilters(vendors, priceSorting, priceRange,
@@ -1339,12 +1368,17 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                         .easeInOut);
 
                                                                 // Check if we need to load more data
+                                                                // Only load more if not vendor filtered or if we need more products for filtering
                                                                 if ((currentPage +
                                                                                 1) *
                                                                             itemsPerPage >=
                                                                         allProducts
                                                                             .length &&
-                                                                    hasMoreData) {
+                                                                    hasMoreData &&
+                                                                    (!isVendorFiltered ||
+                                                                        tempProductList.length <
+                                                                            (currentPage + 1) *
+                                                                                itemsPerPage)) {
                                                                   await _loadMoreProducts();
                                                                 }
 
@@ -1417,8 +1451,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                         ),
                       ],
                     ),
-                  )
-    );
+                  ));
   }
 
   void _applyFilters(List<String> vendors, int? priceSorting,
@@ -1429,41 +1462,47 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
       currentPriceRange = priceRange;
       currentInStockOnly = inStockOnly;
       currentOnSaleOnly = onSaleOnly;
+      isVendorFiltered = vendors.isNotEmpty;
 
+      // Filter against ALL products, not just current page
       if (filterVendor.isNotEmpty) {
-        tempProductList = brandProducts.where((product) {
+        tempProductList = allProducts.where((product) {
           return filterVendor.contains(product.vendorName);
         }).toList();
+        log('Vendor filtering: ${filterVendor.length} vendors selected, ${tempProductList.length} products found');
       } else {
-        tempProductList = List.from(brandProducts);
+        tempProductList = List.from(allProducts);
+        log('No vendor filter applied, showing all ${allProducts.length} products');
       }
 
+      // Apply price range filter
       tempProductList = tempProductList.where((product) {
-        double? price = double.tryParse(product.vendorpricePrice ?? '0');
+        double? price = double.tryParse(product.vendorpricePrice);
         return price != null &&
             price >= priceRange.start &&
             price <= priceRange.end;
       }).toList();
 
+      // Apply sorting
       if (priceSorting != null) {
         if (priceSorting == 1) {
           tempProductList.sort((a, b) {
-            double priceA = double.tryParse(a.vendorpricePrice ?? '0') ?? 0;
-            double priceB = double.tryParse(b.vendorpricePrice ?? '0') ?? 0;
+            double priceA = double.tryParse(a.vendorpricePrice) ?? 0;
+            double priceB = double.tryParse(b.vendorpricePrice) ?? 0;
             return priceA.compareTo(priceB);
           });
         } else if (priceSorting == 2) {
           tempProductList.sort((a, b) {
-            double priceA = double.tryParse(a.vendorpricePrice ?? '0') ?? 0;
-            double priceB = double.tryParse(b.vendorpricePrice ?? '0') ?? 0;
+            double priceA = double.tryParse(a.vendorpricePrice) ?? 0;
+            double priceB = double.tryParse(b.vendorpricePrice) ?? 0;
             return priceB.compareTo(priceA);
           });
         } else if (priceSorting == 3) {
-          tempProductList.sort(
-              (a, b) => (a.productName ?? '').compareTo(b.productName ?? ''));
+          tempProductList
+              .sort((a, b) => (a.productName).compareTo(b.productName));
         } else if (priceSorting == 4) {
-          tempProductList.sort(
-              (a, b) => (b.productName ?? '').compareTo(a.productName ?? ''));
+          tempProductList
+              .sort((a, b) => (b.productName).compareTo(a.productName));
         }
       }
 
@@ -1528,6 +1567,7 @@ class FilterMenu extends StatefulWidget {
   final RangeValues currentPriceRange;
   final bool currentInStockOnly;
   final bool currentOnSaleOnly;
+  final Map<String, int> vendorProductCounts;
 
   const FilterMenu({
     super.key,
@@ -1541,6 +1581,7 @@ class FilterMenu extends StatefulWidget {
         const RangeValues(0, 1000), // Will be updated dynamically
     this.currentInStockOnly = false,
     this.currentOnSaleOnly = false,
+    this.vendorProductCounts = const {},
   });
 
   @override
@@ -1851,24 +1892,17 @@ class _FilterMenuState extends State<FilterMenu> {
   }
 
   List<String> _getUniqueVendorsFromProducts() {
-    if (widget.filterProductDetails.isEmpty) return [];
+    // Use vendor data from API instead of current page products
+    if (widget.vendorProductCounts.isEmpty) return [];
 
-    Set<String> uniqueVendors = {};
-    for (var product in widget.filterProductDetails) {
-      if (product.vendorName.isNotEmpty) {
-        uniqueVendors.add(product.vendorName);
-      }
-    }
-
-    List<String> vendorList = uniqueVendors.toList();
+    List<String> vendorList = widget.vendorProductCounts.keys.toList();
     vendorList.sort();
     return vendorList;
   }
 
   int _getProductCountForVendor(String vendorName) {
-    return widget.filterProductDetails
-        .where((product) => product.vendorName == vendorName)
-        .length;
+    // Use complete vendor data from API
+    return widget.vendorProductCounts[vendorName] ?? 0;
   }
 
   void _applyFilters() {
