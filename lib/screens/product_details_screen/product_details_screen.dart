@@ -2743,6 +2743,46 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             color: Colors.grey,
                           ),
                           const SizedBox(height: 4),
+                          const Padding(
+                            padding: EdgeInsets.only(right: 10.0),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '\$122',
+                                      //'\$${_formatPrice(product.msrp)}',
+                                      style:  TextStyle(
+                                        color: Colors.black,
+                                        fontFamily: 'Segoe UI',
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.lineThrough,
+                                        decorationThickness: 2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                 Padding(
+                                  padding: EdgeInsets.only(right: 0.0, top: 5),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'Add to Cart Price:',
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontFamily: 'Segoe UI',
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 3.0),
@@ -2753,26 +2793,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   '\$${product.vendorpricePrice ?? '--'} ',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 23),
+                                      fontSize: 20),
                                 ),
-                                // const SizedBox(width: 0),
-                                // const Text(
-                                //   '+',
-                                //   style: TextStyle(
-                                //       fontWeight: FontWeight.bold,
-                                //       fontSize: 22),
-                                // ),
-                                // const SizedBox(width: 0),
-                                // const Icon(
-                                //   Icons.local_shipping_outlined,
-                                //   size: 20,
-                                //   color: Colors.grey,
-                                // ),
-                                // const SizedBox(width: 0),
-                                // Expanded(
-                                //   child: _buildShippingText(
-                                //       product.vendorpriceShipping),
-                                // ),
                               ],
                             ),
                           ),
@@ -3885,40 +3907,3 @@ Widget _buildShippingOption(
     ],
   );
 }
-
-// COMMENTED OUT LOCAL DB ONLY CODE:
-// final nowLiked = await LikedPreferencesDB.toggleLikeProduct(
-//   productId: widget.productId,
-//   vendorProductId: actualVendorProductId,
-//   productName: productDetails?.data?.productName ?? 'Unknown Product',
-//   productImage: widget.productImage?.toString() ?? '',
-//   brandName: widget.brandName,
-//   productMpn: widget.productMPN,
-//   productPrice: widget.productPrice?.toString() ?? '0',
-// );
-
-// if (mounted) {
-//   setState(() {
-//     isLiked = nowLiked;
-//   });
-// }
-
-// ScaffoldMessenger.of(context).showSnackBar(
-//   SnackBar(
-//     content: Row(
-//       children: [
-//         Icon(
-//           isLiked ? Icons.favorite : Icons.favorite_border,
-//           color: Colors.white,
-//         ),
-//         SizedBox(width: 8),
-//         Text(isLiked ? 'Added to favorites!' : 'Removed from favorites!'),
-//       ],
-//     ),
-//     backgroundColor: isLiked ? Colors.red : Colors.grey,
-//     duration: Duration(seconds: 2),
-//     behavior: SnackBarBehavior.floating,
-//   ),
-// );
-
-// log('Product ${isLiked ? 'added to' : 'removed from'} favorites with vendor_product_id: $actualVendorProductId');

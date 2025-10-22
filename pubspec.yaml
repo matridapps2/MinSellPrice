@@ -37,7 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   auto_size_text: ^3.0.0
   google_fonts: ^6.2.1
-  syncfusion_flutter_charts: ^29.2.4
+  syncfusion_flutter_charts: ^29.1.40
   flutter_bloc: ^9.1.1
   equatable: ^2.0.7
   http: ^1.4.0
@@ -57,7 +57,7 @@ dependencies:
   flutter_background_service: ^5.1.0
   flutter_background_service_ios: ^5.0.3
   flutter_background_service_android: ^6.3.0
-  device_info_plus: ^11.5.0
+  device_info_plus: ^11.0.0
   shared_preferences: ^2.5.3
   provider: ^6.1.1
 

@@ -74,6 +74,7 @@ class VendorProduct {
   final String? productImage;
   final String? imageName;
   final int totalCount;
+  final List<LowestVendor>? lowestVendor;
 
   VendorProduct({
     //************************************************************************//
@@ -92,7 +93,7 @@ class VendorProduct {
     this.imageName,
     required this.totalCount,
     required this.brandName,
-
+    this.lowestVendor,
   });
 
   factory VendorProduct.fromJson(Map<String, dynamic> json) => VendorProduct(
@@ -113,6 +114,10 @@ class VendorProduct {
         productImage: json["product_image"],
         imageName: json["image_name"],
         totalCount: json["total_count"] ?? 0,
+        lowestVendor: json["lowest_vendor"] != null
+            ? List<LowestVendor>.from(
+                json["lowest_vendor"].map((x) => LowestVendor.fromJson(x)))
+            : null,
       );
 
   Map<String, dynamic> toJson() {
@@ -130,10 +135,52 @@ class VendorProduct {
       "product_image": productImage,
       "image_name": imageName,
       "total_count": totalCount,
+      "lowest_vendor": lowestVendor != null
+          ? List<dynamic>.from(lowestVendor!.map((x) => x.toJson()))
+          : null,
     };
   }
 }
 
+class LowestVendor {
+  final int vendorProductId;
+  final int vendorId;
+  final String vendorName;
+  final String vendorpricePrice;
+  final String vendorUrl;
+  final String vendorpriceDate;
+  final String source;
+
+  LowestVendor({
+    required this.vendorProductId,
+    required this.vendorId,
+    required this.vendorName,
+    required this.vendorpricePrice,
+    required this.vendorUrl,
+    required this.vendorpriceDate,
+    required this.source,
+  });
+
+  factory LowestVendor.fromJson(Map<String, dynamic> json) => LowestVendor(
+        vendorProductId: json["vendor_product_id"] ?? 0,
+        vendorId: json["vendor_id"] ?? 0,
+        vendorName: json["vendor_name"] ?? '',
+        vendorpricePrice: json["vendorprice_price"] ?? '',
+        vendorUrl: json["vendor_url"] ?? '',
+        vendorpriceDate: json["vendorprice_date"] ?? '',
+        source: json["source"] ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        "vendor_product_id": vendorProductId,
+        "vendor_id": vendorId,
+        "vendor_name": vendorName,
+        "vendorprice_price": vendorpricePrice,
+        "vendor_url": vendorUrl,
+        "vendorprice_date": vendorpriceDate,
+        "source": source,
+      };
+}
 
 /*Widget _buildPriceSection(VendorProduct product) {
   // Check if MSRP is null or empty

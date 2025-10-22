@@ -231,12 +231,13 @@ class BrandsApi {
     }
   }
 
-  static Future<ProductDetailsModel> getProductDetails(
-      {required String brandName,
+  static Future<ProductDetailsModel> getProductDetails({
+      required String brandName,
       required String productMPN,
       required int productId,
-      required BuildContext context}) async {
-    log('Product API running');
+      required BuildContext context
+  }) async {
+    log('Single Product API Method');
     log('Parameters - brandName: $brandName, productMPN: $productMPN, productId: $productId');
 
     try {
@@ -264,10 +265,9 @@ class BrandsApi {
       );
 
       log('API Response Status: ${response.statusCode}');
-      log('API Response Headers: ${response.headers}');
 
       if (response.statusCode == 200) {
-        log('Successfully API run: ${response.body}');
+        log(response.body);
         final jsonResponse = json.decode(response.body);
         log('Parsed JSON response: $jsonResponse');
 
