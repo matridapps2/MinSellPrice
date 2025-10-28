@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage>
   bool isLoggedIn = false;
 
   // App notification service for handling automatic notifications
-  late AppNotificationService _appNotificationService;
+  AppNotificationService? _appNotificationService;
 
   @override
   void initState() {
@@ -190,10 +190,10 @@ class _HomePageState extends State<HomePage>
   Future<void> _initializeAppNotificationService() async {
     try {
       _appNotificationService = AppNotificationService();
-      await _appNotificationService.initialize(context);
+      await _appNotificationService?.initialize(context);
 
       // Start automatic notification checking
-      await _appNotificationService.startAutoNotificationChecking();
+      await _appNotificationService?.startAutoNotificationChecking();
 
       log('✅ App notification service initialized successfully');
     } catch (e) {
@@ -207,7 +207,9 @@ class _HomePageState extends State<HomePage>
       log('🔍 Checking for notifications on app resume...');
 
       // Check for new notifications from API when app comes to foreground
-      await _appNotificationService.checkForNotificationsOnAppOpen();
+      if (_appNotificationService != null) {
+        await _appNotificationService!.checkForNotificationsOnAppOpen();
+      }
 
       log('✅ App resume notification check completed');
     } catch (e) {
@@ -295,8 +297,8 @@ class _HomePageState extends State<HomePage>
   void dispose() {
     _authStateSubscription?.cancel();
 
-    // Dispose the app notification service
-    _appNotificationService.dispose();
+    // Dispose the app notification service if initialized
+    _appNotificationService?.dispose();
 
     super.dispose();
   }

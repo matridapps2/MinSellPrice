@@ -71,8 +71,8 @@ class VendorProduct {
   final String vendorUrl;
   final String productMpn;
   final String productName;
-  final String? productImage;
-  final String? imageName;
+  final String productImage;
+  final String imageName;
   final int totalCount;
   final List<LowestVendor>? lowestVendor;
 
@@ -89,8 +89,8 @@ class VendorProduct {
     required this.vendorUrl,
     required this.productMpn,
     required this.productName,
-    this.productImage,
-    this.imageName,
+    required this.productImage,
+    required this.imageName,
     required this.totalCount,
     required this.brandName,
     this.lowestVendor,
@@ -111,8 +111,8 @@ class VendorProduct {
         vendorUrl: json["vendor_url"] ?? '--',
         productMpn: json["product_mpn"] ?? '--',
         productName: json["product_name"] ?? '--',
-        productImage: json["product_image"],
-        imageName: json["image_name"],
+        productImage: json["product_image"] ?? '',
+        imageName: json["image_name"] ?? '',
         totalCount: json["total_count"] ?? 0,
         lowestVendor: json["lowest_vendor"] != null
             ? List<LowestVendor>.from(

@@ -64,9 +64,11 @@ class BrandsApi {
         log('Brand API status code: ${response.statusCode}');
         final Map<String, dynamic> jsonData = json.decode(response.body);
 
+        // Safely extract lists with null checks
         final homeGardenBrands =
-            jsonData["Home & Garden Brands"] as List<dynamic>;
-        final shoesApparels = jsonData["Shoes & Apparels"] as List<dynamic>;
+            jsonData["Home & Garden Brands"] as List<dynamic>? ?? [];
+        final shoesApparels =
+            jsonData["Shoes & Apparels"] as List<dynamic>? ?? [];
 
         log('Home & Garden Brands count: ${homeGardenBrands.length}');
         log('Shoes & Apparels count: ${shoesApparels.length}');
@@ -231,12 +233,11 @@ class BrandsApi {
     }
   }
 
-  static Future<ProductDetailsModel> getProductDetails({
-      required String brandName,
+  static Future<ProductDetailsModel> getProductDetails(
+      {required String brandName,
       required String productMPN,
       required int productId,
-      required BuildContext context
-  }) async {
+      required BuildContext context}) async {
     log('Single Product API Method');
     log('Parameters - brandName: $brandName, productMPN: $productMPN, productId: $productId');
 
@@ -717,6 +718,151 @@ class BrandsApi {
     } catch (e) {
       log('Exception GET Liked Product API: ${e.toString()}');
       return e.toString();
+    }
+  }
+
+  /// Fetch top categories from API
+  static Future<List<Map<String, dynamic>>> fetchTopCategories(
+      [BuildContext? context]) async {
+    try {
+      log('Fetching top categories from API');
+      const url = 'https://www.minsellprice.com/api/top-category';
+
+      final response = await retry(
+        () async => await http.get(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          if (context != null) {
+            Fluttertoast.showToast(
+              msg: 'Retrying due to: $e',
+              gravity: ToastGravity.CENTER,
+              toastLength: Toast.LENGTH_LONG,
+            );
+          }
+        },
+      );
+
+      log('Top Categories API Status code: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('Top Categories API Response: ${response.body}');
+        final List<dynamic> jsonData = json.decode(response.body);
+
+        // Convert to List<Map<String, dynamic>>
+        final List<Map<String, dynamic>> categories =
+            jsonData.map((item) => item as Map<String, dynamic>).toList();
+
+        log('Top Categories count: ${categories.length}');
+        return categories;
+      } else {
+        log('Error Top Categories API: ${response.statusCode}');
+        throw Exception(
+            'Failed to load top categories: ${response.statusCode}');
+      }
+    } catch (e) {
+      log("Exception In Top Categories API: ${e.toString()}");
+      if (context != null) {
+        onExceptionResponse(context: context, exception: e.toString());
+      }
+      return [];
+    }
+  }
+
+  /// Fetch subcategories for a specific category
+  static Future<List<Map<String, dynamic>>> fetchCategorySubcategories(
+      String categoryPath,
+      [BuildContext? context]) async {
+    try {
+      log('Fetching subcategories for category: $categoryPath');
+      final url =
+          'https://www.minsellprice.com/api/category/$categoryPath/subcategories';
+
+      log('Subcategories API URL: $url');
+
+      final response = await retry(
+        () async => await http.get(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          if (context != null) {
+            Fluttertoast.showToast(
+              msg: 'Retrying due to: $e',
+              gravity: ToastGravity.CENTER,
+              toastLength: Toast.LENGTH_LONG,
+            );
+          }
+        },
+      );
+
+      log('Subcategories API Status code: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('Subcategories API Response: ${response.body}');
+        final dynamic jsonResponse = json.decode(response.body);
+
+        // Log all keys in response for debugging
+        if (jsonResponse is Map<String, dynamic>) {
+          log('🔍 Subcategories Response keys: ${jsonResponse.keys.toList()}');
+        }
+
+        // Handle different response formats
+        List<dynamic> subcategoriesData;
+
+        if (jsonResponse is List) {
+          // Direct array response
+          subcategoriesData = jsonResponse;
+        } else if (jsonResponse is Map<String, dynamic>) {
+          // Object response with subcategories key - try multiple variations
+          subcategoriesData = jsonResponse['sub_category'] ?? // snake_case
+              jsonResponse['subcategories'] ?? // camelCase
+              jsonResponse['subCategories'] ?? // camelCase variant
+              jsonResponse['data'] ??
+              jsonResponse['categories'] ??
+              [];
+        } else {
+          log('Unexpected response format');
+          return [];
+        }
+
+        // Convert to List<Map<String, dynamic>>
+        final List<Map<String, dynamic>> subcategories = subcategoriesData
+            .map((item) => item as Map<String, dynamic>)
+            .toList();
+
+        log('Subcategories count: ${subcategories.length}');
+
+        // Log full response if no subcategories found
+        if (subcategories.isEmpty && jsonResponse is Map<String, dynamic>) {
+          log('⚠️ No subcategories parsed. Full response: ${response.body}');
+        }
+
+        return subcategories;
+      } else {
+        log('Error Subcategories API: ${response.statusCode}');
+        log('Error Response: ${response.body}');
+
+        // Return empty list instead of throwing exception
+        // This allows fallback to direct product navigation
+        return [];
+      }
+    } catch (e) {
+      log("Exception In Subcategories API: ${e.toString()}");
+      if (context != null) {
+        onExceptionResponse(context: context, exception: e.toString());
+      }
+      // Return empty list to allow fallback
+      return [];
     }
   }
 }

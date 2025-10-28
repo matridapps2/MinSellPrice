@@ -8,6 +8,8 @@ import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 
 /// Wrapper for ProductList that handles category-specific API calls with pagination
 class CategoryProductList extends StatefulWidget {
@@ -61,7 +63,7 @@ class _CategoryProductListState extends State<CategoryProductList> {
       // Fetch products from category API with pagination
       final products = await CategoryService.fetchCategoryProducts(
         context: context,
-        categoryPath: widget.categoryPath,
+        categoryPath: 'widget.categoryPath',
         pageNumber: _currentPage,
       );
 
@@ -1390,79 +1392,79 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
   Widget _buildProductCard(VendorProduct product) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProductDetailsScreen(
-                productId: product.productId,
-                brandName: widget.categoryName,
-                productMPN: product.productMpn,
-                productImage: product.productImage,
-                productPrice: product.vendorpricePrice,
-              ),
+      child: Container(
+        width: w * .45,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
-          );
-        },
-        child: Container(
-          width: w * .45,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 2,
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildProductImage(product),
-              _buildProductDetails(product),
-            ],
-          ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProductImage(product),
+            _buildProductDetails(product),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildProductImage(VendorProduct product) {
-    return Container(
-      width: double.infinity,
-      height: w * .45,
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailsScreen(
+              productId: product.productId,
+              brandName: widget.categoryName,
+              productMPN: product.productMpn,
+              productImage: product.productImage,
+              productPrice: product.vendorpricePrice,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        height: w * .45,
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(0),
-          topRight: Radius.circular(0),
-        ),
-        child: Image.network(
-          _getProperImageUrl(product.productImage),
-          fit: BoxFit.contain,
-          cacheWidth:
-              (w * .45 * MediaQuery.of(context).devicePixelRatio).round(),
-          cacheHeight:
-              (w * .45 * MediaQuery.of(context).devicePixelRatio).round(),
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey[200],
-              child: Icon(
-                Icons.image_not_supported_outlined,
-                size: w * .08,
-                color: Colors.grey[400],
-              ),
-            );
-          },
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(0),
+            topRight: Radius.circular(0),
+          ),
+          child: Image.network(
+            _getProperImageUrl(product.productImage),
+            fit: BoxFit.contain,
+            cacheWidth:
+                (w * .45 * MediaQuery.of(context).devicePixelRatio).round(),
+            cacheHeight:
+                (w * .45 * MediaQuery.of(context).devicePixelRatio).round(),
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[200],
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  size: w * .08,
+                  color: Colors.grey[400],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -1474,37 +1476,90 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Brand name with logo below product image
+          Row(
+            children: [
+              // Brand logo using BrandImageWidget
+              Container(
+                width: 80,
+                height: 80,
+                margin: const EdgeInsets.only(right: 8),
+                child: BrandImageWidget(brand: {
+                  'brand_name': product.brandName,
+                  'brand_key':
+                      product.brandName.toLowerCase().replaceAll(' ', '-'),
+                  'brand_id': product.productId, // Using productId as fallback
+                }, width: 80, height: 80),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Product name
           SizedBox(
             height: w * .25,
-            child: Text(
-              product.productName.isEmpty
-                  ? 'Product Name Not Available'
-                  : product.productName,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.grey[800],
-                fontFamily: 'Segoe UI',
-                fontSize: 18,
-                height: 1.2,
-                fontWeight: FontWeight.w600,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailsScreen(
+                      productId: product.productId,
+                      brandName: widget.categoryName,
+                      productMPN: product.productMpn,
+                      productImage: product.productImage,
+                      productPrice: product.vendorpricePrice,
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                product.productName.isEmpty
+                    ? 'Product Name Not Available'
+                    : product.productName,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontFamily: 'Segoe UI',
+                  fontSize: 18,
+                  height: 1.2,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 0),
+          // Model number
           SizedBox(
-            height: h * .06,
-            child: Text(
-              'MPN: #${product.productMpn}',
-              style: const TextStyle(
-                fontFamily: 'Segoe UI',
-                fontSize: 16,
+            height: h * .05, // Reduced height to make room for vendor info
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Model: ',
+                    style: const TextStyle(
+                      fontFamily: 'Segoe UI',
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  TextSpan(
+                    text: product.productMpn.toUpperCase(),
+                    style: const TextStyle(
+                      fontFamily: 'Segoe UI',
+                      fontSize: 16,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
             ),
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: 10), // Reduced spacing
           _buildPriceSection(product),
         ],
       ),
@@ -1512,8 +1567,8 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
   }
 
   Widget _buildPriceSection(VendorProduct product) {
-    // Check if MSRP is empty or '--'
-    bool hasMsrp = product.msrp != '--' && product.msrp.isNotEmpty;
+    // Use actual vendor data from the product's lowest_vendor array
+    final vendors = _getVendorsFromProduct(product);
 
     return Container(
       decoration: BoxDecoration(
@@ -1522,129 +1577,62 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Show MSRP with strikethrough if it exists
-          if (hasMsrp) ...[
-            Padding(
-              padding: const EdgeInsets.only(right: 10.0),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          '\$${_formatPrice(product.msrp)}',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontFamily: 'Segoe UI',
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.lineThrough,
-                            decorationThickness: 2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.only(right: 0.0, top: 5),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Add to Cart Price:',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontFamily: 'Segoe UI',
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 5),
-          ],
-
-          // Show vendor price
-          Padding(
-            padding: const EdgeInsets.only(right: 10.0, top: 5),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+          // Show up to 2 vendors side by side
+          if (vendors.isNotEmpty)
+            Row(
               children: [
-                Text(
-                  '\$${_formatPrice(product.vendorpricePrice)}',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontFamily: 'Segoe UI',
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                // First vendor
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 1.0),
+                    child: _buildVendorRow(vendors.first),
+                  ),
+                ),
+                // Second vendor if available
+                if (vendors.length > 1)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 1.0),
+                      child: _buildVendorRow(vendors[1]),
+                    ),
+                  ),
+              ],
+            ),
+
+          // Show "Show Prices (Total Vendor Count)"
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    // Handle show prices action
+                    log('Show prices tapped for ${vendors.length} vendors');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetailsScreen(
+                          productId: product.productId,
+                          brandName: widget.categoryName,
+                          productMPN: product.productMpn,
+                          productImage: product.productImage,
+                          productPrice: product.vendorpricePrice,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Show Prices (${product.vendorIdCount})',
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: w * .02,
-                  vertical: w * .015,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.storefront_outlined,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${product.vendorIdCount}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      product.vendorIdCount == 1 ? 'vendor' : 'vendors',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -1666,18 +1654,233 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
     return imageUrl;
   }
 
+  /// Format price with comma separators for thousands
   String _formatPrice(String price) {
     try {
-      final double? priceValue = double.tryParse(price);
+      // Remove any existing formatting and parse the number
+      final cleanPrice = price.replaceAll(RegExp(r'[^\d.]'), '');
+      final double? priceValue = double.tryParse(cleanPrice);
+
       if (priceValue == null) {
-        return price;
+        return price; // Return original if parsing fails
       }
+
       // Format with commas for thousands
       final formatter = NumberFormat('#,###.##');
       return formatter.format(priceValue);
     } catch (e) {
-      return price;
+      log('Error formatting price: $e');
+      return price; // Return original if formatting fails
     }
+  }
+
+  // Get vendor data from product's lowest_vendor array
+  List<Map<String, dynamic>> _getVendorsFromProduct(VendorProduct product) {
+    List<Map<String, dynamic>> vendors = [];
+
+    // Check if there's only one lowest vendor
+    if (product.lowestVendor != null && product.lowestVendor!.length == 1) {
+      // If only one lowest vendor, use the product's main vendor URL and show that vendor
+      final currentVendor = {
+        'name': product.vendorName,
+        'logo': _getVendorLogo(product.vendorName),
+        'price': product.vendorpricePrice,
+        'url': product.vendorUrl, // Use product's main vendor URL
+      };
+      vendors.add(currentVendor);
+      log('Single lowest vendor detected - using product vendor: "${currentVendor['name']}" with URL: ${currentVendor['url']}');
+    } else if (product.lowestVendor != null &&
+        product.lowestVendor!.isNotEmpty) {
+      // Multiple lowest vendors - add current vendor first
+      final currentVendor = {
+        'name': product.vendorName,
+        'logo': _getVendorLogo(product.vendorName),
+        'price': product.vendorpricePrice,
+        'url': product.vendorUrl,
+      };
+      vendors.add(currentVendor);
+      log('Added current vendor: "${currentVendor['name']}" with logo: ${currentVendor['logo']}');
+
+      // Then add vendors from lowest_vendor array
+      for (var lowestVendor in product.lowestVendor!) {
+        // Skip if it's the same as current vendor
+        if (lowestVendor.vendorName != product.vendorName) {
+          final vendorData = {
+            'name': lowestVendor.vendorName,
+            'logo': _getVendorLogo(lowestVendor.vendorName),
+            'price': lowestVendor.vendorpricePrice,
+            'url': lowestVendor.vendorUrl,
+          };
+          vendors.add(vendorData);
+          log('Added lowest vendor: "${vendorData['name']}" with price: ${vendorData['price']} and URL: ${vendorData['url']}');
+        }
+      }
+    } else {
+      // No lowest vendor data - just use the main vendor
+      final currentVendor = {
+        'name': product.vendorName,
+        'logo': _getVendorLogo(product.vendorName),
+        'price': product.vendorpricePrice,
+        'url': product.vendorUrl,
+      };
+      vendors.add(currentVendor);
+      log('No lowest vendor data - using main vendor: "${currentVendor['name']}"');
+    }
+
+    return vendors;
+  }
+
+  // Get vendor logo URL
+  String _getVendorLogo(String vendorName) {
+    return 'https://growth.matridtech.net/vendor-logo/$vendorName.jpg';
+  }
+
+  // Build vendor logo widget - matches product_list.dart exactly
+  Widget _buildVendorLogoWidget(String vendorName) {
+    String logoPath =
+        'https://growth.matridtech.net/vendor-logo/$vendorName.jpg';
+
+    return Image.network(
+      logoPath,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          padding: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            vendorName,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          padding: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: CircularProgressIndicator(
+            value: loadingProgress.expectedTotalBytes != null
+                ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                : null,
+            strokeWidth: 2,
+          ),
+        );
+      },
+    );
+  }
+
+  // Build individual vendor row - matches product_list.dart exactly
+  Widget _buildVendorRow(Map<String, dynamic> vendor) {
+    log('Building vendor row for: "${vendor['name']}" with logo: ${vendor['logo']} and URL: ${vendor['url']}');
+    return GestureDetector(
+      onTap: () async {
+        // Handle vendor URL tap using url_launcher
+        if (vendor['url'] != null &&
+            vendor['url'].isNotEmpty &&
+            vendor['url'] != 'https://example.com') {
+          try {
+            log('Opening vendor URL: ${vendor['url']} for vendor: ${vendor['name']}');
+            final Uri url = Uri.parse(vendor['url']);
+            if (await canLaunchUrl(url)) {
+              await launchUrl(
+                url,
+                mode:
+                    LaunchMode.externalApplication, // Opens in external browser
+              );
+            } else {
+              throw 'Could not launch $url';
+            }
+          } catch (e) {
+            log('Error opening vendor URL: $e');
+            // Fallback: show a snackbar or dialog
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content:
+                      Text('Unable to open vendor website: ${vendor['name']}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        } else {
+          log('Vendor ${vendor['name']} has no valid URL or is mock data');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('No website available for ${vendor['name']}'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+      },
+      child: Container(
+        height: h * 0.07,
+        margin: const EdgeInsets.only(bottom: 4.0),
+        padding: const EdgeInsets.all(6.0),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Vendor logo - using same pattern as product details screen
+            Container(
+              height: h * 0.03,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  child:
+                      _buildVendorLogoWidget(vendor['name']?.toString() ?? ''),
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            // Vendor price
+            Text(
+              '\$${_formatPrice(vendor['price'])}',
+              style: const TextStyle(
+                color: Colors.blue,
+                fontFamily: 'Segoe UI',
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

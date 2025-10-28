@@ -91,7 +91,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   StreamSubscription<User?>? _authStateSubscription;
 
   // App notification service for handling automatic notifications
-  late AppNotificationService _appNotificationService;
+  AppNotificationService? _appNotificationService;
 
   @override
   void initState() {
@@ -147,7 +147,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Future<void> _initializeAppNotificationService() async {
     try {
       _appNotificationService = AppNotificationService();
-      await _appNotificationService.initialize(context);
+      await _appNotificationService?.initialize(context);
 
       log('✅ App notification service initialized in ProductDetailsScreen');
     } catch (e) {
@@ -161,8 +161,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     // Commented out - auto-notification timer no longer needed
     // _notificationCheckTimer?.cancel();
 
-    // Dispose the app notification service
-    _appNotificationService.dispose();
+    // Dispose the app notification service if initialized
+    _appNotificationService?.dispose();
 
     super.dispose();
   }
@@ -2753,7 +2753,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     Text(
                                       '\$122',
                                       //'\$${_formatPrice(product.msrp)}',
-                                      style:  TextStyle(
+                                      style: TextStyle(
                                         color: Colors.black,
                                         fontFamily: 'Segoe UI',
                                         fontSize: 18,
@@ -2764,7 +2764,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     ),
                                   ],
                                 ),
-                                 Padding(
+                                Padding(
                                   padding: EdgeInsets.only(right: 0.0, top: 5),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.end,

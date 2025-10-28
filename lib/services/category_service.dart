@@ -295,9 +295,24 @@ class CategoryService {
 
         if (jsonResponse.isNotEmpty) {
           final Map<String, dynamic> responseData = jsonDecode(jsonResponse);
-          final List<dynamic> products = responseData['brand_product'] ?? [];
+
+          // Log all keys in response for debugging
+          log('🔍 API Response keys: ${responseData.keys.toList()}');
+
+          // Try multiple possible keys for products
+          List<dynamic> products = responseData['brand_product'] ??
+              responseData['products'] ??
+              responseData['product'] ??
+              responseData['data'] ??
+              responseData['category_products'] ??
+              [];
 
           log('📦 API Response products count: ${products.length}');
+
+          // If still no products, log the full response for debugging
+          if (products.isEmpty) {
+            log('⚠️ No products found. Full response: ${response.body}');
+          }
 
           // Convert to the format expected by ProductList
           final List<Map<String, dynamic>> productList = products

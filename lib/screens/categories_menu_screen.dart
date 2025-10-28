@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:minsellprice/model/category_model.dart';
 import 'package:minsellprice/services/category_service.dart';
 import 'package:minsellprice/widgets/category_widgets.dart';
-import 'package:minsellprice/screens/category_product_list_screen.dart';
+import 'package:minsellprice/navigation/product_list_navigation.dart';
 
 class CategoriesMenuScreen extends StatefulWidget {
   const CategoriesMenuScreen({super.key});
@@ -280,14 +280,10 @@ class _CategoriesMenuScreenState extends State<CategoriesMenuScreen>
     log('🚀 Navigating to product list for: $categoryName');
     log('📂 Category path: $categoryPath');
 
-    Navigator.push(
+    ProductListNavigation.navigateToCategoryProducts(
       context,
-      MaterialPageRoute(
-        builder: (context) => CategoryProductList(
-          categoryPath: categoryPath,
-          categoryName: categoryName,
-        ),
-      ),
+      categoryPath: categoryPath,
+      categoryName: categoryName,
     );
   }
 

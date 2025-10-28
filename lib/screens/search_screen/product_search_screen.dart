@@ -1,14 +1,11 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/cupertino.dart';
-import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
-import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
-import 'package:minsellprice/screens/product_list_screen/product_list.dart';
-import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
+import 'package:minsellprice/navigation/product_list_navigation.dart';
 
 class ProductSearchScreen extends StatefulWidget {
   const ProductSearchScreen({super.key});
@@ -18,7 +15,6 @@ class ProductSearchScreen extends StatefulWidget {
 }
 
 class _ProductSearchScreenState extends State<ProductSearchScreen> {
-
   final TextEditingController _searchController = TextEditingController();
 
   final FocusNode _searchFocusNode = FocusNode();
@@ -340,16 +336,27 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       final brandName = product['brand_name'];
 
       // Check if essential fields have valid values
-      final isValidProductId = productId != null && (productId is int && productId > 0) || (productId is String && int.tryParse(productId) != null && int.parse(productId) > 0);
+      final isValidProductId =
+          productId != null && (productId is int && productId > 0) ||
+              (productId is String &&
+                  int.tryParse(productId) != null &&
+                  int.parse(productId) > 0);
 
-      final isValidMpn = productMpn != null && productMpn.toString().trim().isNotEmpty && productMpn.toString() != "--";
+      final isValidMpn = productMpn != null &&
+          productMpn.toString().trim().isNotEmpty &&
+          productMpn.toString() != "--";
 
-      final isValidProductName = productName != null && productName.toString().trim().isNotEmpty;
+      final isValidProductName =
+          productName != null && productName.toString().trim().isNotEmpty;
 
-      final isValidBrandName = brandName != null && brandName.toString().trim().isNotEmpty && brandName.toString() != " ";
+      final isValidBrandName = brandName != null &&
+          brandName.toString().trim().isNotEmpty &&
+          brandName.toString() != " ";
 
-      if (!isValidProductId || !isValidMpn || !isValidProductName || !isValidBrandName) {
-
+      if (!isValidProductId ||
+          !isValidMpn ||
+          !isValidProductName ||
+          !isValidBrandName) {
         log('Cannot navigate: Invalid product data - ID: $productId, MPN: $productMpn, Name: $productName, Brand: $brandName');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -371,17 +378,15 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       _addToRecentSearches(product);
 
       // Navigate to product details screen
-      Navigator.push(
+      ProductListNavigation.navigateToProductDetails(
         context,
-        MaterialPageRoute(
-          builder: (context) => ProductDetailsScreen(
-            productId: int.tryParse(productId.toString()) ?? 0,
-            brandName: brandName.toString(),
-            productMPN: productMpn.toString(),
-            productImage: product['product_image'] ?? '',
-            productPrice: product['vendorprice_price'] ?? '0.00',
-          ),
-        ),
+        productId: int.tryParse(productId.toString()) ?? 0,
+        brandName: brandName.toString(),
+        productMpn: productMpn.toString(),
+        productImage: product['product_image'] ?? '',
+        productPrice: double.tryParse(
+                product['vendorprice_price']?.toString() ?? '0.00') ??
+            0.0,
       );
     } catch (e) {
       log('Error navigating to product details: $e');
@@ -400,7 +405,6 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       );
     }
   }
-
 
   Future<void> _searchAndNavigate(String query) async {
     setState(() {

@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
-import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
-import 'package:minsellprice/screens/product_list_screen/product_list.dart';
+import 'package:minsellprice/navigation/product_list_navigation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BrandSearchScreen extends StatefulWidget {
@@ -145,15 +144,10 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
   void _navigateToBrandProductList(Map<String, dynamic> brand) {
     _addToRecentSearches(brand);
 
-    Navigator.push(
+    ProductListNavigation.navigateToBrandProducts(
       context,
-      MaterialPageRoute(
-        builder: (context) => ProductList(
-          brandId: brand['brand_id'] ?? 0,
-          brandName: brand['brand_name'] ?? '',
-          dataList: const [],
-        ),
-      ),
+      brandId: brand['brand_id'].toString(),
+      brandName: brand['brand_name'] ?? '',
     );
   }
 
