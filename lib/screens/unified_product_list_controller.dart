@@ -327,7 +327,7 @@ class UnifiedProductListController {
     }
   }
 
-  /// Perform search
+  /// Perform search - searches within already loaded products locally
   Future<void> performSearch(String query, BuildContext context) async {
     if (query.trim().isEmpty) {
       clearSearch();
@@ -337,14 +337,33 @@ class UnifiedProductListController {
     _updateState(isSearching: true);
 
     try {
-      final searchResults = await _apiStrategy.searchProducts(query, context);
+      // Search locally within already-loaded products
+      final productsToSearch = isAnyFilterActive()
+          ? stateNotifier.value.filteredProducts
+          : stateNotifier.value.products;
+
+      final queryLower = query.toLowerCase().trim();
+
+      final searchResults = productsToSearch.where((product) {
+        // Search in multiple fields (case-insensitive)
+        final productMpn = product.productMpn.toLowerCase();
+        final productName = product.productName.toLowerCase();
+        final brandName = product.brandName.toLowerCase();
+        final vendorName = product.vendorName.toLowerCase();
+
+        // Match if query is found in any of these fields
+        return productMpn.contains(queryLower) ||
+            productName.contains(queryLower) ||
+            brandName.contains(queryLower) ||
+            vendorName.contains(queryLower);
+      }).toList();
 
       _updateState(
         searchResults: searchResults,
         isSearching: false,
       );
 
-      log('Search returned ${searchResults.length} results for: "$query"');
+      log('Local search returned ${searchResults.length} results for: "$query" from ${productsToSearch.length} products');
 
       // Scroll to top to show search results
       _scrollToTop();

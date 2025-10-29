@@ -9,13 +9,17 @@ import 'package:flutter/rendering.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
 import 'package:minsellprice/screens/category_subcategories_screen.dart';
 import 'package:minsellprice/navigation/product_list_navigation.dart';
+import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/screens/search_screen/brand_search_screen.dart';
 import 'package:minsellprice/screens/search_screen/product_search_screen.dart';
 import 'package:minsellprice/widgets/category_shimmer.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DashboardScreenWidget extends StatefulWidget {
   const DashboardScreenWidget({super.key});
@@ -41,33 +45,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   bool _isCategoriesLoading = true;
   String? _categoriesError;
 
-  // Promotional slider images
-  final List<Map<String, dynamic>> _promoSlides = [
-    {
-      'image': 'assets/home_screen_assets/banner-one.jpg',
-      'title': 'Special Offers',
-      'subtitle': 'Up to 50% Off',
-      'type': 'asset',
-    },
-    {
-      'image': 'assets/home_screen_assets/banner-two.jpg',
-      'title': 'New Arrivals',
-      'subtitle': 'Check out latest products',
-      'type': 'asset',
-    },
-    {
-      'image': 'assets/sale25.jpg',
-      'title': 'Flash Sale',
-      'subtitle': 'Limited time offer',
-      'type': 'asset',
-    },
-    {
-      'image': 'assets/MIN-PRICE.jpg',
-      'title': 'Best Prices',
-      'subtitle': 'Guaranteed lowest prices',
-      'type': 'asset',
-    },
-  ];
+  // Verified products from API
+  List<VendorProduct> _verifiedProducts = [];
+  bool _isVerifiedProductsLoading = true;
+  String? _verifiedProductsError;
 
   @override
   void initState() {
@@ -77,6 +58,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       _productSearchFocusNode.unfocus();
     });
     _fetchTopCategories();
+    _fetchVerifiedProducts();
   }
 
   /// Fetch top categories from API
@@ -102,6 +84,65 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         setState(() {
           _isCategoriesLoading = false;
           _categoriesError = 'Failed to load categories';
+        });
+      }
+    }
+  }
+
+  /// Fetch verified products from API
+  Future<void> _fetchVerifiedProducts() async {
+    try {
+      setState(() {
+        _isVerifiedProductsLoading = true;
+        _verifiedProductsError = null;
+      });
+
+      final verifiedProductsData =
+          await BrandsApi.fetchVerifiedProducts(context);
+
+      if (mounted) {
+        // Convert to VendorProduct objects
+        final List<VendorProduct> products =
+            verifiedProductsData.map((productData) {
+          // Convert lowest_vendor array
+          List<LowestVendor>? lowestVendors;
+          if (productData['lowest_vendor'] != null) {
+            lowestVendors = (productData['lowest_vendor'] as List)
+                .map((vendor) => LowestVendor.fromJson(vendor))
+                .toList();
+          }
+
+          return VendorProduct(
+            productId: productData['product_id'] ?? 0,
+            vendorpricePrice:
+                productData['vendorprice_price']?.toString() ?? '0.00',
+            brandName: productData['brand_name']?.toString() ?? '',
+            vendorName: productData['vendor_name']?.toString() ?? '',
+            msrp: productData['msrp']?.toString() ?? '0.00',
+            vendorIdCount: 1, // Default since API doesn't provide this
+            vendorpriceDate: '', // API doesn't provide main vendor date
+            vendorUrl: productData['vendor_url']?.toString() ?? '',
+            productMpn: productData['product_mpn']?.toString() ?? '',
+            productName: productData['product_name']?.toString() ?? '',
+            productImage: productData['product_image']?.toString() ?? '',
+            imageName: '', // API doesn't provide this
+            totalCount: 0, // API doesn't provide this
+            lowestVendor: lowestVendors,
+          );
+        }).toList();
+
+        setState(() {
+          _verifiedProducts = products;
+          _isVerifiedProductsLoading = false;
+        });
+        log('Verified products loaded: ${_verifiedProducts.length}');
+      }
+    } catch (e) {
+      log('Error fetching verified products: $e');
+      if (mounted) {
+        setState(() {
+          _isVerifiedProductsLoading = false;
+          _verifiedProductsError = 'Failed to load verified products';
         });
       }
     }
@@ -347,6 +388,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
                     // Top Categories Slider
                     _buildCategoriesSlider(),
+                    const SizedBox(height: 25),
+
+                    // Top Deals Across the Web Section
+                    _buildVerifiedProductsSection(),
                     const SizedBox(height: 25),
 
                     // Promotional Slider
@@ -786,15 +831,15 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Column(
+                              child: const Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   CircularProgressIndicator(
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         AppColors.primary),
                                   ),
-                                  const SizedBox(height: 16),
-                                  const Text('Loading...'),
+                                   SizedBox(height: 16),
+                                   Text('Loading...'),
                                 ],
                               ),
                             ),
@@ -890,8 +935,59 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-  /// Promotional Slider Widget
-  Widget _buildPromotionalSlider() {
+  /// Top Deals Across the Web Section Widget
+  Widget _buildVerifiedProductsSection() {
+    if (_isVerifiedProductsLoading) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section Header
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'The Best Online Savings This Week',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              height: 220,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.grey[200],
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_verifiedProductsError != null || _verifiedProducts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -909,56 +1005,206 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Special Offers',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                  letterSpacing: 0.5,
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'The Best Online Savings This Week',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Slider Container
-          Container(
-            height: 180,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.15),
-                  spreadRadius: 2,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+          // Products Horizontal Scroll
+          SizedBox(
+            height: 360,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: _verifiedProducts.length,
+              itemBuilder: (context, index) {
+                final product = _verifiedProducts[index];
+                return _buildVerifiedProductCard(product);
+              },
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Swiper(
-                itemCount: _promoSlides.length,
-                autoplay: true,
-                autoplayDelay: 4000,
-                duration: 800,
-                viewportFraction: 0.95,
-                scale: 0.92,
-                pagination: SwiperPagination(
-                  alignment: Alignment.bottomCenter,
-                  builder: DotSwiperPaginationBuilder(
-                    color: Colors.white.withOpacity(0.5),
-                    activeColor: AppColors.primary,
-                    size: 8,
-                    activeSize: 10,
-                    space: 6,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build Individual Verified Product Card
+  Widget _buildVerifiedProductCard(VendorProduct product) {
+    // Get vendor data from product's lowest_vendor array
+    final vendors = _getVendorsFromVerifiedProduct(product);
+
+    return Container(
+      width: 180,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Product Image
+          GestureDetector(
+            onTap: () => _navigateToProductDetails(product),
+            child: Container(
+              height: 140,
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: _getProperImageUrl(product.productImage),
+                  fit: BoxFit.contain,
+                  placeholder: (context, url) => Container(
+                    color: Colors.grey[50],
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.grey[50],
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 40,
+                      color: Colors.grey[400],
+                    ),
                   ),
                 ),
-                itemBuilder: (context, index) {
-                  final slide = _promoSlides[index];
-                  return _buildSlideItem(slide);
-                },
+              ),
+            ),
+          ),
+
+          // Brand Logo using existing BrandImageWidget - Clickable
+          GestureDetector(
+            onTap: () => _navigateToProductDetails(product),
+            child: Container(
+              height: 55,
+              width: 55,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BrandImageWidget(
+                  brand: {
+                    'brand_name': product.brandName,
+                    'brand_key': product
+                        .brandName, // Let BrandImageWidget handle the processing
+                    'brand_id':
+                        product.productId, // Using productId as fallback
+                  },
+                  width: 55,
+                  height: 55,
+                ),
+              ),
+            ),
+          ),
+
+          // Product Details
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Product Name
+                  GestureDetector(
+                    onTap: () => _navigateToProductDetails(product),
+                    child: Text(
+                      product.productName.isEmpty
+                          ? 'Product Name Not Available'
+                          : product.productName,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Model Number
+                  if (product.productMpn.isNotEmpty)
+                    Row(
+                      children: [
+                        Text(
+                          'Model: ',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          //textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          product.productMpn.toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          //textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+
+
+                  const Spacer(),
+
+                  // Vendor Prices (side by side)
+                  if (vendors.isNotEmpty)
+                    Row(
+                      children: [
+                        // First vendor
+                        Expanded(
+                          child: _buildVendorPriceWidget(vendors.first),
+                        ),
+                        // Second vendor if available
+                        if (vendors.length > 1) ...[
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildVendorPriceWidget(vendors[1]),
+                          ),
+                        ],
+                      ],
+                    ),
+                  const SizedBox(height: 6),
+                ],
               ),
             ),
           ),
@@ -967,143 +1213,219 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-  /// Build Individual Slide Item
-  Widget _buildSlideItem(Map<String, dynamic> slide) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.grey[100]!,
-            Colors.white,
-          ],
+  /// Navigate to product details
+  void _navigateToProductDetails(VendorProduct product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailsScreen(
+          productId: product.productId,
+          brandName: product.brandName,
+          productMPN: product.productMpn,
+          productImage: product.productImage,
+          productPrice: double.tryParse(product.vendorpricePrice) ?? 0.0,
         ),
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background Image
-          slide['type'] == 'asset'
-              ? Image.asset(
-                  slide['image'],
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: 48,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    );
-                  },
-                )
-              : CachedNetworkImage(
-                  imageUrl: slide['image'],
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        size: 48,
-                        color: Colors.grey[400],
-                      ),
+    );
+  }
+
+  /// Open vendor website
+  void _openVendorWebsite(Map<String, dynamic> vendor) async {
+    final vendorUrl = vendor['url']?.toString() ?? '';
+    final vendorName = vendor['name']?.toString() ?? '';
+
+    log('Opening vendor website for: $vendorName');
+    log('Vendor URL: $vendorUrl');
+
+    if (vendorUrl.isNotEmpty && vendorUrl != 'https://example.com') {
+      try {
+        final Uri url = Uri.parse(vendorUrl);
+
+        // Check if we can launch the URL
+        if (await canLaunchUrl(url)) {
+          await launchUrl(
+            url,
+            mode: LaunchMode.externalApplication, // Opens in external browser
+          );
+          log('Successfully opened vendor website: $vendorUrl');
+        } else {
+          throw 'Could not launch $vendorUrl';
+        }
+      } catch (e) {
+        log('Error opening vendor URL: $e');
+        // Show error message to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Unable to open $vendorName website'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } else {
+      log('Invalid or empty vendor URL for: $vendorName');
+      // Show message for invalid URL
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No website available for $vendorName'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Get proper image URL
+  String _getProperImageUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return 'https://www.minsellprice.com/assets/no_image/no_image.jpg';
+    }
+
+    if (imageUrl.startsWith('//')) {
+      return 'https:$imageUrl';
+    }
+
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      return 'https://$imageUrl';
+    }
+    return imageUrl;
+  }
+
+  /// Format price with comma separators
+  String _formatPrice(String price) {
+    try {
+      final double? priceValue =
+          double.tryParse(price.replaceAll(RegExp(r'[^\d.]'), ''));
+
+      if (priceValue == null) {
+        return price;
+      }
+
+      final formatter = NumberFormat('#,###.##');
+      return formatter.format(priceValue);
+    } catch (e) {
+      return price;
+    }
+  }
+
+  /// Build vendor price widget for verified products
+  Widget _buildVendorPriceWidget(Map<String, dynamic> vendor) {
+    return GestureDetector(
+      onTap: () => _openVendorWebsite(vendor),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!, width: 0.5),
+        ),
+        child: Column(
+          children: [
+            // Vendor logo
+            Container(
+              height: 30,
+              width: double.infinity,
+              child: CachedNetworkImage(
+                imageUrl: _getVendorLogoUrl(vendor['name']?.toString() ?? ''),
+                fit: BoxFit.contain,
+                placeholder: (context, url) => Container(
+                  padding: const EdgeInsets.all(4),
+                  alignment: Alignment.center,
+                  child: Text(
+                    vendor['name']?.toString() ?? '',
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
                     ),
                   ),
                 ),
-
-          // Gradient Overlay
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7),
-                ],
-                stops: const [0.5, 1.0],
+                errorWidget: (context, url, error) => Container(
+                  padding: const EdgeInsets.all(4),
+                  alignment: Alignment.center,
+                  child: Text(
+                    vendor['name']?.toString() ?? '',
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-
-          // Text Content
-          Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (slide['title'] != null)
-                  Text(
-                    slide['title'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black45,
-                          offset: Offset(0, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                if (slide['subtitle'] != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    slide['subtitle'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black45,
-                          offset: Offset(0, 1),
-                          blurRadius: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
+            const SizedBox(height: 4),
+            // Price
+            Text(
+              '\$${_formatPrice(vendor['price']?.toString() ?? '0')}',
+              style: const TextStyle(
+                color: Colors.blue,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-
-          // Tap Effect
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                log('Promotional slide tapped: ${slide['title']}');
-                // Add navigation logic here
-              },
-              child: Container(),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  /// Get vendors from verified product
+  List<Map<String, dynamic>> _getVendorsFromVerifiedProduct(
+      VendorProduct product) {
+    List<Map<String, dynamic>> vendors = [];
+
+    // Add main vendor
+    vendors.add({
+      'name': product.vendorName,
+      'price': product.vendorpricePrice,
+      'url': product.vendorUrl,
+    });
+
+    // Add vendors from lowest_vendor array
+    if (product.lowestVendor != null && product.lowestVendor!.isNotEmpty) {
+      for (var lowestVendor in product.lowestVendor!) {
+        // Skip if it's the same as main vendor
+        if (lowestVendor.vendorName != product.vendorName) {
+          vendors.add({
+            'name': lowestVendor.vendorName,
+            'price': lowestVendor.vendorpricePrice,
+            'url': lowestVendor.vendorUrl,
+          });
+        }
+      }
+    }
+
+    // Sort by price to show cheapest first
+    vendors.sort((a, b) {
+      final priceA = double.tryParse(
+              a['price']?.toString().replaceAll(RegExp(r'[^\d.]'), '') ??
+                  '0') ??
+          0;
+      final priceB = double.tryParse(
+              b['price']?.toString().replaceAll(RegExp(r'[^\d.]'), '') ??
+                  '0') ??
+          0;
+      return priceA.compareTo(priceB);
+    });
+
+    // Return maximum 2 vendors
+    return vendors.take(2).toList();
+  }
+
+  /// Get vendor logo URL
+  String _getVendorLogoUrl(String vendorName) {
+    return 'https://growth.matridtech.net/vendor-logo/$vendorName.jpg';
   }
 
   Widget _buildBrandsSections(BrandsProvider brandsProvider) {
@@ -1452,8 +1774,26 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
       String brandKey = widget.brand['brand_key']?.toString() ?? '';
       int brandId = widget.brand['brand_id'] ?? 0;
 
-      String processedBrandName = brandName.replaceAll(' ', '-').toLowerCase();
-      String processedBrandKey = brandKey.replaceAll(' ', '-').toLowerCase();
+      // Clean and process brand names more thoroughly
+      String processedBrandName = brandName
+          .trim()
+          .replaceAll(RegExp(r'[^\w\s]'), '') // Remove special characters
+          .replaceAll(
+              RegExp(r'\s+'), '-') // Replace multiple spaces with single hyphen
+          .replaceAll(
+              RegExp(r'-+'), '-') // Replace multiple hyphens with single hyphen
+          .replaceAll(RegExp(r'^-|-$'), '') // Remove leading/trailing hyphens
+          .toLowerCase();
+
+      String processedBrandKey = brandKey
+          .trim()
+          .replaceAll(RegExp(r'[^\w\s]'), '') // Remove special characters
+          .replaceAll(
+              RegExp(r'\s+'), '-') // Replace multiple spaces with single hyphen
+          .replaceAll(
+              RegExp(r'-+'), '-') // Replace multiple hyphens with single hyphen
+          .replaceAll(RegExp(r'^-|-$'), '') // Remove leading/trailing hyphens
+          .toLowerCase();
 
       _imageUrl1 =
           'https://growth.matridtech.net/brand-logo/brands/$processedBrandKey.png';

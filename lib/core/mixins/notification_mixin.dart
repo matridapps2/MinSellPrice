@@ -9,7 +9,7 @@ mixin NotificationMixin<T extends StatefulWidget> on State<T> {
   @override
   void initState() {
     super.initState();
-    _initializeNotificationChecking();
+    // _initializeNotificationChecking();
   }
 
   @override

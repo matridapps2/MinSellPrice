@@ -233,6 +233,50 @@ class BrandsApi {
     }
   }
 
+  /// Fetch verified products from API
+  static Future<List<Map<String, dynamic>>> fetchVerifiedProducts(
+      BuildContext context) async {
+    try {
+      String uri = 'https://www.minsellprice.com/api/get-verified-products';
+
+      log('Fetching Verified Products API');
+      log('Verified Products URL: $uri');
+
+      final response = await retry(
+        () async => await http.get(Uri.parse(uri)),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          Fluttertoast.showToast(
+            msg: 'Retrying due to: $e',
+            gravity: ToastGravity.CENTER,
+            toastLength: Toast.LENGTH_LONG,
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        log('Verified Products API status code: ${response.statusCode}');
+        log('Verified Products API response length: ${response.body.length}');
+
+        // Parse the JSON response
+        final List<dynamic> jsonData = json.decode(response.body);
+        final List<Map<String, dynamic>> verifiedProducts =
+            jsonData.map((e) => Map<String, dynamic>.from(e)).toList();
+
+        log('Fetched ${verifiedProducts.length} verified products');
+        return verifiedProducts;
+      } else {
+        log('Error Verified Products API: ${response.statusCode}');
+        log('Error response body: ${response.body}');
+        return [];
+      }
+    } catch (e) {
+      log("Exception In Verified Products API: ${e.toString()}");
+      onExceptionResponse(context: context, exception: e.toString());
+      return [];
+    }
+  }
+
   static Future<ProductDetailsModel> getProductDetails(
       {required String brandName,
       required String productMPN,

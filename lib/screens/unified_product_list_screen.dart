@@ -348,8 +348,9 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
     if (isSearching) {
       productCount = state.searchResults.length;
       title = 'Search Results';
-      subtitle =
-          '${state.searchResults.length} items found for "${_controller.searchController.text}"';
+      subtitle = productCount > 0
+          ? '${state.searchResults.length} items found for "${_controller.searchController.text}"'
+          : 'No items found for "${_controller.searchController.text}"';
     } else if (isFiltered) {
       productCount = state.filteredProducts.length;
       title = 'Filtered Products';
@@ -1297,6 +1298,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         'logo': _getVendorLogo(product.vendorName),
         'price': product.vendorpricePrice,
         'url': product.vendorUrl, // Use product's main vendor URL
+        'date': product.vendorpriceDate,
       };
       vendors.add(currentVendor);
       log('Single lowest vendor detected - using product vendor: "${currentVendor['name']}" with URL: ${currentVendor['url']}');
@@ -1308,6 +1310,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         'logo': _getVendorLogo(product.vendorName),
         'price': product.vendorpricePrice,
         'url': product.vendorUrl,
+        'date': product.vendorpriceDate,
       };
       vendors.add(currentVendor);
       log('Added current vendor: "${currentVendor['name']}" with logo: ${currentVendor['logo']}');
@@ -1321,6 +1324,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
             'logo': _getVendorLogo(lowestVendor.vendorName),
             'price': lowestVendor.vendorpricePrice,
             'url': lowestVendor.vendorUrl,
+            'date': lowestVendor.vendorpriceDate,
           };
           vendors.add(vendorData);
           log('Added lowest vendor: "${vendorData['name']}" with price: ${vendorData['price']} and URL: ${vendorData['url']}');
@@ -1335,6 +1339,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
           'logo': _getVendorLogo(product.vendorName),
           'price': product.vendorpricePrice,
           'url': product.vendorUrl,
+          'date': product.vendorpriceDate,
         };
         vendors.add(currentVendor);
         log('Added main vendor: "${currentVendor['name']}" with URL: ${currentVendor['url']}');
@@ -1353,6 +1358,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
           'logo': _getVendorLogo(product.vendorName),
           'price': product.vendorpricePrice,
           'url': product.vendorUrl,
+          'date': product.vendorpriceDate,
         };
         vendors.add(currentVendor);
         log('Single vendor - showing main vendor: "${currentVendor['name']}" with URL: ${currentVendor['url']}');
@@ -1415,6 +1421,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         'price': mockPrice,
         'url':
             'https://www.${vendorName.toLowerCase().replaceAll(' ', '')}.com',
+        'date': product.vendorpriceDate, // Use same date as main product
       };
 
       mockVendors.add(mockVendor);
@@ -1520,8 +1527,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         }
       },
       child: Container(
-        height: h * 0.07,
-        margin: const EdgeInsets.only(bottom: 4.0),
+        height: h * 0.1,
+        margin: const EdgeInsets.only(bottom: 6.0),
         padding: const EdgeInsets.all(6.0),
         decoration: BoxDecoration(
           color: Colors.grey[50],
@@ -1542,9 +1549,9 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
           children: [
             // Vendor logo - using same pattern as product details screen
             Container(
-              height: h * 0.03,
+              height: h * 0.035,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(6),
                 child: Container(
                   width: double.infinity,
                   color: Colors.white,
@@ -1553,7 +1560,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             // Vendor price
             Text(
               '\$${_formatPrice(vendor['price'])}',
@@ -1564,6 +1571,20 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            // Vendor price date
+            Text(
+              _formatVendorDate(vendor['date']?.toString() ?? ''),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontFamily: 'Segoe UI',
+                fontSize: 9,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1622,6 +1643,29 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
     } catch (e) {
       log('Error formatting price: $e');
       return price; // Return original if formatting fails
+    }
+  }
+
+  /// Format vendor date for display
+  String _formatVendorDate(String date) {
+    try {
+      if (date.isEmpty || date == '0' || date == 'null') {
+        return 'N/A';
+      }
+
+      // Try to parse the date (expected format: 2025-08-28)
+      final DateTime? parsedDate = DateTime.tryParse(date);
+
+      if (parsedDate != null) {
+        // Format as "Sep 11, 2025" (MMM dd, yyyy)
+        final formatter = DateFormat('MMM dd, yyyy');
+        return formatter.format(parsedDate);
+      }
+
+      return date;
+    } catch (e) {
+      log('Error formatting vendor date "$date": $e');
+      return 'N/A';
     }
   }
 
