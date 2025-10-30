@@ -57,8 +57,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       _brandSearchFocusNode.unfocus();
       _productSearchFocusNode.unfocus();
     });
-    _fetchTopCategories();
-    _fetchVerifiedProducts();
+    _initCall();
+  }
+
+  void _initCall() async {
+    await _fetchTopCategories();
+    await _fetchVerifiedProducts();
   }
 
   /// Fetch top categories from API
@@ -838,8 +842,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         AppColors.primary),
                                   ),
-                                   SizedBox(height: 16),
-                                   Text('Loading...'),
+                                  SizedBox(height: 16),
+                                  Text('Loading...'),
                                 ],
                               ),
                             ),
@@ -1182,7 +1186,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         ),
                       ],
                     ),
-
 
                   const Spacer(),
 
@@ -1777,7 +1780,8 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
       // Clean and process brand names more thoroughly
       String processedBrandName = brandName
           .trim()
-          .replaceAll(RegExp(r'[^\w\s]'), '') // Remove special characters
+          .replaceAll(RegExp(r'[^\w\s-]'),
+              '') // Remove special characters except hyphens
           .replaceAll(
               RegExp(r'\s+'), '-') // Replace multiple spaces with single hyphen
           .replaceAll(
@@ -1787,7 +1791,8 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
 
       String processedBrandKey = brandKey
           .trim()
-          .replaceAll(RegExp(r'[^\w\s]'), '') // Remove special characters
+          .replaceAll(RegExp(r'[^\w\s-]'),
+              '') // Remove special characters except hyphens
           .replaceAll(
               RegExp(r'\s+'), '-') // Replace multiple spaces with single hyphen
           .replaceAll(
@@ -1796,9 +1801,9 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
           .toLowerCase();
 
       _imageUrl1 =
-          'https://growth.matridtech.net/brand-logo/brands/$processedBrandKey.png';
-      _imageUrl2 =
           'https://www.minsellprice.com/Brand-logo-images/$processedBrandName.png';
+      _imageUrl2 =
+          'https://growth.matridtech.net/brand-logo/brands/$processedBrandKey.png';
 
       _currentUrl = _imageUrl1;
 
@@ -1820,16 +1825,15 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
   void _onImageError() {
     setState(() {
       if (_attempt == 0) {
+        // First failure: try second URL (growth.matridtech.net)
         _currentUrl = _imageUrl2;
-        log('Trying alternative URL: $_imageUrl2');
-      } else if (_attempt == 1) {
-        _currentUrl = _imageUrl1;
-        log('Trying original URL again: $_imageUrl1');
+        log('First URL failed, trying alternative URL: $_imageUrl2');
+        _attempt++;
       } else {
+        // Second failure: show placeholder
         _currentUrl = '';
-        log('All image URLs failed, showing placeholder');
+        log('Both image URLs failed, showing placeholder');
       }
-      _attempt++;
     });
   }
 
@@ -1845,6 +1849,7 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
       child: _currentUrl.isEmpty
           ? _buildPlaceholderWidget()
           : CachedNetworkImage(
+              key: ValueKey(_currentUrl), // Force rebuild when URL changes
               imageUrl: _currentUrl,
               fit: BoxFit.contain,
               placeholder: (context, url) => _buildLoadingWidget(),

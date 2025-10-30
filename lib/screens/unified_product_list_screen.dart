@@ -276,7 +276,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                           color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.search_rounded,
                           color: AppColors.primary,
                           size: 20,
@@ -1527,7 +1527,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         }
       },
       child: Container(
-        height: h * 0.1,
+        height: h * 0.15,
         margin: const EdgeInsets.only(bottom: 6.0),
         padding: const EdgeInsets.all(6.0),
         decoration: BoxDecoration(
@@ -1548,8 +1548,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Vendor logo - using same pattern as product details screen
-            Container(
-              height: h * 0.035,
+            SizedBox(
+              height: h * 0.038,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: Container(
@@ -1579,11 +1579,11 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
               style: TextStyle(
                 color: Colors.grey[600],
                 fontFamily: 'Segoe UI',
-                fontSize: 9,
+                fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ],

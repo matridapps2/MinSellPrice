@@ -61,8 +61,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-DEBUG"
+            resValue "string", "app_name", "MinSellPrice DEBUG"
+        }
         release {
             signingConfig signingConfigs.debug
+            resValue "string", "app_name", "MinSellPrice"
         }
     }
 }

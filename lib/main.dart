@@ -30,6 +30,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   log('Handling a background message: ${message.messageId}');
 }
 
+/// Check if the app is running on a mobile platform (Android or iOS)
+bool _isMobilePlatform() {
+  return Platform.isAndroid || Platform.isIOS;
+}
+
 // Immediate loading screen to prevent white screen
 class ImmediateLoadingScreen extends StatelessWidget {
   const ImmediateLoadingScreen({super.key});
@@ -65,6 +70,61 @@ class ImmediateLoadingScreen extends StatelessWidget {
 void main() async {
   // Minimal initialization - only what's absolutely necessary
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Check if running on mobile platform (Android or iOS only)
+  if (!_isMobilePlatform()) {
+    log('❌ This app is designed to run only on mobile platforms (Android/iOS)');
+    log('❌ Current platform: ${Platform.operatingSystem}');
+    runApp(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 80,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Mobile App Only',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'This app is designed to run only on\nAndroid and iOS mobile devices.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Text(
+                  'Current Platform: ${Platform.operatingSystem}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    return; // Exit early if not mobile
+  }
+
+  log('✅ Running on mobile platform: ${Platform.operatingSystem}');
 
   // Commented out WorkManager usage - using AppNotificationService instead
   // await WorkManagerService.initialize();
@@ -131,6 +191,12 @@ void main() async {
 // Initialize everything in background
 Future<void> _initializeEverythingInBackground() async {
   try {
+    // Only initialize on mobile platforms
+    if (!_isMobilePlatform()) {
+      log('⏭️ Skipping background initialization - not a mobile platform');
+      return;
+    }
+
     // Set orientation
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -201,6 +267,12 @@ Future<void> _initializeEverythingInBackground() async {
 // Request notification permission
 Future<void> _requestNotificationPermission() async {
   try {
+    // Only request permission on mobile platforms
+    if (!_isMobilePlatform()) {
+      log('⏭️ Skipping notification permission - not a mobile platform');
+      return;
+    }
+
     // Wait a bit for the app to fully load
     await Future.delayed(const Duration(seconds: 2));
 
@@ -225,6 +297,12 @@ Future<void> _requestNotificationPermission() async {
 // Initialize app lifecycle service
 Future<void> _initializeAppLifecycleService() async {
   try {
+    // Only initialize on mobile platforms
+    if (!_isMobilePlatform()) {
+      log('⏭️ Skipping app lifecycle service - not a mobile platform');
+      return;
+    }
+
     // Wait for the app to fully load
     await Future.delayed(const Duration(seconds: 3));
 

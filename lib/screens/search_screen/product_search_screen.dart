@@ -576,17 +576,20 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
                           const SizedBox(height: 12),
                           // Product Name
-                          Text(
-                            product['product_name']?.toString() ?? '',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          Expanded(
+                            child: Text(
+                                product['product_name']?.toString() ?? '',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                           ),
+
                         ],
                       ),
                     ),

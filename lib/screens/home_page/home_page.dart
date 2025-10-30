@@ -93,11 +93,6 @@ class _HomePageState extends State<HomePage>
     await _checkNotificationStatus();
     await _initializeDatabase();
 
-    // Initialize WorkManager for background API calls
-    //  await _initializeWorkManager();
-
-    // Initialize app notification service
-//    await _initializeAppNotificationService();
   }
 
   Future<void> _getEmail() async {
@@ -282,16 +277,6 @@ class _HomePageState extends State<HomePage>
       }
     }
   }
-
-  // Future<void> _showExampleNotifications() async {
-  //   final notificationService = NotificationService();
-  //   await notificationService.showPriceDropNotification(
-  //     productName: 'Example Product',
-  //     oldPrice: 99.99,
-  //     newPrice: 79.99,
-  //     productId: 'example_product_123',
-  //   );
-  // }
 
   @override
   void dispose() {
@@ -543,7 +528,7 @@ class _HomePageState extends State<HomePage>
                         selectedColor: AppColors.primary,
                       ),
                     ],
-                  ),
+                ),
             body: _screens[_activeIndex],
           ),
           Positioned(
