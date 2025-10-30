@@ -4,7 +4,7 @@ import 'package:minsellprice/core/apis/apis_calls.dart';
 
 enum BrandsState { initial, loading, loaded, error }
 
-class BrandsProvider extends ChangeNotifier {
+class BrandsProvider extends ChangeNotifier{
   BrandsState _state = BrandsState.initial;
   List<Map<String, dynamic>> _homeGardenBrands = [];
   List<Map<String, dynamic>> _shoesApparels = [];
