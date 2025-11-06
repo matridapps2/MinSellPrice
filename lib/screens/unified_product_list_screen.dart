@@ -14,6 +14,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:minsellprice/screens/unified_product_list_controller.dart';
 import 'package:minsellprice/screens/unified_filter_menu.dart';
 
+import '../widgets/stylish_loader.dart';
+
 /// Enum to define different types of product list sources
 enum ProductListType {
   brand,
@@ -80,13 +82,20 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
 
   Widget _buildLoadingScaffold() {
     return Scaffold(
-      appBar: _buildAppBar(),
-      body: const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-        ),
-      ),
-    );
+        appBar: _buildAppBar(),
+        body: const Center(
+          child: StylishLoader(
+            type: LoaderType.wave,
+            size: 80.0,
+            primaryColor: AppColors.primary,
+            text: "Loading Product..",
+            textStyle: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppColors.primary,
+            ),
+          ),
+        ));
   }
 
   Widget _buildErrorScaffold() {
@@ -1281,6 +1290,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
   }
 
   // Get vendor data from product's lowest_vendor array
+  // Set the lowest two vendors based on vendorprice_price from lowestVendor array
   List<Map<String, dynamic>> _getVendorsFromProduct(VendorProduct product) {
     List<Map<String, dynamic>> vendors = [];
 
@@ -1290,48 +1300,34 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
     log('Product vendor price: ${product.vendorpricePrice}');
     log('Product lowestVendor: ${product.lowestVendor}');
 
-    // Check if there's only one lowest vendor
-    if (product.lowestVendor != null && product.lowestVendor!.length == 1) {
-      // If only one lowest vendor, use the product's main vendor URL and show that vendor
-      final currentVendor = {
-        'name': product.vendorName,
-        'logo': _getVendorLogo(product.vendorName),
-        'price': product.vendorpricePrice,
-        'url': product.vendorUrl, // Use product's main vendor URL
-        'date': product.vendorpriceDate,
-      };
-      vendors.add(currentVendor);
-      log('Single lowest vendor detected - using product vendor: "${currentVendor['name']}" with URL: ${currentVendor['url']}');
-    } else if (product.lowestVendor != null &&
-        product.lowestVendor!.isNotEmpty) {
-      // Multiple lowest vendors - add current vendor first
-      final currentVendor = {
-        'name': product.vendorName,
-        'logo': _getVendorLogo(product.vendorName),
-        'price': product.vendorpricePrice,
-        'url': product.vendorUrl,
-        'date': product.vendorpriceDate,
-      };
-      vendors.add(currentVendor);
-      log('Added current vendor: "${currentVendor['name']}" with logo: ${currentVendor['logo']}');
-
-      // Then add vendors from lowest_vendor array
+    // Check if lowestVendor array exists and has data
+    if (product.lowestVendor != null && product.lowestVendor!.isNotEmpty) {
+      // Get all vendors from lowest_vendor array and convert to map format
       for (var lowestVendor in product.lowestVendor!) {
-        // Skip if it's the same as current vendor
-        if (lowestVendor.vendorName != product.vendorName) {
-          final vendorData = {
-            'name': lowestVendor.vendorName,
-            'logo': _getVendorLogo(lowestVendor.vendorName),
-            'price': lowestVendor.vendorpricePrice,
-            'url': lowestVendor.vendorUrl,
-            'date': lowestVendor.vendorpriceDate,
-          };
-          vendors.add(vendorData);
-          log('Added lowest vendor: "${vendorData['name']}" with price: ${vendorData['price']} and URL: ${vendorData['url']}');
-        }
+        final vendorData = {
+          'name': lowestVendor.vendorName,
+          'logo': _getVendorLogo(lowestVendor.vendorName),
+          'price': lowestVendor.vendorpricePrice,
+          'url': lowestVendor.vendorUrl,
+          'date': lowestVendor.vendorpriceDate,
+        };
+        vendors.add(vendorData);
+        log('Added lowest vendor: "${vendorData['name']}" with price: ${vendorData['price']} and URL: ${vendorData['url']}');
       }
+
+      // Sort by vendorprice_price to get lowest prices first
+      vendors.sort((a, b) {
+        final priceA = _parsePrice(a['price']) ?? double.infinity;
+        final priceB = _parsePrice(b['price']) ?? double.infinity;
+        return priceA.compareTo(priceB);
+      });
+
+      // Take the lowest two vendors based on vendorprice_price
+      final limitedVendors = vendors.take(2).toList();
+      log('Selected ${limitedVendors.length} lowest vendor(s) from lowestVendor array based on vendorprice_price');
+      return limitedVendors;
     } else {
-      // No lowest_vendor data - check if we should show multiple vendors
+      // No lowest_vendor data - fall back to current vendor logic
       if (product.vendorIdCount > 1) {
         // Show main vendor
         final currentVendor = {
@@ -1351,7 +1347,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
             _generateMockVendors(product, additionalCount);
         vendors.addAll(additionalVendors);
         log('Added ${additionalVendors.length} mock vendors for display');
-      } else {
+      }
+      else {
         // Only one vendor - show the main vendor
         final currentVendor = {
           'name': product.vendorName,
@@ -1363,20 +1360,20 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         vendors.add(currentVendor);
         log('Single vendor - showing main vendor: "${currentVendor['name']}" with URL: ${currentVendor['url']}');
       }
+
+      // Sort by price to show cheapest first
+      vendors.sort((a, b) {
+        final priceA = _parsePrice(a['price']) ?? 0;
+        final priceB = _parsePrice(b['price']) ?? 0;
+        return priceA.compareTo(priceB);
+      });
+
+      // Limit to maximum 2 vendors for display
+      final limitedVendors = vendors.take(2).toList();
+
+      log('Total vendors for product "${product.productName}": ${vendors.length}, showing: ${limitedVendors.length}');
+      return limitedVendors;
     }
-
-    // Sort by price to show cheapest first
-    vendors.sort((a, b) {
-      final priceA = _parsePrice(a['price']) ?? 0;
-      final priceB = _parsePrice(b['price']) ?? 0;
-      return priceA.compareTo(priceB);
-    });
-
-    // Limit to maximum 2 vendors for display
-    final limitedVendors = vendors.take(2).toList();
-
-    log('Total vendors for product "${product.productName}": ${vendors.length}, showing: ${limitedVendors.length}');
-    return limitedVendors;
   }
 
   String _getVendorLogo(String vendorName) {

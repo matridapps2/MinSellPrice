@@ -229,10 +229,10 @@ class _HomePageState extends State<HomePage>
                 });
                 return provider;
               },
-              child: DashboardScreenWidget(),
+              child: const DashboardScreenWidget(),
             ),
             //   LikedProduct(database: db),
-            LikedProductScreen(),
+            const LikedProductScreen(),
             ChangeNotifierProvider(
               create: (context) {
                 final provider = BrandsProvider();
@@ -259,19 +259,19 @@ class _HomePageState extends State<HomePage>
                 provider.fetchBrands();
                 return provider;
               },
-              child: DashboardScreenWidget(),
+              child: const DashboardScreenWidget(),
             ),
             //LikedProduct(database: database),
-            LikedProductScreen(),
+            const LikedProductScreen(),
             ChangeNotifierProvider(
               create: (context) {
                 final provider = BrandsProvider();
                 provider.fetchBrands();
                 return provider;
               },
-              child: CategoriesMenuScreen(),
+              child: const CategoriesMenuScreen(),
             ),
-            AccountScreen(),
+            const AccountScreen(),
           ];
         });
       }

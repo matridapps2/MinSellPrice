@@ -50,6 +50,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   bool _isVerifiedProductsLoading = true;
   String? _verifiedProductsError;
 
+  // Visibility states for expanded sections
+  bool _showAllKitchenDeals = false;
+  bool _showAllOutdoorDeals = false;
+
   @override
   void initState() {
     super.initState();
@@ -123,14 +127,18 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             brandName: productData['brand_name']?.toString() ?? '',
             vendorName: productData['vendor_name']?.toString() ?? '',
             msrp: productData['msrp']?.toString() ?? '0.00',
-            vendorIdCount: 1, // Default since API doesn't provide this
-            vendorpriceDate: '', // API doesn't provide main vendor date
+            vendorIdCount: 1,
+            // Default since API doesn't provide this
+            vendorpriceDate: '',
+            // API doesn't provide main vendor date
             vendorUrl: productData['vendor_url']?.toString() ?? '',
             productMpn: productData['product_mpn']?.toString() ?? '',
             productName: productData['product_name']?.toString() ?? '',
             productImage: productData['product_image']?.toString() ?? '',
-            imageName: '', // API doesn't provide this
-            totalCount: 0, // API doesn't provide this
+            imageName: '',
+            // API doesn't provide this
+            totalCount: 0,
+            // API doesn't provide this
             lowestVendor: lowestVendors,
           );
         }).toList();
@@ -394,9 +402,21 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     _buildCategoriesSlider(),
                     const SizedBox(height: 25),
 
-                    // Top Deals Across the Web Section
-                    _buildVerifiedProductsSection(),
+                    // Kitchen Appliances Horizontal Section
+                    _buildKitchenAppliancesSection(),
                     const SizedBox(height: 25),
+
+                    // Outdoor Kitchen Deals Horizontal Section
+                    _buildOutdoorKitchenSection(),
+                    const SizedBox(height: 25),
+
+                    // Home Repairs Section
+                    _buildHomeRepairsSection(),
+                    const SizedBox(height: 25),
+
+                    // Top Deals Across the Web Section
+                    /* _buildVerifiedProductsSection(),
+                    const SizedBox(height: 25),*/
 
                     // Promotional Slider
                     // _buildPromotionalSlider(),
@@ -589,15 +609,15 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Column(
+                    child: const Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircularProgressIndicator(
                           valueColor:
                               AlwaysStoppedAnimation<Color>(AppColors.primary),
                         ),
-                        const SizedBox(height: 16),
-                        const Text('Loading...'),
+                        SizedBox(height: 16),
+                        Text('Loading...'),
                       ],
                     ),
                   ),
@@ -939,28 +959,124 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-  /// Top Deals Across the Web Section Widget
-  Widget _buildVerifiedProductsSection() {
-    if (_isVerifiedProductsLoading) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section Header
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 24,
-                  decoration: BoxDecoration(
+  /// Kitchen Appliances Horizontal Section Widget
+  Widget _buildKitchenAppliancesSection() {
+    // Static product data matching the image design
+    final List<Map<String, dynamic>> staticProducts = [
+      {
+        'brand': 'VIKING',
+        'model': 'VQEWD5301SS',
+        'name': 'Viking® 5 Series 30" Stainless Steel Outdoor Warming Drawer',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 3259.00,
+        'discountedPrice': 2809.99,
+        'discountPercent': 14,
+      },
+      {
+        'brand': 'VIKING',
+        'model': 'VMOD5240SS',
+        'name':
+            'Viking® Professional 5 Series 1.2 Cu. Ft. Stainless Steel Microwave Drawer',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 2659.00,
+        'discountedPrice': 2309.99,
+        'discountPercent': 13,
+      },
+      {
+        'brand': 'KitchenAid',
+        'model': 'KMBS104ESS',
+        'name': '24 Inch Built-In Microwave Oven',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 1949.99,
+        'discountedPrice': 1753.00,
+        'discountPercent': 10,
+      },
+      {
+        'brand': 'VIKING',
+        'model': 'VGIC53626BSS',
+        'name':
+            'Viking® 5 Series 36" Stainless Steel Pro Style Natural Gas Range',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 6799.00,
+        'discountedPrice': 6099.99,
+        'discountPercent': 10,
+      },
+      {
+        'brand': 'FRIGIDAIRE',
+        'model': 'FCRE3052BS',
+        'name': '30 Inch Freestanding Electric Range',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 1079.00,
+        'discountedPrice': 593.00,
+        'discountPercent': 45,
+      },
+      {
+        'brand': 'LG',
+        'model': 'LSIL6336FE',
+        'name': 'LG 30" PrintProof® Stainless Steel Slide In Induction Range',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 3629.00,
+        'discountedPrice': 2345.00,
+        'discountPercent': 35,
+      },
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Ranges, Cooktops,',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAllKitchenDeals = !_showAllKitchenDeals;
+                  });
+                },
+                child: Text(
+                  _showAllKitchenDeals ? 'Show Less' : 'View All Deals',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(2),
+                    decoration: TextDecoration.underline,
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  'The Best Online Savings This Week',
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.only(left: 12.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Microwaves...',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -970,27 +1086,405 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Container(
-              height: 220,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.grey[200],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Products - Show horizontal scroll or grid based on visibility
+          if (!_showAllKitchenDeals)
+            SizedBox(
+              height: 380,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: staticProducts.length,
+                itemBuilder: (context, index) {
+                  final product = staticProducts[index];
+                  return _buildStaticProductCard(product);
+                },
               ),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
+            )
+          else
+            // Expanded Grid View
+            _buildExpandedProductGrid(staticProducts),
+        ],
+      ),
+    );
+  }
+
+  /// Build Static Product Card
+  Widget _buildStaticProductCard(Map<String, dynamic> product) {
+    final brand = product['brand'] ?? '';
+    final model = product['model'] ?? '';
+    final name = product['name'] ?? '';
+    final image = product['image'] ?? '';
+    final originalPrice = product['originalPrice'] ?? 0.0;
+    final discountedPrice = product['discountedPrice'] ?? 0.0;
+    final discountPercent = product['discountPercent'] ?? 0;
+
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Product Image
+          Container(
+            height: 180,
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
               ),
             ),
-          ],
-        ),
-      );
-    }
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: image.isNotEmpty && image.contains('no_image')
+                  ? Container(
+                      color: Colors.grey[100],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No image available',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: image,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[50],
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[100],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'No image available',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+          ),
 
-    if (_verifiedProductsError != null || _verifiedProducts.isEmpty) {
-      return const SizedBox.shrink();
-    }
+          // Brand Logo
+          Padding(
+            padding: const EdgeInsets.only(left: 12, top: 8, bottom: 4),
+            child: Container(
+              height: 40,
+              width: 80,
+              child: BrandImageWidget(
+                brand: {
+                  'brand_name': brand,
+                  'brand_key': brand,
+                  'brand_id': 0,
+                },
+                width: 80,
+                height: 40,
+              ),
+            ),
+          ),
+
+          // Product Details
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Model Number
+                  Text(
+                    model,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Product Name
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Price Section
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Original Price (strikethrough) - only show if discounted
+                      if (discountPercent > 0) ...[
+                        Text(
+                          '\$${_formatPrice(originalPrice.toString())}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 15,
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      // Current Price
+                      Text(
+                        '\$${_formatPrice(discountedPrice.toString())}',
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Discount Badge - only show if there's a discount
+                  if (discountPercent > 0) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.red[200]!, width: 1),
+                      ),
+                      child: Text(
+                        '$discountPercent% OFF',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Outdoor Kitchen Deals Horizontal Section Widget
+  Widget _buildOutdoorKitchenSection() {
+    // Static outdoor kitchen product data
+    final List<Map<String, dynamic>> staticOutdoorProducts = [
+      {
+        'brand': 'COYOTE Outdoor Living',
+        'model': 'C1C28NG',
+        'name':
+            'Coyote Outdoor Living C1C28NG Coyote C Series 40000 BTU 28 inch Natural Gas Stainless Steel Built-In Gas Grill',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 3049.00,
+        'discountedPrice': 1449.00,
+        'discountPercent': 52,
+      },
+      {
+        'brand': 'COYOTE Outdoor Living',
+        'model': 'C2SL36NG',
+        'name':
+            'Coyote Outdoor Living C2SL36NG Coyote S Series 90000 BTU 35-1/2 Inch x 25-1/2 Inch x 23 Inch Natural Gas Stainless Steel Gas Grill',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 3599.00,
+        'discountedPrice': 3599.00,
+        'discountPercent': 0,
+      },
+      {
+        'brand': 'COYOTE Outdoor Living',
+        'model': 'C2C34NG',
+        'name':
+            'Coyote Outdoor Living C2C34NG Coyote Outdoor C Series 60000 BTU 34 inch x 25-1/2 inch x 23 inch Natural Gas Stainless Steel Built-In Gas Grill',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 2099.00,
+        'discountedPrice': 1999.00,
+        'discountPercent': 5,
+      },
+      {
+        'brand': 'COYOTE Outdoor Living',
+        'model': 'C1C28LP',
+        'name':
+            'Coyote Outdoor Living C1C28LP Coyote C Series 40000 BTU 28 Inch Liquid Propane Stainless Steel Built-In Gas Grill',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 1449.00,
+        'discountedPrice': 1449.00,
+        'discountPercent': 0,
+      },
+      {
+        'brand': 'COYOTE Outdoor Living',
+        'model': 'C1C28LP',
+        'name':
+            'Coyote Outdoor Living C1C28LP Coyote C Series 40000 BTU 28 Inch Liquid Propane Stainless Steel Built-In Gas Grill',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 1449.00,
+        'discountedPrice': 1449.00,
+        'discountPercent': 0,
+      },
+      {
+        'brand': 'NAPOLEON QUALITY FIREPLACES',
+        'model': 'RXT425SIBPK-1',
+        'name':
+            'Napoleon Rogue XT 425 Stand Alone Gas Grill with Infrared Side Burner',
+        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
+        'originalPrice': 899.00,
+        'discountedPrice': 899.00,
+        'discountPercent': 0,
+      },
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Outdoor Kitchen Deals',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAllOutdoorDeals = !_showAllOutdoorDeals;
+                  });
+                },
+                child: Text(
+                  _showAllOutdoorDeals ? 'Show Less' : 'View All Deals',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Products - Show horizontal scroll or grid based on visibility
+          if (!_showAllOutdoorDeals)
+            SizedBox(
+              height: 400,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: staticOutdoorProducts.length,
+                itemBuilder: (context, index) {
+                  final product = staticOutdoorProducts[index];
+                  return _buildStaticProductCard(product);
+                },
+              ),
+            )
+          else
+            // Expanded Grid View
+            _buildExpandedProductGrid(staticOutdoorProducts),
+        ],
+      ),
+    );
+  }
+
+  /// Home Repairs Section Widget
+  Widget _buildHomeRepairsSection() {
+    // Static home repairs category data
+    final List<Map<String, dynamic>> homeRepairsCategories = [
+      {
+        'icon': '🧹',
+        'label': 'Cleaning Tools',
+      },
+      {
+        'icon': '📦',
+        'label': 'Home Storage',
+      },
+      {
+        'icon': '🖼',
+        'label': 'Home Decor',
+      },
+      {
+        'icon': '🛏️',
+        'label': 'Bedding',
+      },
+    ];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -1009,36 +1503,29 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'The Best Online Savings This Week',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
+              const Text(
+                'Home Repairs',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Products Horizontal Scroll
+          // Categories Horizontal Scroll
           SizedBox(
-            height: 360,
+            height: 180, // Increased height to accommodate larger cards
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              itemCount: _verifiedProducts.length,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              itemCount: homeRepairsCategories.length,
               itemBuilder: (context, index) {
-                final product = _verifiedProducts[index];
-                return _buildVerifiedProductCard(product);
+                final category = homeRepairsCategories[index];
+                return _buildHomeRepairCategoryCard(category);
               },
             ),
           ),
@@ -1046,6 +1533,416 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       ),
     );
   }
+
+  /// Build Expanded Product Grid View
+  Widget _buildExpandedProductGrid(List<Map<String, dynamic>> products) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 0.70,
+      ),
+      itemCount: products.length,
+      itemBuilder: (context, index) {
+        final product = products[index];
+        return _buildStaticProductCardGrid(product);
+      },
+    );
+  }
+
+  /// Build Static Product Card for Grid View
+  Widget _buildStaticProductCardGrid(Map<String, dynamic> product) {
+    final brand = product['brand'] ?? '';
+    final model = product['model'] ?? '';
+    final name = product['name'] ?? '';
+    final image = product['image'] ?? '';
+    final originalPrice = product['originalPrice'] ?? 0.0;
+    final discountedPrice = product['discountedPrice'] ?? 0.0;
+    final discountPercent = product['discountPercent'] ?? 0;
+
+    return Container(
+      //  height: 1000,
+      //     margin: const EdgeInsets.symmetric(horizontal: 0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Product Image
+          Container(
+            height: 100,
+            width: double.infinity,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: image.isNotEmpty && image.contains('no_image')
+                  ? Container(
+                      color: Colors.grey[100],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 40,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'No image available',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: image,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[50],
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[100],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 40,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'No image available',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+
+          // Brand Logo
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 6, bottom: 4),
+            child: Container(
+              height: 35,
+              width: 70,
+              child: BrandImageWidget(
+                brand: {
+                  'brand_name': brand,
+                  'brand_key': brand,
+                  'brand_id': 0,
+                },
+                width: 70,
+                height: 35,
+              ),
+            ),
+          ),
+
+          // Product Details
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Model Number
+                  Text(
+                    model,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Product Name
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      height: 1.2,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Price Section
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Original Price (strikethrough) - only show if discounted
+                      if (discountPercent > 0) ...[
+                        Text(
+                          '\$${_formatPrice(originalPrice.toString())}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      // Current Price
+                      Text(
+                        '\$${_formatPrice(discountedPrice.toString())}',
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                  // Discount Badge - only show if there's a discount
+                  if (discountPercent > 0) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.red[200]!, width: 1),
+                      ),
+                      child: Text(
+                        '$discountPercent% OFF',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build Home Repair Category Card
+  Widget _buildHomeRepairCategoryCard(Map<String, dynamic> category) {
+    final icon = category['icon'] ?? '📦';
+    final label = category['label'] ?? 'Category';
+
+    return Container(
+      width: 140,
+      height: 180, // Match parent SizedBox height
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            // Emoji Icon
+            Container(
+              height: 80,
+              width: 80,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey[50],
+              ),
+              child: Center(
+                child: Text(
+                  icon,
+                  style: const TextStyle(fontSize: 45),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Label
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Top Deals Across the Web Section Widget
+  // Widget _buildVerifiedProductsSection() {
+  //   if (_isVerifiedProductsLoading) {
+  //     return Container(
+  //       margin: const EdgeInsets.symmetric(horizontal: 16),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           // Section Header
+  //           Row(
+  //             children: [
+  //               Container(
+  //                 width: 4,
+  //                 height: 24,
+  //                 decoration: BoxDecoration(
+  //                   color: AppColors.primary,
+  //                   borderRadius: BorderRadius.circular(2),
+  //                 ),
+  //               ),
+  //               const SizedBox(width: 12),
+  //               const Text(
+  //                 'The Best Online Savings This Week',
+  //                 style: TextStyle(
+  //                   fontSize: 20,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: Colors.black87,
+  //                   letterSpacing: 0.5,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //           const SizedBox(height: 16),
+  //           Container(
+  //             height: 220,
+  //             decoration: BoxDecoration(
+  //               borderRadius: BorderRadius.circular(16),
+  //               color: Colors.grey[200],
+  //             ),
+  //             child: const Center(
+  //               child: CircularProgressIndicator(
+  //                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  //
+  //   if (_verifiedProductsError != null || _verifiedProducts.isEmpty) {
+  //     return const SizedBox.shrink();
+  //   }
+  //
+  //   return Container(
+  //     margin: const EdgeInsets.symmetric(horizontal: 16),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         // Section Header
+  //         Row(
+  //           children: [
+  //             Container(
+  //               width: 4,
+  //               height: 24,
+  //               decoration: BoxDecoration(
+  //                 color: AppColors.primary,
+  //                 borderRadius: BorderRadius.circular(2),
+  //               ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             const Expanded(
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   const Text(
+  //                     'The Best Online Savings This Week',
+  //                     style: TextStyle(
+  //                       fontSize: 20,
+  //                       fontWeight: FontWeight.bold,
+  //                       color: Colors.black87,
+  //                       letterSpacing: 0.5,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 16),
+  //
+  //         // Products Horizontal Scroll
+  //         SizedBox(
+  //           height: 360,
+  //           child: ListView.builder(
+  //             scrollDirection: Axis.horizontal,
+  //             padding: const EdgeInsets.symmetric(horizontal: 8),
+  //             itemCount: _verifiedProducts.length,
+  //             itemBuilder: (context, index) {
+  //               final product = _verifiedProducts[index];
+  //               return _buildVerifiedProductCard(product);
+  //             },
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   /// Build Individual Verified Product Card
   Widget _buildVerifiedProductCard(VendorProduct product) {
@@ -1119,10 +2016,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 child: BrandImageWidget(
                   brand: {
                     'brand_name': product.brandName,
-                    'brand_key': product
-                        .brandName, // Let BrandImageWidget handle the processing
-                    'brand_id':
-                        product.productId, // Using productId as fallback
+                    'brand_key': product.brandName,
+                    // Let BrandImageWidget handle the processing
+                    'brand_id': product.productId,
+                    // Using productId as fallback
                   },
                   width: 55,
                   height: 55,
@@ -1849,7 +2746,8 @@ class _BrandImageWidgetState extends State<BrandImageWidget> {
       child: _currentUrl.isEmpty
           ? _buildPlaceholderWidget()
           : CachedNetworkImage(
-              key: ValueKey(_currentUrl), // Force rebuild when URL changes
+              key: ValueKey(_currentUrl),
+              // Force rebuild when URL changes
               imageUrl: _currentUrl,
               fit: BoxFit.contain,
               placeholder: (context, url) => _buildLoadingWidget(),
