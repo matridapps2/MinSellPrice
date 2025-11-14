@@ -1,9 +1,14 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:minsellprice/model/category_model.dart';
+import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/services/category_service.dart';
 import 'package:minsellprice/widgets/category_widgets.dart';
 import 'package:minsellprice/navigation/product_list_navigation.dart';
+import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 
 class CategoriesMenuScreen extends StatefulWidget {
   const CategoriesMenuScreen({super.key});
@@ -190,32 +195,41 @@ class _CategoriesMenuScreenState extends State<CategoriesMenuScreen>
   void _onCategoryIconTap(MainCategory category) {
     log('🎯 Category icon tapped: ${category.name} (ID: ${category.id})');
 
-    setState(() {
-      _selectedCategoryId = category.id;
-      _selectedSubcategoryId = null;
-      _selectedSubSubcategoryId = null;
-      _breadcrumbs = [
-        {'name': category.name, 'path': category.id}
-      ];
-    });
-    log('📂 Navigated to subcategories for: ${category.name}');
+    // Immediate state update without waiting
+    if (mounted) {
+      setState(() {
+        _selectedCategoryId = category.id;
+        _selectedSubcategoryId = null;
+        _selectedSubSubcategoryId = null;
+        _breadcrumbs = [
+          {'name': category.name, 'path': category.id}
+        ];
+      });
+      log('📂 Navigated to subcategories for: ${category.name}');
+    }
   }
 
   void _onSubcategoryIconTap(SubCategory subcategory) {
-    setState(() {
-      _selectedSubcategoryId = subcategory.id;
-      _selectedSubSubcategoryId = null;
-      _breadcrumbs = [
-        {
-          'name': _getCategoryName(_selectedCategoryId!),
-          'path': _selectedCategoryId!
-        },
-        {
-          'name': subcategory.name,
-          'path': '$_selectedCategoryId/${subcategory.id}'
-        },
-      ];
-    });
+    log('🎯 Subcategory icon tapped: ${subcategory.name} (ID: ${subcategory.id})');
+
+    // Immediate state update without waiting
+    if (mounted) {
+      setState(() {
+        _selectedSubcategoryId = subcategory.id;
+        _selectedSubSubcategoryId = null;
+        _breadcrumbs = [
+          {
+            'name': _getCategoryName(_selectedCategoryId!),
+            'path': _selectedCategoryId!
+          },
+          {
+            'name': subcategory.name,
+            'path': '$_selectedCategoryId/${subcategory.id}'
+          },
+        ];
+      });
+      log('📂 Navigated to sub-subcategories for: ${subcategory.name}');
+    }
   }
 
   void _onBreadcrumbTap(String path) {
@@ -481,6 +495,310 @@ class _CategoriesMenuScreenState extends State<CategoriesMenuScreen>
             ? '${word[0].toUpperCase()}${word.substring(1)}'
             : '')
         .join(' ');
+  }
+
+  // ============================================
+  // Vendor Price, Logo, Date Logic
+  // Based on unified_product_list_screen.dart
+  // ============================================
+
+  /// Get vendors from product - matches unified_product_list_screen.dart logic
+  List<Map<String, dynamic>> _getVendorsFromProduct(VendorProduct product) {
+    List<Map<String, dynamic>> vendors = [];
+
+    log('Getting vendors for product: ${product.productName}');
+    log('Product vendor name: ${product.vendorName}');
+    log('Product vendor URL: ${product.vendorUrl}');
+    log('Product vendor price: ${product.vendorpricePrice}');
+    log('Product lowestVendor: ${product.lowestVendor}');
+
+    // Check if lowestVendor array exists and has data
+    if (product.lowestVendor != null && product.lowestVendor!.isNotEmpty) {
+      // Get all vendors from lowest_vendor array and convert to map format
+      for (var lowestVendor in product.lowestVendor!) {
+        final vendorData = {
+          'name': lowestVendor.vendorName,
+          'logo': _getVendorLogo(lowestVendor.vendorName),
+          'price': lowestVendor.vendorpricePrice,
+          'url': lowestVendor.vendorUrl,
+          'date': lowestVendor.vendorpriceDate,
+        };
+        vendors.add(vendorData);
+        log('Added lowest vendor: "${vendorData['name']}" with price: ${vendorData['price']} and URL: ${vendorData['url']}');
+      }
+
+      // Sort by vendorprice_price to get lowest prices first
+      vendors.sort((a, b) {
+        final priceA = _parsePrice(a['price']) ?? double.infinity;
+        final priceB = _parsePrice(b['price']) ?? double.infinity;
+        return priceA.compareTo(priceB);
+      });
+
+      // Take the lowest two vendors based on vendorprice_price
+      final limitedVendors = vendors.take(2).toList();
+      log('Selected ${limitedVendors.length} lowest vendor(s) from lowestVendor array based on vendorprice_price');
+      return limitedVendors;
+    } else {
+      // No lowest_vendor data - fall back to current vendor logic
+      if (product.vendorIdCount > 1) {
+        // Show main vendor
+        final currentVendor = {
+          'name': product.vendorName,
+          'logo': _getVendorLogo(product.vendorName),
+          'price': product.vendorpricePrice,
+          'url': product.vendorUrl,
+          'date': product.vendorpriceDate,
+        };
+        vendors.add(currentVendor);
+        log('Added main vendor: "${currentVendor['name']}" with URL: ${currentVendor['url']}');
+      } else {
+        // Only one vendor - show the main vendor
+        final currentVendor = {
+          'name': product.vendorName,
+          'logo': _getVendorLogo(product.vendorName),
+          'price': product.vendorpricePrice,
+          'url': product.vendorUrl,
+          'date': product.vendorpriceDate,
+        };
+        vendors.add(currentVendor);
+        log('Single vendor - showing main vendor: "${currentVendor['name']}" with URL: ${currentVendor['url']}');
+      }
+
+      // Sort by price to show cheapest first
+      vendors.sort((a, b) {
+        final priceA = _parsePrice(a['price']) ?? 0;
+        final priceB = _parsePrice(b['price']) ?? 0;
+        return priceA.compareTo(priceB);
+      });
+
+      // Limit to maximum 2 vendors for display
+      final limitedVendors = vendors.take(2).toList();
+
+      log('Total vendors for product "${product.productName}": ${vendors.length}, showing: ${limitedVendors.length}');
+      return limitedVendors;
+    }
+  }
+
+  /// Get vendor logo URL
+  String _getVendorLogo(String vendorName) {
+    return 'https://growth.matridtech.net/vendor-logo/$vendorName.jpg';
+  }
+
+  /// Build vendor logo widget
+  Widget _buildVendorLogoWidget(String vendorName) {
+    String logoPath =
+        'https://growth.matridtech.net/vendor-logo/$vendorName.jpg';
+
+    return Image.network(
+      logoPath,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          padding: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            vendorName,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          padding: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: CircularProgressIndicator(
+            value: loadingProgress.expectedTotalBytes != null
+                ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                : null,
+            strokeWidth: 2,
+          ),
+        );
+      },
+    );
+  }
+
+  /// Build individual vendor row - matches unified_product_list_screen.dart
+  Widget _buildVendorRow(Map<String, dynamic> vendor) {
+    log('Building vendor row for: "${vendor['name']}" with logo: ${vendor['logo']} and URL: ${vendor['url']}');
+    return GestureDetector(
+      onTap: () async {
+        // Handle vendor URL tap using url_launcher
+        if (vendor['url'] != null &&
+            vendor['url'].isNotEmpty &&
+            vendor['url'] != 'https://example.com') {
+          try {
+            log('Opening vendor URL: ${vendor['url']} for vendor: ${vendor['name']}');
+            final Uri url = Uri.parse(vendor['url']);
+            if (await canLaunchUrl(url)) {
+              await launchUrl(
+                url,
+                mode:
+                    LaunchMode.externalApplication, // Opens in external browser
+              );
+            } else {
+              throw 'Could not launch $url';
+            }
+          } catch (e) {
+            log('Error opening vendor URL: $e');
+            // Fallback: show a toast message
+            if (mounted) {
+              CommonToasts.centeredMobile(
+                  msg: 'Unable to open vendor website: ${vendor['name']}',
+                  context: context);
+            }
+          }
+        } else {
+          log('Vendor ${vendor['name']} has no valid URL or is mock data');
+          if (mounted) {
+            CommonToasts.centeredMobile(
+                msg: 'No website available for ${vendor['name']}',
+                context: context);
+          }
+        }
+      },
+      child: Container(
+        height: h * 0.15,
+        margin: const EdgeInsets.only(bottom: 6.0),
+        padding: const EdgeInsets.all(6.0),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Vendor logo - using same pattern as unified_product_list_screen
+            SizedBox(
+              height: h * 0.038,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  child:
+                      _buildVendorLogoWidget(vendor['name']?.toString() ?? ''),
+                ),
+              ),
+            ),
+            const SizedBox(height: 3),
+            // Vendor price
+            Text(
+              '\$${_formatPrice(vendor['price'])}',
+              style: const TextStyle(
+                color: Colors.blue,
+                fontFamily: 'Segoe UI',
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            // Vendor price date
+            Text(
+              _formatVendorDate(vendor['date']?.toString() ?? ''),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontFamily: 'Segoe UI',
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Parse price consistently for filtering and display
+  double? _parsePrice(String price) {
+    try {
+      if (price.isEmpty) return null;
+
+      // Remove any existing formatting and parse the number
+      final cleanPrice = price.replaceAll(RegExp(r'[^\d.]'), '');
+      final double? priceValue = double.tryParse(cleanPrice);
+
+      // Validate price is positive and reasonable
+      if (priceValue == null || priceValue < 0 || priceValue > 1000000) {
+        return null;
+      }
+
+      return priceValue;
+    } catch (e) {
+      log('Error parsing price "$price": $e');
+      return null;
+    }
+  }
+
+  /// Format price with comma separators for thousands
+  String _formatPrice(String price) {
+    try {
+      final double? priceValue = _parsePrice(price);
+
+      if (priceValue == null) {
+        return price; // Return original if parsing fails
+      }
+
+      // Format with commas for thousands
+      final formatter = NumberFormat('#,###.##');
+      return formatter.format(priceValue);
+    } catch (e) {
+      log('Error formatting price: $e');
+      return price; // Return original if formatting fails
+    }
+  }
+
+  /// Format vendor date for display
+  String _formatVendorDate(String date) {
+    try {
+      if (date.isEmpty || date == '0' || date == 'null') {
+        return 'N/A';
+      }
+
+      // Try to parse the date (expected format: 2025-08-28)
+      final DateTime? parsedDate = DateTime.tryParse(date);
+
+      if (parsedDate != null) {
+        // Format as "Sep 11, 2025" (MMM dd, yyyy)
+        final formatter = DateFormat('MMM dd, yyyy');
+        return formatter.format(parsedDate);
+      }
+
+      return date;
+    } catch (e) {
+      log('Error formatting vendor date "$date": $e');
+      return 'N/A';
+    }
   }
 
   @override

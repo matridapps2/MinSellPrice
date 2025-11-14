@@ -164,11 +164,11 @@ class LowestVendor {
   factory LowestVendor.fromJson(Map<String, dynamic> json) => LowestVendor(
         vendorProductId: json["vendor_product_id"] ?? 0,
         vendorId: json["vendor_id"] ?? 0,
-        vendorName: json["vendor_name"] ?? '',
-        vendorpricePrice: json["vendorprice_price"] ?? '',
-        vendorUrl: json["vendor_url"] ?? '',
-        vendorpriceDate: json["vendorprice_date"] ?? '',
-        source: json["source"] ?? '',
+        vendorName: json["vendor_name"]?.toString() ?? '',
+        vendorpricePrice: json["vendorprice_price"]?.toString() ?? '',
+        vendorUrl: json["vendor_url"]?.toString() ?? '',
+        vendorpriceDate: json["vendorprice_date"]?.toString() ?? '',
+        source: json["source"]?.toString() ?? '',
       );
 
   Map<String, dynamic> toJson() => {

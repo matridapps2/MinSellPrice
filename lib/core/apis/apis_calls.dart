@@ -909,4 +909,112 @@ class BrandsApi {
       return [];
     }
   }
+
+  /// Fetch home slider products deals from API
+  static Future<List<Map<String, dynamic>>> fetchHomeSliderProductsDeals(
+      [BuildContext? context]) async {
+    try {
+      log('Fetching home slider products deals from API');
+      const url = 'https://www.minsellprice.com/api/home-slider-products-deals';
+
+      final response = await retry(
+        () async => await http.get(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          if (context != null) {
+            Fluttertoast.showToast(
+              msg: 'Retrying due to: $e',
+              gravity: ToastGravity.CENTER,
+              toastLength: Toast.LENGTH_LONG,
+            );
+          }
+        },
+      );
+
+      log('Home Slider Products Deals API Status code: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('Home Slider Products Deals API Response received');
+        final List<dynamic> jsonData = json.decode(response.body);
+
+        // Convert to List<Map<String, dynamic>>
+        final List<Map<String, dynamic>> deals =
+            jsonData.map((item) => item as Map<String, dynamic>).toList();
+
+        log('Home Slider Products Deals count: ${deals.length}');
+        return deals;
+      } else {
+        log('Error Home Slider Products Deals API: ${response.statusCode}');
+        log('Error Response: ${response.body}');
+        throw Exception(
+            'Failed to load home slider products deals: ${response.statusCode}');
+      }
+    } catch (e) {
+      log("Exception In Home Slider Products Deals API: ${e.toString()}");
+      if (context != null) {
+        onExceptionResponse(context: context, exception: e.toString());
+      }
+      return [];
+    }
+  }
+
+  /// Fetch home box products deals from API
+  static Future<List<Map<String, dynamic>>> fetchHomeBoxProductsDeals(
+      [BuildContext? context]) async {
+    try {
+      log('Fetching home box products deals from API');
+      const url = 'https://www.minsellprice.com/api/home-box-products-deals';
+
+      final response = await retry(
+        () async => await http.get(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+        retryIf: (e) => e is SocketException || e is TimeoutException,
+        onRetry: (e) {
+          if (context != null) {
+            Fluttertoast.showToast(
+              msg: 'Retrying due to: $e',
+              gravity: ToastGravity.CENTER,
+              toastLength: Toast.LENGTH_LONG,
+            );
+          }
+        },
+      );
+
+      log('Home Box Products Deals API Status code: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        log('Home Box Products Deals API Response received');
+        final List<dynamic> jsonData = json.decode(response.body);
+
+        // Convert to List<Map<String, dynamic>>
+        final List<Map<String, dynamic>> deals =
+            jsonData.map((item) => item as Map<String, dynamic>).toList();
+
+        log('Home Box Products Deals count: ${deals.length}');
+        return deals;
+      } else {
+        log('Error Home Box Products Deals API: ${response.statusCode}');
+        log('Error Response: ${response.body}');
+        throw Exception(
+            'Failed to load home box products deals: ${response.statusCode}');
+      }
+    } catch (e) {
+      log("Exception In Home Box Products Deals API: ${e.toString()}");
+      if (context != null) {
+        onExceptionResponse(context: context, exception: e.toString());
+      }
+      return [];
+    }
+  }
 }

@@ -15,8 +15,9 @@ class CategoryService {
   static Future<List<MainCategory>?> fetchCategories({
     required BuildContext context,
   }) async {
+    String ceche = '123224';
     try {
-      final url = '$_baseUrl$_categoriesEndpoint';
+      final url = '$_baseUrl$_categoriesEndpoint?cache=$ceche';
       log('🌐 Fetching categories from: $url');
 
       final response = await http.get(
@@ -274,7 +275,8 @@ class CategoryService {
     int pageNumber = 1,
   }) async {
     try {
-      final url = '$_baseUrl/category/$categoryPath?page_no=$pageNumber';
+      String ceche = '243322';
+      final url = '$_baseUrl/category/$categoryPath?page_no=$pageNumber&ceche=$ceche';
       log('🌐 Fetching category products from: $url');
 
       final response = await http.get(

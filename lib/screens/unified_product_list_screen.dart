@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
@@ -88,7 +89,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
             type: LoaderType.wave,
             size: 80.0,
             primaryColor: AppColors.primary,
-            text: "Loading Product..",
+            text: "Loading Products..",
             textStyle: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -1289,8 +1290,6 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
     );
   }
 
-  // Get vendor data from product's lowest_vendor array
-  // Set the lowest two vendors based on vendorprice_price from lowestVendor array
   List<Map<String, dynamic>> _getVendorsFromProduct(VendorProduct product) {
     List<Map<String, dynamic>> vendors = [];
 
@@ -1347,8 +1346,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
             _generateMockVendors(product, additionalCount);
         vendors.addAll(additionalVendors);
         log('Added ${additionalVendors.length} mock vendors for display');
-      }
-      else {
+      } else {
         // Only one vendor - show the main vendor
         final currentVendor = {
           'name': product.vendorName,
@@ -1502,24 +1500,30 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
             log('Error opening vendor URL: $e');
             // Fallback: show a snackbar or dialog
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
+              CommonToasts.centeredMobile(
+                  msg: 'Unable to open vendor website: ${vendor['name']}',
+                  context: context);
+              /* ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content:
                       Text('Unable to open vendor website: ${vendor['name']}'),
                   backgroundColor: Colors.red,
                 ),
-              );
+              );*/
             }
           }
         } else {
           log('Vendor ${vendor['name']} has no valid URL or is mock data');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            CommonToasts.centeredMobile(
+                msg: 'No website available for ${vendor['name']}',
+                context: context);
+            /*ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('No website available for ${vendor['name']}'),
                 backgroundColor: Colors.orange,
               ),
-            );
+            );*/
           }
         }
       },

@@ -997,27 +997,80 @@ class CategoryApiStrategy implements ProductListApiStrategy {
       Map<String, dynamic> categoryProduct) {
     try {
       log('Converting category product: ${categoryProduct['product_name']}');
-      log('Vendor name: ${categoryProduct['vendor_name']}');
-      log('Vendor URL: ${categoryProduct['vendor_url']}');
-      log('Vendor price: ${categoryProduct['vendorprice_price']}');
+
+      // Parse lowest_vendor array if it exists
+      List<LowestVendor>? lowestVendorList;
+      if (categoryProduct["lowest_vendor"] != null) {
+        try {
+          final lowestVendorData = categoryProduct["lowest_vendor"];
+          if (lowestVendorData is List && lowestVendorData.isNotEmpty) {
+            lowestVendorList = lowestVendorData
+                .map((x) => LowestVendor.fromJson(x as Map<String, dynamic>))
+                .toList();
+            log('✅ Parsed ${lowestVendorList.length} vendor(s) from lowest_vendor array');
+            for (var vendor in lowestVendorList) {
+              log('  - Vendor: ${vendor.vendorName}, Price: ${vendor.vendorpricePrice}, URL: ${vendor.vendorUrl}');
+            }
+          } else {
+            log('⚠️ lowest_vendor exists but is empty or not a list');
+          }
+        } catch (e) {
+          log('❌ Error parsing lowest_vendor: $e');
+          log('lowest_vendor data: ${categoryProduct["lowest_vendor"]}');
+        }
+      } else {
+        log('⚠️ No lowest_vendor field found in category product');
+      }
+
+      // Extract vendor info - prefer first lowest_vendor if available, otherwise use top-level fields
+      String vendorName = '';
+      String vendorUrl = '';
+      String vendorpricePrice = '0.00';
+      String vendorpriceDate = '';
+
+      if (lowestVendorList != null && lowestVendorList.isNotEmpty) {
+        // Use data from first lowest vendor (typically the lowest price)
+        final firstVendor = lowestVendorList.first;
+        vendorName = firstVendor.vendorName.isNotEmpty
+            ? firstVendor.vendorName
+            : (categoryProduct["vendor_name"]?.toString() ?? '');
+        vendorUrl = firstVendor.vendorUrl.isNotEmpty
+            ? firstVendor.vendorUrl
+            : (categoryProduct["vendor_url"]?.toString() ?? '');
+        vendorpricePrice = firstVendor.vendorpricePrice.isNotEmpty
+            ? firstVendor.vendorpricePrice
+            : (categoryProduct["vendorprice_price"]?.toString() ?? '0.00');
+        vendorpriceDate = firstVendor.vendorpriceDate.isNotEmpty
+            ? firstVendor.vendorpriceDate
+            : (categoryProduct["vendorprice_date"]?.toString() ?? '');
+      } else {
+        // Fallback to top-level vendor fields
+        vendorName = categoryProduct["vendor_name"]?.toString() ?? '';
+        vendorUrl = categoryProduct["vendor_url"]?.toString() ?? '';
+        vendorpricePrice =
+            categoryProduct["vendorprice_price"]?.toString() ?? '0.00';
+        vendorpriceDate = categoryProduct["vendorprice_date"]?.toString() ?? '';
+      }
+
+      log('Final vendor name: $vendorName');
+      log('Final vendor URL: $vendorUrl');
+      log('Final vendor price: $vendorpricePrice');
 
       return VendorProduct(
         productId: categoryProduct["product_id"] ?? 0,
-        vendorpricePrice:
-            (categoryProduct["vendorprice_price"]?.toString() ?? '0.00'),
+        vendorpricePrice: vendorpricePrice,
         brandName: (categoryProduct["brand_name"]?.toString() ?? ''),
-        vendorName: (categoryProduct["vendor_name"]?.toString() ?? ''),
+        vendorName: vendorName,
         msrp: (categoryProduct["msrp"]?.toString() ?? '0.00'),
         vendorIdCount: categoryProduct["vendorIdCount"] ?? 0,
-        vendorpriceDate:
-            (categoryProduct["vendorprice_date"]?.toString() ?? ''),
-        vendorUrl: (categoryProduct["vendor_url"]?.toString() ?? ''),
+        vendorpriceDate: vendorpriceDate,
+        vendorUrl: vendorUrl,
         productMpn: (categoryProduct["product_mpn"]?.toString() ?? ''),
         productName: (categoryProduct["product_name"]?.toString() ?? ''),
         productImage: categoryProduct["product_image"]?.toString() ?? '',
         imageName: categoryProduct["image_name"]?.toString() ?? '',
         totalCount: categoryProduct["total_count"] ?? 0,
-        lowestVendor: null, // Category products don't have lowest vendor data
+        lowestVendor: lowestVendorList,
       );
     } catch (e) {
       log('Error converting category product: $e');

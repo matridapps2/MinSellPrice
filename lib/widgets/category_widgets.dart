@@ -64,52 +64,73 @@ class CategoryCard extends StatelessWidget {
             ],
             // Category Info (tappable area)
             Expanded(
-              child: GestureDetector(
-                onTap: onTap,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      category.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? AppColors.primary : Colors.black87,
-                      ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isSelected ? AppColors.primary : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          category.description,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${category.subcategories.length} subcategories',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      category.description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${category.subcategories.length} subcategories',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
             // Arrow Icon (tappable for navigation to subcategories)
-            GestureDetector(
-              onTap: onIconTap ??
-                  onTap, // Use icon tap if available, otherwise fallback to category tap
-              child: Icon(
+            if (onIconTap != null)
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onIconTap,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: isSelected ? AppColors.primary : Colors.grey[400],
+                    ),
+                  ),
+                ),
+              )
+            else
+              Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
                 color: isSelected ? AppColors.primary : Colors.grey[400],
               ),
-            ),
           ],
         ),
       ),
@@ -168,15 +189,23 @@ class SubcategoryList extends StatelessWidget {
                 const SizedBox(width: 12),
                 // Subcategory name (tappable area)
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => onSubcategoryTap(subcategory),
-                    child: Text(
-                      subcategory.name,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? AppColors.primary : Colors.black87,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => onSubcategoryTap(subcategory),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          subcategory.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w500,
+                            color:
+                                isSelected ? AppColors.primary : Colors.black87,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -193,18 +222,29 @@ class SubcategoryList extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 // Arrow icon (tappable for navigation to sub-subcategories)
-                GestureDetector(
-                  onTap: () {
-                    if (onSubcategoryIconTap != null) {
-                      onSubcategoryIconTap!(subcategory);
-                    }
-                  },
-                  child: Icon(
+                if (onSubcategoryIconTap != null)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => onSubcategoryIconTap!(subcategory),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color:
+                              isSelected ? AppColors.primary : Colors.grey[400],
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Icon(
                     Icons.chevron_right,
                     size: 20,
                     color: isSelected ? AppColors.primary : Colors.grey[400],
                   ),
-                ),
               ],
             ),
           ),
@@ -213,7 +253,6 @@ class SubcategoryList extends StatelessWidget {
     );
   }
 }
-
 /// Sub-subcategory grid widget
 class SubSubcategoryGrid extends StatelessWidget {
   final List<String> subSubcategories;

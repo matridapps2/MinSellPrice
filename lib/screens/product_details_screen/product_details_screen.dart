@@ -501,7 +501,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     color: AppColors.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.notifications_active,
                     size: 32,
                     color: AppColors.primary,
@@ -511,7 +511,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 const SizedBox(height: 20),
 
                 // Title
-                Text(
+                const Text(
                   'Set Price Alert',
                   style: TextStyle(
                     fontSize: 24,
@@ -554,7 +554,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: 'Enter your email address',
-                      prefixIcon: Icon(
+                      prefixIcon: const Icon(
                         Icons.email_outlined,
                         color: AppColors.primary,
                       ),
@@ -1391,7 +1391,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           type: LoaderType.wave,
           size: 80.0,
           primaryColor: AppColors.primary,
-          text: "Loading Product..",
+          text: "Loading Products..",
           textStyle: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,

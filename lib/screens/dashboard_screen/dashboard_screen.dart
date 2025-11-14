@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
+import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
 import 'package:minsellprice/screens/category_subcategories_screen.dart';
@@ -53,6 +54,18 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   // Visibility states for expanded sections
   bool _showAllKitchenDeals = false;
   bool _showAllOutdoorDeals = false;
+  bool _showAllFaucetDeals = false;
+  bool _showAllSinkDeals = false;
+
+  // Home slider products deals from API
+  List<Map<String, dynamic>> _homeSliderDeals = [];
+  bool _isHomeSliderDealsLoading = true;
+  String? _homeSliderDealsError;
+
+  // Home box products deals from API
+  List<Map<String, dynamic>> _homeBoxDeals = [];
+  bool _isHomeBoxDealsLoading = true;
+  String? _homeBoxDealsError;
 
   @override
   void initState() {
@@ -67,6 +80,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   void _initCall() async {
     await _fetchTopCategories();
     await _fetchVerifiedProducts();
+    await _fetchHomeSliderProductsDeals();
+    await _fetchHomeBoxProductsDeals();
   }
 
   /// Fetch top categories from API
@@ -158,6 +173,268 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         });
       }
     }
+  }
+
+  /// Fetch home slider products deals from API
+  Future<void> _fetchHomeSliderProductsDeals() async {
+    try {
+      setState(() {
+        _isHomeSliderDealsLoading = true;
+        _homeSliderDealsError = null;
+      });
+
+      final deals = await BrandsApi.fetchHomeSliderProductsDeals(context);
+
+      if (mounted) {
+        setState(() {
+          _homeSliderDeals = deals;
+          _isHomeSliderDealsLoading = false;
+        });
+        log('Home slider products deals loaded: ${_homeSliderDeals.length}');
+      }
+    } catch (e) {
+      log('Error fetching home slider products deals: $e');
+      if (mounted) {
+        setState(() {
+          _isHomeSliderDealsLoading = false;
+          _homeSliderDealsError = 'Failed to load deals';
+        });
+      }
+    }
+  }
+
+  /// Fetch home box products deals from API
+  Future<void> _fetchHomeBoxProductsDeals() async {
+    try {
+      setState(() {
+        _isHomeBoxDealsLoading = true;
+        _homeBoxDealsError = null;
+      });
+
+      final deals = await BrandsApi.fetchHomeBoxProductsDeals(context);
+
+      if (mounted) {
+        setState(() {
+          _homeBoxDeals = deals;
+          _isHomeBoxDealsLoading = false;
+        });
+        log('Home box products deals loaded: ${_homeBoxDeals.length}');
+      }
+    } catch (e) {
+      log('Error fetching home box products deals: $e');
+      if (mounted) {
+        setState(() {
+          _isHomeBoxDealsLoading = false;
+          _homeBoxDealsError = 'Failed to load deals';
+        });
+      }
+    }
+  }
+
+  /// Get products for a specific category from home slider deals
+  List<Map<String, dynamic>> _getProductsForCategory(String categoryTitle) {
+    if (_homeSliderDeals.isEmpty) {
+      log('Home slider deals is empty');
+      return [];
+    }
+
+    // Log all available categories for debugging
+    log('🔍 Searching for category: $categoryTitle');
+    log('📋 Available categories:');
+    for (var deal in _homeSliderDeals) {
+      final title = deal['HomePageCategoryTitle']?.toString() ?? '';
+      final route = deal['SectionRoute']?.toString() ?? '';
+      log('  - Title: "$title" | Route: "$route"');
+    }
+
+    // Map of search terms to possible category title variations
+    final categoryMapping = {
+      'Ranges, Cooktops, Microwaves': [
+        'ranges',
+        'cooktops',
+        'microwaves',
+        'range',
+        'cooktop',
+        'microwave',
+      ],
+      'Outdoor Kitchen': [
+        'outdoor',
+        'kitchen',
+        'grill',
+        'outdoor kitchen',
+        'outdoor kitchen deals',
+      ],
+      'Kitchen Faucet': [
+        'faucet',
+        'kitchen faucet',
+        'faucets',
+        'kitchen faucets',
+      ],
+      'Kitchen Sinks': [
+        'sink',
+        'sinks',
+        'kitchen sink',
+        'kitchen sinks',
+      ],
+    };
+
+    // Get search terms for the category
+    final searchTerms = categoryMapping[categoryTitle] ??
+        categoryTitle
+            .toLowerCase()
+            .split(' ')
+            .where((t) => t.length > 2)
+            .toList();
+    final searchPattern = categoryTitle.toLowerCase();
+
+    for (var deal in _homeSliderDeals) {
+      final title = deal['HomePageCategoryTitle']?.toString() ?? '';
+      final route = deal['SectionRoute']?.toString() ?? '';
+      final titleLower = title.toLowerCase();
+      final routeLower = route.toLowerCase();
+
+      // Try exact match in title
+      if (titleLower.contains(searchPattern)) {
+        log('✅ Found exact category match: "$title" for search: "$categoryTitle"');
+        final productData = deal['product_data'] as List<dynamic>? ?? [];
+        log('📦 Found ${productData.length} products for category: $title');
+        return productData
+            .map((product) => product as Map<String, dynamic>)
+            .toList();
+      }
+
+      // Try matching with route
+      if (routeLower.contains(searchPattern) ||
+          searchPattern.contains(routeLower)) {
+        log('✅ Found route match: "$route" for search: "$categoryTitle"');
+        final productData = deal['product_data'] as List<dynamic>? ?? [];
+        log('📦 Found ${productData.length} products for category: $title');
+        return productData
+            .map((product) => product as Map<String, dynamic>)
+            .toList();
+      }
+
+      // Try matching with search terms
+      bool matches = false;
+      for (var term in searchTerms) {
+        if (titleLower.contains(term) || routeLower.contains(term)) {
+          matches = true;
+          break;
+        }
+      }
+
+      if (matches) {
+        log('✅ Found category match: "$title" (route: "$route") for search: "$categoryTitle"');
+        final productData = deal['product_data'] as List<dynamic>? ?? [];
+        log('📦 Found ${productData.length} products for category: $title');
+        return productData
+            .map((product) => product as Map<String, dynamic>)
+            .toList();
+      }
+    }
+
+    log('⚠️ No category match found for: "$categoryTitle"');
+    return [];
+  }
+
+  /// Get category title for a specific category
+  String? _getCategoryTitle(String categoryTitle) {
+    if (_homeSliderDeals.isEmpty) return null;
+
+    // Map of search terms to possible category title variations
+    final categoryMapping = {
+      'Ranges, Cooktops, Microwaves': [
+        'ranges',
+        'cooktops',
+        'microwaves',
+        'range',
+        'cooktop',
+        'microwave',
+      ],
+      'Outdoor Kitchen': [
+        'outdoor',
+        'kitchen',
+        'grill',
+        'outdoor kitchen',
+        'outdoor kitchen deals',
+      ],
+      'Kitchen Faucet': [
+        'faucet',
+        'kitchen faucet',
+        'faucets',
+        'kitchen faucets',
+      ],
+      'Kitchen Sinks': [
+        'sink',
+        'sinks',
+        'kitchen sink',
+        'kitchen sinks',
+      ],
+    };
+
+    // Get search terms for the category
+    final searchTerms = categoryMapping[categoryTitle] ??
+        categoryTitle
+            .toLowerCase()
+            .split(' ')
+            .where((t) => t.length > 2)
+            .toList();
+    final searchPattern = categoryTitle.toLowerCase();
+
+    for (var deal in _homeSliderDeals) {
+      final title = deal['HomePageCategoryTitle']?.toString() ?? '';
+      final route = deal['SectionRoute']?.toString() ?? '';
+      final titleLower = title.toLowerCase();
+      final routeLower = route.toLowerCase();
+
+      // Try exact match in title
+      if (titleLower.contains(searchPattern)) {
+        return title;
+      }
+
+      // Try matching with route
+      if (routeLower.contains(searchPattern) ||
+          searchPattern.contains(routeLower)) {
+        return title;
+      }
+
+      // Try matching with search terms
+      bool matches = false;
+      for (var term in searchTerms) {
+        if (titleLower.contains(term) || routeLower.contains(term)) {
+          matches = true;
+          break;
+        }
+      }
+
+      if (matches) {
+        return title;
+      }
+    }
+    return null;
+  }
+
+  /// Navigate to product details from product data
+  void _navigateToProductDetailsFromData(Map<String, dynamic> product) {
+    final productId = product['product_id'] ?? 0;
+    final brandName = product['brand_name']?.toString() ?? '';
+    final productMpn = product['product_mpn']?.toString() ?? '';
+    final productImage = product['product_image']?.toString() ?? '';
+    final firstVendorPrice = product['firstVendorPrice']?.toString() ?? '0.00';
+    final price = double.tryParse(firstVendorPrice) ?? 0.0;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailsScreen(
+          productId: productId,
+          brandName: brandName,
+          productMPN: productMpn,
+          productImage: productImage,
+          productPrice: price,
+        ),
+      ),
+    );
   }
 
   @override
@@ -410,6 +687,18 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     _buildOutdoorKitchenSection(),
                     const SizedBox(height: 25),
 
+                    // Kitchen Faucet Deals Section
+                    _buildKitchenFaucetDealsSection(),
+                    const SizedBox(height: 25),
+
+                    // Kitchen Sinks Sale Section
+                    _buildKitchenSinksSaleSection(),
+                    const SizedBox(height: 25),
+
+                    // Home Box Products Deals Section
+                    _buildHomeBoxProductsDealsSection(),
+                    const SizedBox(height: 25),
+
                     // Home Repairs Section
                     _buildHomeRepairsSection(),
                     const SizedBox(height: 25),
@@ -441,50 +730,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   /// Top Categories Slider Widget
   Widget _buildCategoriesSlider() {
     if (_isCategoriesLoading) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section Header
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Shop by Category',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              height: 180,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.grey[200],
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+      return const CategoryShimmer();
     }
 
     if (_categoriesError != null || _topCategories.isEmpty) {
@@ -496,62 +742,90 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header
+          // Enhanced Section Header
           Row(
             children: [
               Container(
-                width: 4,
-                height: 24,
+                width: 5,
+                height: 28,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(2),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.7),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.4),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               const Text(
                 'Shop by Category',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
-                  letterSpacing: 0.5,
+                  letterSpacing: 1.0,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black12,
+                      offset: Offset(0, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Slider Container
+          // Enhanced Slider Container with modern styling
           Container(
-            height: 180,
+            height: 220,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.15),
-                  spreadRadius: 2,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.08),
+                  spreadRadius: 0,
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  spreadRadius: 0,
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
               child: Swiper(
                 itemCount: _topCategories.length,
                 autoplay: true,
-                autoplayDelay: 3500,
-                duration: 800,
-                viewportFraction: 0.95,
-                scale: 0.92,
+                autoplayDelay: 4000,
+                duration: 600,
+                viewportFraction: 0.92,
+                scale: 0.90,
                 pagination: SwiperPagination(
                   alignment: Alignment.bottomCenter,
+                  margin: const EdgeInsets.only(bottom: 16),
                   builder: DotSwiperPaginationBuilder(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withOpacity(0.4),
                     activeColor: AppColors.primary,
-                    size: 8,
-                    activeSize: 10,
-                    space: 6,
+                    size: 10,
+                    activeSize: 12,
+                    space: 8,
                   ),
                 ),
                 itemBuilder: (context, index) {
@@ -573,484 +847,540 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     final categoryImage = category['category_image'] ?? '';
 
     return GestureDetector(
-      onTap: () async {
-        log('Category tapped: $categoryName');
-        if (categoryUrl.isNotEmpty) {
-          // Remove leading slash if present
-          String cleanUrl = categoryUrl.startsWith('/')
-              ? categoryUrl.substring(1)
-              : categoryUrl;
-
-          // Remove 'category/' prefix if present to avoid duplication
-          if (cleanUrl.startsWith('category/')) {
-            cleanUrl = cleanUrl.substring(9); // Remove 'category/'
-          }
-
-          // Extract only the last segment of the path
-          // Example: "cooking/range-hoods" -> "range-hoods"
-          final pathSegments = cleanUrl.split('/');
-          cleanUrl = pathSegments.last;
-
-          log('Original path from API: $categoryUrl');
-          log('Clean category path: $cleanUrl');
-
-          // Show loading indicator and store the context
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (dialogContext) => PopScope(
-              canPop: false,
-              child: Center(
-                child: Material(
-                  color: Colors.transparent,
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        ),
-                        SizedBox(height: 16),
-                        Text('Loading...'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-
-          // Small delay to ensure dialog is shown
-          await Future.delayed(const Duration(milliseconds: 100));
-
-          try {
-            // Try to fetch subcategories
-            final subcategories = await BrandsApi.fetchCategorySubcategories(
-              cleanUrl,
-              context,
-            );
-
-            // Close loading dialog
-            if (context.mounted) {
-              Navigator.of(context, rootNavigator: true).pop();
-              log('✅ Loading dialog closed');
-            }
-
-            // Small delay before navigation
-            await Future.delayed(const Duration(milliseconds: 100));
-
-            if (subcategories.isNotEmpty) {
-              // Navigate to subcategories screen
-              log('✅ Found ${subcategories.length} subcategories, navigating to subcategories screen');
-              if (context.mounted) {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CategorySubcategoriesScreen(
-                      categoryName: categoryName,
-                      categoryPath: cleanUrl,
-                      subcategories: subcategories,
-                    ),
-                  ),
-                );
-              }
-            } else {
-              // No subcategories found - show message, don't navigate
-              log('⚠️ No subcategories found for category: $categoryName');
-              log('Category path: $cleanUrl');
-              log('❌ NOT navigating to products - subcategories should exist');
-
-              // Show error message to user
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content:
-                        Text('No subcategories available for $categoryName'),
-                    backgroundColor: Colors.orange,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              }
-            }
-          } catch (e) {
-            log('❌ Error loading subcategories: $e');
-            // Close loading dialog on error
-            if (context.mounted) {
-              Navigator.of(context, rootNavigator: true).pop();
-              log('✅ Loading dialog closed (error case)');
-
-              // Small delay before showing error
-              await Future.delayed(const Duration(milliseconds: 100));
-
-              // Show error message to user
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to load $categoryName'),
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              }
-              log('❌ Error displayed to user, NOT navigating to products');
-            }
-          }
-        }
-      },
+      onTap: () => _handleCategoryTap(categoryName, categoryUrl),
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              Colors.grey[100]!,
-            ],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 2,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              spreadRadius: 0,
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 0,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background Image
-            CachedNetworkImage(
-              imageUrl: categoryImage,
-              fit: BoxFit.contain,
-              placeholder: (context, url) => Container(
-                color: Colors.grey[100],
-                child: Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
-                    ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background Image with better fit
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.grey[100]!,
+                      Colors.grey[200]!,
+                    ],
                   ),
                 ),
-              ),
-              errorWidget: (context, url, error) => Container(
-                color: Colors.grey[100],
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.category,
-                      size: 48,
-                      color: AppColors.primary.withOpacity(0.5),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      categoryName,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Gradient Overlay for better text visibility
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.7),
-                  ],
-                  stops: const [0.6, 1.0],
-                ),
-              ),
-            ),
-
-            // Category Name at Bottom
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    categoryName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black45,
-                          offset: Offset(0, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Explore now',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      shadows: const [
-                        Shadow(
-                          color: Colors.black45,
-                          offset: Offset(0, 1),
-                          blurRadius: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Tap Effect
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () async {
-                  log('Category slide tapped: $categoryName');
-                  if (categoryUrl.isNotEmpty) {
-                    String cleanUrl = categoryUrl.startsWith('/')
-                        ? categoryUrl.substring(1)
-                        : categoryUrl;
-
-                    // Remove 'category/' prefix if present to avoid duplication
-                    if (cleanUrl.startsWith('category/')) {
-                      cleanUrl = cleanUrl.substring(9); // Remove 'category/'
-                    }
-
-                    // Extract only the last segment of the path
-                    // Example: "cooking/range-hoods" -> "range-hoods"
-                    final pathSegments = cleanUrl.split('/');
-                    cleanUrl = pathSegments.last;
-
-                    log('Original path from API: $categoryUrl');
-                    log('Clean category path: $cleanUrl');
-
-                    // Show loading indicator
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (dialogContext) => PopScope(
-                        canPop: false,
-                        child: Center(
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
+                child: categoryImage.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: categoryImage,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.grey[100]!,
+                                Colors.grey[200]!,
+                              ],
+                            ),
+                          ),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
                               ),
-                              child: const Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColors.primary),
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text('Loading...'),
-                                ],
-                              ),
+                              strokeWidth: 3,
                             ),
                           ),
                         ),
-                      ),
-                    );
-
-                    // Small delay to ensure dialog is shown
-                    await Future.delayed(const Duration(milliseconds: 100));
-
-                    try {
-                      // Try to fetch subcategories
-                      final subcategories =
-                          await BrandsApi.fetchCategorySubcategories(
-                        cleanUrl,
-                        context,
-                      );
-
-                      // Close loading dialog
-                      if (context.mounted) {
-                        Navigator.of(context, rootNavigator: true).pop();
-                        log('✅ Loading dialog closed');
-                      }
-
-                      // Small delay before navigation
-                      await Future.delayed(const Duration(milliseconds: 100));
-
-                      if (subcategories.isNotEmpty) {
-                        // Navigate to subcategories screen
-                        log('✅ Found ${subcategories.length} subcategories, navigating to subcategories screen');
-                        if (context.mounted) {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CategorySubcategoriesScreen(
-                                categoryName: categoryName,
-                                categoryPath: cleanUrl,
-                                subcategories: subcategories,
+                        errorWidget: (context, url, error) => Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.primary.withOpacity(0.1),
+                                AppColors.primary.withOpacity(0.05),
+                              ],
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.category_outlined,
+                                  size: 56,
+                                  color: AppColors.primary.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  categoryName,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.grey[700],
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primary.withOpacity(0.1),
+                              AppColors.primary.withOpacity(0.05),
+                            ],
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.category_outlined,
+                                size: 56,
+                                color: AppColors.primary.withOpacity(0.7),
                               ),
                             ),
-                          );
-                        }
-                      } else {
-                        // No subcategories found - show message, don't navigate
-                        log('⚠️ No subcategories found for category: $categoryName');
-                        log('Category path: $cleanUrl');
-                        log('❌ NOT navigating to products - subcategories should exist');
-
-                        // Show error message to user
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  'No subcategories available for $categoryName'),
-                              backgroundColor: Colors.orange,
-                              duration: const Duration(seconds: 3),
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                categoryName,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          );
-                        }
-                      }
-                    } catch (e) {
-                      log('❌ Error loading subcategories: $e');
-                      // Close loading dialog on error
-                      if (context.mounted) {
-                        Navigator.of(context, rootNavigator: true).pop();
-                        log('✅ Loading dialog closed (error case)');
-
-                        // Small delay before showing error
-                        await Future.delayed(const Duration(milliseconds: 100));
-
-                        // Show error message to user
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to load $categoryName'),
-                              backgroundColor: Colors.red,
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        }
-                        log('❌ Error displayed to user, NOT navigating to products');
-                      }
-                    }
-                  }
-                },
-                child: Container(),
+                          ],
+                        ),
+                      ),
               ),
-            ),
-          ],
+
+              // Enhanced Gradient Overlay for better text visibility
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.3),
+                      Colors.black.withOpacity(0.75),
+                      Colors.black.withOpacity(0.85),
+                    ],
+                    stops: const [0.0, 0.4, 0.7, 0.9, 1.0],
+                  ),
+                ),
+              ),
+
+              // Decorative Top Accent
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary.withOpacity(0.8),
+                        AppColors.primary.withOpacity(0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Category Content at Bottom
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.8),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Category Name with enhanced styling
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              categoryName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black87,
+                                    offset: Offset(0, 2),
+                                    blurRadius: 8,
+                                  ),
+                                  Shadow(
+                                    color: Colors.black54,
+                                    offset: Offset(0, 1),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Explore Button Style Text
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Explore Now',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Shimmer effect overlay (optional)
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () => _handleCategoryTap(categoryName, categoryUrl),
+                    splashColor: Colors.white.withOpacity(0.2),
+                    highlightColor: Colors.white.withOpacity(0.1),
+                    child: Container(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  /// Handle category tap navigation
+  Future<void> _handleCategoryTap(
+      String categoryName, String categoryUrl) async {
+    log('Category tapped: $categoryName');
+    if (categoryUrl.isEmpty) return;
+
+    // Remove leading slash if present
+    String cleanUrl =
+        categoryUrl.startsWith('/') ? categoryUrl.substring(1) : categoryUrl;
+
+    // Remove 'category/' prefix if present to avoid duplication
+    if (cleanUrl.startsWith('category/')) {
+      cleanUrl = cleanUrl.substring(9); // Remove 'category/'
+    }
+
+    // Extract only the last segment of the path
+    final pathSegments = cleanUrl.split('/');
+    cleanUrl = pathSegments.last;
+
+    log('Original path from API: $categoryUrl');
+    log('Clean category path: $cleanUrl');
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => PopScope(
+        canPop: false,
+        child: Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Small delay to ensure dialog is shown
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    try {
+      // Try to fetch subcategories
+      final subcategories = await BrandsApi.fetchCategorySubcategories(
+        cleanUrl,
+        context,
+      );
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        log('✅ Loading dialog closed');
+      }
+
+      // Small delay before navigation
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (subcategories.isNotEmpty) {
+        // Navigate to subcategories screen
+        log('✅ Found ${subcategories.length} subcategories, navigating to subcategories screen');
+        if (context.mounted) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CategorySubcategoriesScreen(
+                categoryName: categoryName,
+                categoryPath: cleanUrl,
+                subcategories: subcategories,
+              ),
+            ),
+          );
+        }
+      } else {
+        // No subcategories found - show message, don't navigate
+        log('⚠️ No subcategories found for category: $categoryName');
+        log('Category path: $cleanUrl');
+        log('❌ NOT navigating to products - subcategories should exist');
+
+        // Show error message to user
+        if (context.mounted) {
+          CommonToasts.centeredMobile(
+            msg: 'No subcategories available for $categoryName',
+            context: context,
+          );
+        }
+      }
+    } catch (e) {
+      log('❌ Error loading subcategories: $e');
+      // Close loading dialog on error
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        log('✅ Loading dialog closed (error case)');
+
+        // Small delay before showing error
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Show error message to user
+        if (context.mounted) {
+          CommonToasts.centeredMobile(
+            msg: 'Failed to load $categoryName',
+            context: context,
+          );
+        }
+        log('❌ Error displayed to user, NOT navigating to products');
+      }
+    }
+  }
+
   /// Kitchen Appliances Horizontal Section Widget
   Widget _buildKitchenAppliancesSection() {
-    // Static product data matching the image design
-    final List<Map<String, dynamic>> staticProducts = [
-      {
-        'brand': 'VIKING',
-        'model': 'VQEWD5301SS',
-        'name': 'Viking® 5 Series 30" Stainless Steel Outdoor Warming Drawer',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 3259.00,
-        'discountedPrice': 2809.99,
-        'discountPercent': 14,
-      },
-      {
-        'brand': 'VIKING',
-        'model': 'VMOD5240SS',
-        'name':
-            'Viking® Professional 5 Series 1.2 Cu. Ft. Stainless Steel Microwave Drawer',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 2659.00,
-        'discountedPrice': 2309.99,
-        'discountPercent': 13,
-      },
-      {
-        'brand': 'KitchenAid',
-        'model': 'KMBS104ESS',
-        'name': '24 Inch Built-In Microwave Oven',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 1949.99,
-        'discountedPrice': 1753.00,
-        'discountPercent': 10,
-      },
-      {
-        'brand': 'VIKING',
-        'model': 'VGIC53626BSS',
-        'name':
-            'Viking® 5 Series 36" Stainless Steel Pro Style Natural Gas Range',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 6799.00,
-        'discountedPrice': 6099.99,
-        'discountPercent': 10,
-      },
-      {
-        'brand': 'FRIGIDAIRE',
-        'model': 'FCRE3052BS',
-        'name': '30 Inch Freestanding Electric Range',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 1079.00,
-        'discountedPrice': 593.00,
-        'discountPercent': 45,
-      },
-      {
-        'brand': 'LG',
-        'model': 'LSIL6336FE',
-        'name': 'LG 30" PrintProof® Stainless Steel Slide In Induction Range',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 3629.00,
-        'discountedPrice': 2345.00,
-        'discountPercent': 35,
-      },
+    // Get products from API - try multiple search patterns
+    List<Map<String, dynamic>> products = [];
+    String? categoryTitle;
+
+    // Try different search patterns
+    final searchPatterns = [
+      'Ranges, Cooktops, Microwaves',
+      'Ranges',
+      'Cooktops',
+      'Microwaves',
     ];
+
+    for (var pattern in searchPatterns) {
+      products = _getProductsForCategory(pattern);
+      categoryTitle = _getCategoryTitle(pattern);
+      if (products.isNotEmpty && categoryTitle != null) {
+        break;
+      }
+    }
+
+    // Show shimmer when loading
+    if (_isHomeSliderDealsLoading) {
+      return const ProductSectionShimmer();
+    }
+
+    // Hide section when no products or when no category title
+    if (products.isEmpty || categoryTitle == null) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header
+          // Enhanced Section Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 4,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(2),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Ranges, Cooktops,',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      letterSpacing: 0.5,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        '$categoryTitle',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black12,
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               GestureDetector(
                 onTap: () {
@@ -1070,44 +1400,512 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.only(left: 12.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Microwaves...',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllKitchenDeals)
             SizedBox(
-              height: 380,
+              height: 370,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                itemCount: staticProducts.length,
+                itemCount: products.length,
                 itemBuilder: (context, index) {
-                  final product = staticProducts[index];
-                  return _buildStaticProductCard(product);
+                  final product = products[index];
+                  return _buildApiProductCard(product);
                 },
               ),
             )
           else
             // Expanded Grid View
-            _buildExpandedProductGrid(staticProducts),
+            _buildExpandedApiProductGrid(products),
         ],
+      ),
+    );
+  }
+
+  /// Build API Product Card (for products from API)
+  Widget _buildApiProductCard(Map<String, dynamic> product) {
+    final brand = product['brand_name']?.toString() ?? '';
+    final model = product['product_mpn']?.toString() ?? '';
+    final name = product['product_name']?.toString() ?? '';
+    final image = product['product_image']?.toString() ?? '';
+    final msrp = double.tryParse(product['msrp']?.toString() ?? '0') ?? 0.0;
+    final firstVendorPrice =
+        double.tryParse(product['firstVendorPrice']?.toString() ?? '0') ?? 0.0;
+    final discountPercent =
+        double.tryParse(product['discount_percent']?.toString() ?? '0') ?? 0.0;
+
+    return GestureDetector(
+      onTap: () => _navigateToProductDetailsFromData(product),
+      child: Container(
+        width: 280,
+        height: 370,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            // Product Image
+            Container(
+              height: 160,
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: image.isEmpty || image.contains('no_image')
+                    ? Container(
+                        color: Colors.grey[100],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'No image available',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: _getProperImageUrl(image),
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[50],
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[100],
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No image available',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+
+            // Brand Logo
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4, bottom: 2),
+              child: Container(
+                height: 30,
+                width: 80,
+                child: BrandImageWidget(
+                  brand: {
+                    'brand_name': brand,
+                    'brand_key': product['brand_key']?.toString() ?? brand,
+                    'brand_id': product['brand_id'] ?? 0,
+                  },
+                  width: 80,
+                  height: 30,
+                ),
+              ),
+            ),
+
+            // Product Details
+            Expanded(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Model Number
+                          if (model.isNotEmpty)
+                            Text(
+                              model,
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          if (model.isNotEmpty) const SizedBox(height: 2),
+
+                          // Product Name
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Price Section
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            // Original Price (strikethrough) - only show if discounted
+                            if (discountPercent > 0 && msrp > 0) ...[
+                              Flexible(
+                                child: Text(
+                                  '\$${_formatPrice(msrp.toString())}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 11,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: Colors.grey[600],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                            ],
+                            // Current Price
+                            Flexible(
+                              child: Text(
+                                '\$${_formatPrice(firstVendorPrice.toString())}',
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Discount Badge - only show if there's a discount
+                        if (discountPercent > 0) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red[50],
+                              borderRadius: BorderRadius.circular(6),
+                              border:
+                                  Border.all(color: Colors.red[200]!, width: 1),
+                            ),
+                            child: Text(
+                              '${discountPercent.toStringAsFixed(0)}% OFF',
+                              style: TextStyle(
+                                color: Colors.red[700],
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build Expanded API Product Grid View
+  Widget _buildExpandedApiProductGrid(List<Map<String, dynamic>> products) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 0.70,
+      ),
+      itemCount: products.length,
+      itemBuilder: (context, index) {
+        final product = products[index];
+        return _buildApiProductCardGrid(product);
+      },
+    );
+  }
+
+  /// Build API Product Card for Grid View
+  Widget _buildApiProductCardGrid(Map<String, dynamic> product) {
+    final brand = product['brand_name']?.toString() ?? '';
+    final model = product['product_mpn']?.toString() ?? '';
+    final name = product['product_name']?.toString() ?? '';
+    final image = product['product_image']?.toString() ?? '';
+    final msrp = double.tryParse(product['msrp']?.toString() ?? '0') ?? 0.0;
+    final firstVendorPrice =
+        double.tryParse(product['firstVendorPrice']?.toString() ?? '0') ?? 0.0;
+    final discountPercent =
+        double.tryParse(product['discount_percent']?.toString() ?? '0') ?? 0.0;
+
+    return GestureDetector(
+      onTap: () => _navigateToProductDetailsFromData(product),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image
+            Container(
+              height: 100,
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: image.isEmpty || image.contains('no_image')
+                    ? Container(
+                        color: Colors.grey[100],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 40,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'No image',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: _getProperImageUrl(image),
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[50],
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[100],
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 40,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'No image',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+
+            // Brand Logo
+            Padding(
+              padding: const EdgeInsets.only(left: 8, top: 6, bottom: 4),
+              child: Container(
+                height: 35,
+                width: 70,
+                child: BrandImageWidget(
+                  brand: {
+                    'brand_name': brand,
+                    'brand_key': product['brand_key']?.toString() ?? brand,
+                    'brand_id': product['brand_id'] ?? 0,
+                  },
+                  width: 70,
+                  height: 35,
+                ),
+              ),
+            ),
+
+            // Product Details
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Model Number
+                    if (model.isNotEmpty)
+                      Text(
+                        model,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    if (model.isNotEmpty) const SizedBox(height: 4),
+
+                    // Product Name
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Price Section
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Original Price (strikethrough) - only show if discounted
+                        if (discountPercent > 0 && msrp > 0) ...[
+                          Text(
+                            '\$${_formatPrice(msrp.toString())}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 15,
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        // Current Price
+                        Flexible(
+                          child: Text(
+                            '\$${_formatPrice(firstVendorPrice.toString())}',
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Discount Badge - only show if there's a discount
+                    if (discountPercent > 0) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 0),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.red[200]!, width: 1),
+                        ),
+                        child: Text(
+                          '${discountPercent.toStringAsFixed(0)}% OFF',
+                          style: TextStyle(
+                            color: Colors.red[700],
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 0),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1327,100 +2125,75 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   /// Outdoor Kitchen Deals Horizontal Section Widget
   Widget _buildOutdoorKitchenSection() {
-    // Static outdoor kitchen product data
-    final List<Map<String, dynamic>> staticOutdoorProducts = [
-      {
-        'brand': 'COYOTE Outdoor Living',
-        'model': 'C1C28NG',
-        'name':
-            'Coyote Outdoor Living C1C28NG Coyote C Series 40000 BTU 28 inch Natural Gas Stainless Steel Built-In Gas Grill',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 3049.00,
-        'discountedPrice': 1449.00,
-        'discountPercent': 52,
-      },
-      {
-        'brand': 'COYOTE Outdoor Living',
-        'model': 'C2SL36NG',
-        'name':
-            'Coyote Outdoor Living C2SL36NG Coyote S Series 90000 BTU 35-1/2 Inch x 25-1/2 Inch x 23 Inch Natural Gas Stainless Steel Gas Grill',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 3599.00,
-        'discountedPrice': 3599.00,
-        'discountPercent': 0,
-      },
-      {
-        'brand': 'COYOTE Outdoor Living',
-        'model': 'C2C34NG',
-        'name':
-            'Coyote Outdoor Living C2C34NG Coyote Outdoor C Series 60000 BTU 34 inch x 25-1/2 inch x 23 inch Natural Gas Stainless Steel Built-In Gas Grill',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 2099.00,
-        'discountedPrice': 1999.00,
-        'discountPercent': 5,
-      },
-      {
-        'brand': 'COYOTE Outdoor Living',
-        'model': 'C1C28LP',
-        'name':
-            'Coyote Outdoor Living C1C28LP Coyote C Series 40000 BTU 28 Inch Liquid Propane Stainless Steel Built-In Gas Grill',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 1449.00,
-        'discountedPrice': 1449.00,
-        'discountPercent': 0,
-      },
-      {
-        'brand': 'COYOTE Outdoor Living',
-        'model': 'C1C28LP',
-        'name':
-            'Coyote Outdoor Living C1C28LP Coyote C Series 40000 BTU 28 Inch Liquid Propane Stainless Steel Built-In Gas Grill',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 1449.00,
-        'discountedPrice': 1449.00,
-        'discountPercent': 0,
-      },
-      {
-        'brand': 'NAPOLEON QUALITY FIREPLACES',
-        'model': 'RXT425SIBPK-1',
-        'name':
-            'Napoleon Rogue XT 425 Stand Alone Gas Grill with Infrared Side Burner',
-        'image': 'https://www.minsellprice.com/assets/no_image/no_image.jpg',
-        'originalPrice': 899.00,
-        'discountedPrice': 899.00,
-        'discountPercent': 0,
-      },
-    ];
+    // Get products from API - search for outdoor kitchen related categories
+    final products = _getProductsForCategory('Outdoor Kitchen');
+    final categoryTitle = _getCategoryTitle('Outdoor Kitchen');
+
+    // Show shimmer when loading (Outdoor Kitchen uses height 400)
+    if (_isHomeSliderDealsLoading) {
+      return const ProductSectionShimmer(height: 400);
+    }
+
+    // Hide section when no products or when no category title
+    if (products.isEmpty || categoryTitle == null) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header
+          // Enhanced Section Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 4,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(2),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Outdoor Kitchen Deals',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      letterSpacing: 0.5,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        categoryTitle,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black12,
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               GestureDetector(
                 onTap: () {
@@ -1440,26 +2213,670 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllOutdoorDeals)
             SizedBox(
-              height: 400,
+              height: 370,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                itemCount: staticOutdoorProducts.length,
+                itemCount: products.length,
                 itemBuilder: (context, index) {
-                  final product = staticOutdoorProducts[index];
-                  return _buildStaticProductCard(product);
+                  final product = products[index];
+                  return _buildApiProductCard(product);
                 },
               ),
             )
           else
             // Expanded Grid View
-            _buildExpandedProductGrid(staticOutdoorProducts),
+            _buildExpandedApiProductGrid(products),
         ],
+      ),
+    );
+  }
+
+  /// Kitchen Faucet Deals Section Widget
+  Widget _buildKitchenFaucetDealsSection() {
+    // Get products from API - search for kitchen faucet related categories
+    final products = _getProductsForCategory('Kitchen Faucet');
+    final categoryTitle = _getCategoryTitle('Kitchen Faucet');
+
+    // Show shimmer when loading
+    if (_isHomeSliderDealsLoading) {
+      return const ProductSectionShimmer();
+    }
+
+    // Hide section when no products or when no category title
+    if (products.isEmpty || categoryTitle == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Enhanced Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        categoryTitle,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black12,
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAllFaucetDeals = !_showAllFaucetDeals;
+                  });
+                },
+                child: Text(
+                  _showAllFaucetDeals ? 'Show Less' : 'View All Deals',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Products - Show horizontal scroll or grid based on visibility
+          if (!_showAllFaucetDeals)
+            SizedBox(
+              height: 370,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return _buildApiProductCard(product);
+                },
+              ),
+            )
+          else
+            // Expanded Grid View
+            _buildExpandedApiProductGrid(products),
+        ],
+      ),
+    );
+  }
+
+  /// Kitchen Sinks Sale Section Widget
+  Widget _buildKitchenSinksSaleSection() {
+    // Get products from API - search for kitchen sinks related categories
+    final products = _getProductsForCategory('Kitchen Sinks');
+    final categoryTitle = _getCategoryTitle('Kitchen Sinks');
+
+    // Show shimmer when loading
+    if (_isHomeSliderDealsLoading) {
+      return const ProductSectionShimmer();
+    }
+
+    // Hide section when no products or when no category title
+    if (products.isEmpty || categoryTitle == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Enhanced Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        categoryTitle,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black12,
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAllSinkDeals = !_showAllSinkDeals;
+                  });
+                },
+                child: Text(
+                  _showAllSinkDeals ? 'Show Less' : 'View All Deals',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Products - Show horizontal scroll or grid based on visibility
+          if (!_showAllSinkDeals)
+            SizedBox(
+              height: 370,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return _buildApiProductCard(product);
+                },
+              ),
+            )
+          else
+            // Expanded Grid View
+            _buildExpandedApiProductGrid(products),
+        ],
+      ),
+    );
+  }
+
+  /// Home Box Products Deals Section Widget
+  Widget _buildHomeBoxProductsDealsSection() {
+    // Show shimmer when loading
+    if (_isHomeBoxDealsLoading) {
+      return Column(
+        children: List.generate(2, (index) {
+          return Column(
+            children: [
+              const HomeBoxDealsGridShimmer(),
+              if (index < 1) const SizedBox(height: 25),
+            ],
+          );
+        }),
+      );
+    }
+
+    // Hide section when no deals
+    if (_homeBoxDeals.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Display all home box deals sections
+    return Column(
+      children: _homeBoxDeals.asMap().entries.map((entry) {
+        final index = entry.key;
+        final deal = entry.value;
+        final categoryTitle = deal['HomePageCategoryTitle']?.toString() ?? '';
+        final productData = deal['product_data'] as List<dynamic>? ?? [];
+        final sectionRoute = deal['SectionRoute']?.toString() ?? '';
+        final viewAllCategoryId = deal['ViewAllPageCategoryID'] ?? 0;
+
+        // Convert product data to List<Map<String, dynamic>>
+        final products = productData
+            .map((product) => product as Map<String, dynamic>)
+            .toList();
+
+        // Skip if no products or no title
+        if (products.isEmpty || categoryTitle.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        // Show first 4 products in 2x2 grid
+        final displayProducts = products.take(4).toList();
+
+        return Column(
+          children: [
+            _buildHomeBoxDealSection(
+              categoryTitle: categoryTitle,
+              products: displayProducts,
+              sectionRoute: sectionRoute,
+              viewAllCategoryId: viewAllCategoryId,
+              totalProducts: products.length,
+            ),
+            if (index < _homeBoxDeals.length - 1) const SizedBox(height: 25),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  /// Build individual home box deal section
+  Widget _buildHomeBoxDealSection({
+    required String categoryTitle,
+    required List<Map<String, dynamic>> products,
+    required String sectionRoute,
+    required int viewAllCategoryId,
+    required int totalProducts,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        categoryTitle,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black12,
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Products Grid (2x2)
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 0.72,
+            ),
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return _buildHomeBoxProductCard(product);
+            },
+          ),
+
+          // View All Deals Link
+          const SizedBox(height: 16),
+          Center(
+            child: GestureDetector(
+              onTap: () {
+                // Navigate to view all products page using section route
+                if (sectionRoute.isNotEmpty) {
+                  ProductListNavigation.navigateToCategoryProducts(
+                    context,
+                    categoryPath: sectionRoute,
+                    categoryName: categoryTitle,
+                  );
+                } else {
+                  log('View All Deals tapped for: $categoryTitle - No route available');
+                }
+              },
+              child: Text(
+                'View All Deals',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build Home Box Product Card (2x2 grid style)
+  Widget _buildHomeBoxProductCard(Map<String, dynamic> product) {
+    final brand = product['brand_name']?.toString() ?? '';
+    final model = product['product_mpn']?.toString() ?? '';
+    final name = product['product_name']?.toString() ?? '';
+    final image = product['product_image']?.toString() ?? '';
+    final msrp = double.tryParse(product['msrp']?.toString() ?? '0') ?? 0.0;
+    final firstVendorPrice =
+        double.tryParse(product['firstVendorPrice']?.toString() ?? '0') ?? 0.0;
+    final discountPercent =
+        double.tryParse(product['discount_percent']?.toString() ?? '0') ?? 0.0;
+
+    return GestureDetector(
+      onTap: () => _navigateToProductDetailsFromData(product),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image
+            Container(
+              height: 130,
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: image.isEmpty || image.contains('no_image')
+                    ? Container(
+                        color: Colors.grey[100],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 40,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'No image',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: _getProperImageUrl(image),
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[50],
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[100],
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 40,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'No image',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+
+            // Brand Logo
+            Padding(
+              padding: const EdgeInsets.only(left: 8, top: 4, bottom: 2),
+              child: Container(
+                height: 28,
+                width: 70,
+                child: BrandImageWidget(
+                  brand: {
+                    'brand_name': brand,
+                    'brand_key': product['brand_key']?.toString() ?? brand,
+                    'brand_id': product['brand_id'] ?? 0,
+                  },
+                  width: 70,
+                  height: 28,
+                ),
+              ),
+            ),
+
+            // Product Details
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Model Number
+                        if (model.isNotEmpty)
+                          Text(
+                            model,
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        if (model.isNotEmpty) const SizedBox(height: 2),
+
+                        // Product Name
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Price Section
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            // Original Price (strikethrough) - only show if discounted
+                            if (discountPercent > 0 && msrp > 0) ...[
+                              Flexible(
+                                child: Text(
+                                  '\$${_formatPrice(msrp.toString())}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 10,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: Colors.grey[600],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                            ],
+                            // Current Price (green color to match design)
+                            Flexible(
+                              child: Text(
+                                '\$${_formatPrice(firstVendorPrice.toString())}',
+                                style: TextStyle(
+                                  color: Colors.green[700],
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Discount Badge - only show if there's a discount
+                        if (discountPercent > 0) ...[
+                          const SizedBox(height: 3),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.green[50],
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                  color: Colors.green[200]!, width: 1),
+                            ),
+                            child: Text(
+                              '${discountPercent.toStringAsFixed(0)}% OFF',
+                              style: TextStyle(
+                                color: Colors.green[700],
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2155,26 +3572,32 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         log('Error opening vendor URL: $e');
         // Show error message to user
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          CommonToasts.centeredMobile(
+              msg: 'Unable to open $vendorName website', context: context);
+
+          /*ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Unable to open $vendorName website'),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 3),
             ),
-          );
+          );*/
         }
       }
     } else {
       log('Invalid or empty vendor URL for: $vendorName');
       // Show message for invalid URL
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        CommonToasts.centeredMobile(
+            msg: 'No website available for $vendorName', context: context);
+
+        /* ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('No website available for $vendorName'),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 3),
           ),
-        );
+        );*/
       }
     }
   }
