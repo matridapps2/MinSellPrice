@@ -409,7 +409,7 @@ class CategoryBreadcrumb extends StatelessWidget {
                   ],
                 ],
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -455,7 +455,7 @@ class CategorySearchBar extends StatelessWidget {
             color: Colors.grey[500],
             fontSize: 14,
           ),
-          prefixIcon: Icon(
+          prefixIcon: const Icon(
             Icons.search,
             color: AppColors.primary,
             size: 20,
@@ -483,7 +483,7 @@ class CategorySearchBar extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
+            borderSide: const BorderSide(
               color: AppColors.primary,
               width: 2,
             ),

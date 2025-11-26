@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -324,7 +323,7 @@ class NotificationService {
     // Create formatted title and body with price details
     const title = 'Price Drop Alert!';
     final body =
-        '$productName price dropped from \$${oldPrice} to \$${newPrice.toStringAsFixed(2)} - Save \$${savings.toStringAsFixed(2)}!';
+        '$productName price dropped from \$$oldPrice to \$${newPrice.toStringAsFixed(2)} - Save \$${savings.toStringAsFixed(2)}!';
 
     // Create detailed notification with product image
     await _showDetailedPriceDropNotification(
@@ -381,9 +380,9 @@ class NotificationService {
       final richBody = '''
 PRICE DROP ALERT!
 Product: $productName
-Old Price: \$${oldPrice}
+Old Price: \$$oldPrice
 New Price: \$${newPrice.toStringAsFixed(2)}
-You Save: \$${savings.toStringAsFixed(2)} (${savingsPercentage}% off!)
+You Save: \$${savings.toStringAsFixed(2)} ($savingsPercentage% off!)
 Don't miss this amazing deal! Tap to view product details.
 ''';
 

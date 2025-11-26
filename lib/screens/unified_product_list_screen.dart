@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
@@ -106,7 +105,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             const Text(
               'Failed to load products',
@@ -330,7 +329,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderSide:
-                            BorderSide(color: AppColors.primary, width: 2),
+                            const BorderSide(color: AppColors.primary, width: 2),
                         borderRadius: BorderRadius.circular(25),
                       ),
                       disabledBorder: OutlineInputBorder(
@@ -1186,9 +1185,9 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
             child: RichText(
               text: TextSpan(
                 children: [
-                  TextSpan(
+                  const TextSpan(
                     text: 'Model: ',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Segoe UI',
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -1420,7 +1419,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
       };
 
       mockVendors.add(mockVendor);
-      log('Generated mock vendor: "$vendorName" with price: \$${mockPrice}');
+      log('Generated mock vendor: "$vendorName" with price: \$$mockPrice');
     }
 
     return mockVendors;
@@ -1686,7 +1685,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
               elevation: 2,
               leading: InkWell(
                 onTap: () => Navigator.pop(context),
-                child: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+                child: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
               ),
               surfaceTintColor: Colors.white,
               toolbarHeight: .14 * w,
@@ -1708,7 +1707,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(
+                    const CircularProgressIndicator(
                       valueColor:
                           AlwaysStoppedAnimation<Color>(AppColors.primary),
                     ),

@@ -7,18 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
-import 'package:minsellprice/core/utils/constants/constants.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/model/saved_product_model.dart';
-import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/home_page/home_page.dart';
-import 'package:minsellprice/screens/loging_page/loging_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
-import 'package:minsellprice/screens/register_page/register_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:minsellprice/core/mixins/notification_mixin.dart';
 
-import '../../../core/utils/common_screen_widget/login_reqiure_design.dart';
 
 class NotificationScreen extends StatefulWidget {
   final Map<String, dynamic>? notificationData;
@@ -502,7 +496,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                                 Container(
                                   width: 8,
                                   height: 8,
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     color: AppColors.primary,
                                     shape: BoxShape.circle,
                                   ),
@@ -912,7 +906,7 @@ class _NotificationScreenState extends State<NotificationScreen>
               child: const Text('Close'),
             ),
           ),
-          Spacer(),
+          const Spacer(),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);

@@ -11,7 +11,7 @@ class CherryToast extends StatefulWidget {
   OverlayEntry? overlayEntry;
 
   CherryToast({
-    Key? key,
+    super.key,
     this.title,
     required this.icon,
     required this.themeColor,
@@ -47,7 +47,7 @@ class CherryToast extends StatefulWidget {
     this.horizontalAlignment = CrossAxisAlignment.start,
     this.titleDescriptionMargin = 0,
     this.descriptionActionMargin = 0,
-  }) : super(key: key) {
+  }) {
     assert(
       title != null || description != null,
       'Cherry toast must be initialized with minimum title or description',
@@ -55,7 +55,7 @@ class CherryToast extends StatefulWidget {
   }
 
   CherryToast.success({
-    Key? key,
+    super.key,
     this.title,
     this.action,
     this.actionHandler,
@@ -87,7 +87,7 @@ class CherryToast extends StatefulWidget {
     this.horizontalAlignment = CrossAxisAlignment.start,
     this.titleDescriptionMargin = 0,
     this.descriptionActionMargin = 0,
-  }) : super(key: key) {
+  }) {
     assert(
       title != null || description != null,
       'Cherry toast must be initialized with minimum title or description',
@@ -97,7 +97,7 @@ class CherryToast extends StatefulWidget {
   }
 
   CherryToast.error({
-    Key? key,
+    super.key,
     this.title,
     this.action,
     this.actionHandler,
@@ -129,7 +129,7 @@ class CherryToast extends StatefulWidget {
     this.horizontalAlignment = CrossAxisAlignment.start,
     this.titleDescriptionMargin = 0,
     this.descriptionActionMargin = 0,
-  }) : super(key: key) {
+  }) {
     assert(
       title != null || description != null,
       'Cherry toast must be initialized with minimum title or description',
@@ -139,7 +139,7 @@ class CherryToast extends StatefulWidget {
   }
 
   CherryToast.warning({
-    Key? key,
+    super.key,
     this.title,
     this.action,
     this.actionHandler,
@@ -171,7 +171,7 @@ class CherryToast extends StatefulWidget {
     this.horizontalAlignment = CrossAxisAlignment.start,
     this.titleDescriptionMargin = 0,
     this.descriptionActionMargin = 0,
-  }) : super(key: key) {
+  }) {
     assert(
       title != null || description != null,
       'Cherry toast must be initialized with minimum title or description',
@@ -181,7 +181,7 @@ class CherryToast extends StatefulWidget {
   }
 
   CherryToast.info({
-    Key? key,
+    super.key,
     this.title,
     this.action,
     this.actionHandler,
@@ -213,7 +213,7 @@ class CherryToast extends StatefulWidget {
     this.horizontalAlignment = CrossAxisAlignment.start,
     this.titleDescriptionMargin = 0,
     this.descriptionActionMargin = 0,
-  }) : super(key: key) {
+  }) {
     assert(
       title != null || description != null,
       'Cherry toast must be initialized with minimum title or description',

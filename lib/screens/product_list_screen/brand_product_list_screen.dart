@@ -955,7 +955,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                                   child: Row(
                                                                                     mainAxisSize: MainAxisSize.min,
                                                                                     children: [
-                                                                                      Icon(
+                                                                                      const Icon(
                                                                                         Icons.storefront_outlined,
                                                                                         color: Colors.white,
                                                                                         size: 18,
@@ -963,7 +963,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                                       const SizedBox(width: 2),
                                                                                       Text(
                                                                                         '${finalList[index].vendorIdCount}',
-                                                                                        style: TextStyle(
+                                                                                        style: const TextStyle(
                                                                                           color: Colors.white,
                                                                                           fontSize: 19,
                                                                                           fontWeight: FontWeight.bold,
@@ -1014,7 +1014,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                   child: Center(
                                     child: Column(
                                       children: [
-                                        CircularProgressIndicator(
+                                        const CircularProgressIndicator(
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
                                                   AppColors.primary),
@@ -1131,13 +1131,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                   child: ElevatedButton(
                                                     style: ButtonStyle(
                                                       backgroundColor:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .resolveWith<
                                                                   Color>(
-                                                        (Set<MaterialState>
+                                                        (Set<WidgetState>
                                                             states) {
                                                           if (states.contains(
-                                                              MaterialState
+                                                              WidgetState
                                                                   .pressed)) {
                                                             return AppColors
                                                                 .primary
@@ -1152,10 +1152,10 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         },
                                                       ),
                                                       foregroundColor:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .resolveWith<
                                                                   Color>(
-                                                        (Set<MaterialState>
+                                                        (Set<WidgetState>
                                                             states) {
                                                           return currentPage ==
                                                                   0
@@ -1166,10 +1166,10 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         },
                                                       ),
                                                       side:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .resolveWith<
                                                                   BorderSide>(
-                                                        (Set<MaterialState>
+                                                        (Set<WidgetState>
                                                             states) {
                                                           return currentPage ==
                                                                   0
@@ -1177,13 +1177,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   color: Colors
                                                                           .grey[
                                                                       300]!)
-                                                              : BorderSide(
+                                                              : const BorderSide(
                                                                   color: AppColors
                                                                       .primary,
                                                                   width: 2);
                                                         },
                                                       ),
-                                                      shape: MaterialStateProperty
+                                                      shape: WidgetStateProperty
                                                           .resolveWith<
                                                               OutlinedBorder>(
                                                         (states) =>
@@ -1194,13 +1194,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         ),
                                                       ),
                                                       elevation:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .resolveWith<
                                                                   double>(
-                                                        (Set<MaterialState>
+                                                        (Set<WidgetState>
                                                             states) {
                                                           if (states.contains(
-                                                              MaterialState
+                                                              WidgetState
                                                                   .pressed)) {
                                                             return 2;
                                                           }
@@ -1211,7 +1211,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         },
                                                       ),
                                                       shadowColor:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .all(AppColors
                                                                   .primary
                                                                   .withOpacity(
@@ -1265,13 +1265,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                   child: ElevatedButton(
                                                     style: ButtonStyle(
                                                       backgroundColor:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .resolveWith<
                                                                   Color>(
-                                                        (Set<MaterialState>
+                                                        (Set<WidgetState>
                                                             states) {
                                                           if (states.contains(
-                                                              MaterialState
+                                                              WidgetState
                                                                   .pressed)) {
                                                             return AppColors
                                                                 .primary
@@ -1287,10 +1287,10 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         },
                                                       ),
                                                       foregroundColor:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .resolveWith<
                                                                   Color>(
-                                                        (Set<MaterialState>
+                                                        (Set<WidgetState>
                                                             states) {
                                                           return (currentPage +
                                                                       1) >=
@@ -1302,10 +1302,10 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         },
                                                       ),
                                                       side:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .resolveWith<
                                                                   BorderSide>(
-                                                        (Set<MaterialState>
+                                                        (Set<WidgetState>
                                                             states) {
                                                           return (currentPage +
                                                                       1) >=
@@ -1314,13 +1314,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                                   color: Colors
                                                                           .grey[
                                                                       300]!)
-                                                              : BorderSide(
+                                                              : const BorderSide(
                                                                   color: AppColors
                                                                       .primary,
                                                                   width: 2);
                                                         },
                                                       ),
-                                                      shape: MaterialStateProperty
+                                                      shape: WidgetStateProperty
                                                           .resolveWith<
                                                               OutlinedBorder>(
                                                         (states) =>
@@ -1331,13 +1331,13 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         ),
                                                       ),
                                                       elevation:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .resolveWith<
                                                                   double>(
-                                                        (Set<MaterialState>
+                                                        (Set<WidgetState>
                                                             states) {
                                                           if (states.contains(
-                                                              MaterialState
+                                                              WidgetState
                                                                   .pressed)) {
                                                             return 2;
                                                           }
@@ -1349,7 +1349,7 @@ class _BrandProductListScreen extends State<BrandProductListScreen> {
                                                         },
                                                       ),
                                                       shadowColor:
-                                                          MaterialStateProperty
+                                                          WidgetStateProperty
                                                               .all(AppColors
                                                                   .primary
                                                                   .withOpacity(
@@ -1624,7 +1624,7 @@ class _FilterMenuState extends State<FilterMenu> {
             elevation: 2,
             leading: InkWell(
               onTap: () => Navigator.pop(context),
-              child: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+              child: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
             ),
             surfaceTintColor: Colors.white,
             toolbarHeight: .14 * w,
@@ -1639,7 +1639,7 @@ class _FilterMenuState extends State<FilterMenu> {
               ),
             ),
             automaticallyImplyLeading: false,
-            actionsPadding: EdgeInsets.only(right: 15),
+            actionsPadding: const EdgeInsets.only(right: 15),
             actions: [
               TextButton(
                 onPressed: () async {
@@ -1704,10 +1704,10 @@ class _FilterMenuState extends State<FilterMenu> {
                             children: [
                               Text('\$${priceRange.start.round()}',
                                   style:
-                                      TextStyle(fontWeight: FontWeight.w600)),
+                                      const TextStyle(fontWeight: FontWeight.w600)),
                               Text('\$${priceRange.end.round()}',
                                   style:
-                                      TextStyle(fontWeight: FontWeight.w600)),
+                                      const TextStyle(fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ],
@@ -1821,12 +1821,12 @@ class _FilterMenuState extends State<FilterMenu> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary),
+                      side: const BorderSide(color: AppColors.primary),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Cancel',
                       style: TextStyle(
                           color: AppColors.primary,

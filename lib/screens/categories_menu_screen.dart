@@ -356,7 +356,7 @@ class _CategoriesMenuScreenState extends State<CategoriesMenuScreen>
     }
 
     if (_mainCategories.isEmpty) {
-      return EmptyCategoryState(
+      return const EmptyCategoryState(
         message: 'No categories available',
       );
     }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
@@ -612,7 +611,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
         children: [
           // Fixed Header with Search
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.primary,
             ),
             child: SafeArea(
@@ -702,7 +701,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                             color: AppColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.search_rounded,
                             color: AppColors.primary,
                             size: 24,
@@ -750,7 +749,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide:
-                              BorderSide(color: AppColors.primary, width: 2),
+                              const BorderSide(color: AppColors.primary, width: 2),
                           borderRadius: BorderRadius.circular(25),
                         ),
                         disabledBorder: OutlineInputBorder(
@@ -973,7 +972,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
-                                          child: Icon(
+                                          child: const Icon(
                                             Icons.arrow_forward_ios,
                                             color: AppColors.primary,
                                             size: 16,

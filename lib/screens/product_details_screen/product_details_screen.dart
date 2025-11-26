@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:minsellprice/InAppBrowser.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/app.dart';
@@ -29,6 +30,7 @@ import 'package:minsellprice/services/app_notification_service.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../loging_page/loging_page.dart';
 import 'all_alert_product.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -58,9 +60,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   TextEditingController _emailController = TextEditingController();
 
-  // Commented out - auto-notification timer no longer needed
-  // Timer? _notificationCheckTimer;
-
   bool isLoading = true;
   bool isLiked = false;
   bool isInComparison = false;
@@ -68,8 +67,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool _isLoadingPriceAlert = false;
   bool isLoggedIn = false;
   bool isAlertAlreadySet = false;
-
-  double _priceThreshold = 0;
+  bool _canScrollLeft = false;
+  bool _canScrollRight = true; // Initially true, will be updated after layout
+  bool _isLoadingBrandProducts =
+      true; // Separate loading state for brand products
 
   List<String> filterVendor = [];
   List<String> uniqueVendors = [];
@@ -98,6 +99,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     super.initState();
     _initCall();
     _setupAuthStateListener();
+    _setupScrollListener();
 
     // Start background WorkManager for price monitoring
     //_startBackgroundWorkManager();
@@ -158,6 +160,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   void dispose() {
     _authStateSubscription?.cancel();
+    _scrollController.removeListener(_updateScrollButtons);
+    _scrollController.dispose();
     // Commented out - auto-notification timer no longer needed
     // _notificationCheckTimer?.cancel();
 
@@ -165,6 +169,133 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _appNotificationService?.dispose();
 
     super.dispose();
+  }
+
+  /// Setup scroll listener to update button visibility
+  void _setupScrollListener() {
+    _scrollController.addListener(_updateScrollButtons);
+  }
+
+  /// Update scroll button visibility based on scroll position
+  void _updateScrollButtons() {
+    if (!mounted) return;
+
+    // If no vendor data, hide both buttons
+    if (vendorProductData.length <= 1) {
+      setState(() {
+        _canScrollLeft = false;
+        _canScrollRight = false;
+      });
+      return;
+    }
+
+    if (!_scrollController.hasClients) {
+      log('Scroll controller has no clients yet');
+      // If no clients but we have multiple items, assume we can scroll right initially
+      setState(() {
+        _canScrollLeft = false; // Hide left icon initially
+        _canScrollRight = true; // Show right icon initially
+      });
+      return;
+    }
+
+    try {
+      final position = _scrollController.position;
+      final maxScrollExtent = position.maxScrollExtent;
+      final currentPixels = position.pixels;
+
+      log('Updating scroll buttons: pixels=$currentPixels, max=$maxScrollExtent, items=${vendorProductData.length}');
+
+      // Check if content is scrollable
+      if (maxScrollExtent <= 0) {
+        log('Content is not scrollable (maxScrollExtent: $maxScrollExtent)');
+        setState(() {
+          _canScrollLeft = false;
+          _canScrollRight = false;
+        });
+        return;
+      }
+
+      // Left icon should only show when scrolled away from the start (position > 0)
+      // Right icon should show when not at the end
+      final canScrollLeft =
+          currentPixels > 5.0; // Threshold to show left icon when scrolled
+      final canScrollRight = currentPixels < (maxScrollExtent - 5.0);
+
+      log('Scroll state: canLeft=$canScrollLeft, canRight=$canScrollRight, pixels=$currentPixels');
+
+      setState(() {
+        _canScrollLeft = canScrollLeft;
+        _canScrollRight = canScrollRight;
+      });
+      log('Updated scroll state: _canScrollLeft=$_canScrollLeft, _canScrollRight=$_canScrollRight');
+    } catch (e) {
+      log('Error updating scroll buttons: $e');
+    }
+  }
+
+  /// Scroll to the next item
+  void _scrollToNext() {
+    if (!_scrollController.hasClients) {
+      log('Scroll controller has no clients');
+      return;
+    }
+
+    try {
+      final position = _scrollController.position;
+      const scrollAmount =
+          176.0; // Card width (160) + left margin (8) + right margin (8)
+      final newPosition = _scrollController.offset + scrollAmount;
+      final maxScroll = position.maxScrollExtent;
+
+      log('Scrolling next: current=${_scrollController.offset}, new=$newPosition, max=$maxScroll');
+
+      _scrollController
+          .animateTo(
+        newPosition > maxScroll ? maxScroll : newPosition,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      )
+          .then((_) {
+        // Update button visibility after scroll animation completes
+        if (mounted) {
+          _updateScrollButtons();
+        }
+      });
+    } catch (e) {
+      log('Error scrolling next: $e');
+    }
+  }
+
+  /// Scroll to the previous item
+  void _scrollToPrevious() {
+    if (!_scrollController.hasClients) {
+      log('Scroll controller has no clients');
+      return;
+    }
+
+    try {
+      const scrollAmount =
+          176.0; // Card width (160) + left margin (8) + right margin (8)
+      final newPosition = _scrollController.offset - scrollAmount;
+
+      log('Scrolling previous: current=${_scrollController.offset}, new=$newPosition');
+
+      _scrollController
+          .animateTo(
+        newPosition < 0 ? 0 : newPosition,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      )
+          .then((_) {
+        // Update button visibility after scroll animation completes
+        if (mounted) {
+          _updateScrollButtons();
+        }
+      });
+    } catch (e) {
+      log('Error scrolling previous: $e');
+    }
   }
 
   Future<void> _getDeviceId() async {
@@ -924,8 +1055,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           label: 'Login',
           textColor: Colors.white,
           onPressed: () {
-            // Navigate to login screen or show login dialog
+            // Navigate to login screen
             log('User requested to go to login screen');
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LoginPage(
+                  onLoginSuccess: () {
+                    // Refresh liked status after successful login
+                    _checkIfLiked();
+                  },
+                ),
+              ),
+            );
           },
         ),
       ),
@@ -1234,6 +1376,29 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           productDetails = details;
           vendorProductData = details.vendorProductData ?? [];
           isLoading = false; // Set loading to false after successful API call
+          // Reset scroll button states when new data loads
+          _canScrollLeft = false;
+          _canScrollRight = vendorProductData.length > 1;
+        });
+        // Reset scroll position and update buttons after data is loaded
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            // Reset scroll position to start
+            if (_scrollController.hasClients) {
+              _scrollController.jumpTo(0);
+            }
+            // Update scroll buttons after layout
+            Future.delayed(const Duration(milliseconds: 150), () {
+              if (mounted) {
+                _updateScrollButtons();
+              }
+            });
+            Future.delayed(const Duration(milliseconds: 400), () {
+              if (mounted) {
+                _updateScrollButtons();
+              }
+            });
+          }
         });
         log('Single API Data is');
         log('${productDetails?.toJson()}');
@@ -1252,6 +1417,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Future<void> _fetchBrandProducts() async {
     log('_fetchBrandProducts method is running');
     try {
+      // Set loading state to true at the start
+      if (mounted) {
+        setState(() {
+          _isLoadingBrandProducts = true;
+          loadingMessage = 'Loading products... ';
+        });
+      }
+
       List<VendorProduct> allFetchedProducts = [];
       int pageNumber = 1;
       int maxPages = 5;
@@ -1279,8 +1452,61 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           break;
         }
 
-        final List<VendorProduct> fetchedProducts =
-            jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+        final List<VendorProduct> fetchedProducts = jsonList.map((e) {
+          // Transform the product data to ensure proper price handling
+          final productData = Map<String, dynamic>.from(e);
+
+          // Get the first vendor price - check multiple possible fields
+          String firstVendorPrice = '';
+          if (productData['firstVendorPrice'] != null) {
+            firstVendorPrice = productData['firstVendorPrice'].toString();
+          } else if (productData['vendorprice_price'] != null) {
+            firstVendorPrice = productData['vendorprice_price'].toString();
+          } else if (productData['lowest_vendor'] != null &&
+              (productData['lowest_vendor'] as List).isNotEmpty) {
+            // Get price from lowest_vendor array
+            final lowestVendor = (productData['lowest_vendor'] as List).first;
+            if (lowestVendor['vendorprice_price'] != null) {
+              firstVendorPrice = lowestVendor['vendorprice_price'].toString();
+            }
+          }
+
+          // If still empty or "--", try to parse from vendorpricePrice
+          if (firstVendorPrice.isEmpty ||
+              firstVendorPrice == '--' ||
+              firstVendorPrice == 'null') {
+            firstVendorPrice =
+                productData['vendorprice_price']?.toString() ?? '0.00';
+          }
+
+          // Calculate discount percentage if we have both prices
+          double discountPercent = 0.0;
+          final msrpValue = double.tryParse(productData['msrp']
+                      ?.toString()
+                      .replaceAll(RegExp(r'[^\d.]'), '') ??
+                  '0') ??
+              0.0;
+          final priceValue = double.tryParse(
+                  firstVendorPrice.replaceAll(RegExp(r'[^\d.]'), '')) ??
+              0.0;
+
+          if (msrpValue > 0 && priceValue > 0 && priceValue < msrpValue) {
+            discountPercent = ((msrpValue - priceValue) / msrpValue) * 100;
+          }
+
+          // Update product data with calculated values - use firstVendorPrice for vendorprice_price if it's valid
+          if (firstVendorPrice.isNotEmpty &&
+              firstVendorPrice != '--' &&
+              firstVendorPrice != 'null') {
+            productData['vendorprice_price'] = firstVendorPrice;
+          }
+          productData['firstVendorPrice'] = firstVendorPrice;
+          productData['discount_percent'] = discountPercent.toStringAsFixed(0);
+
+          log('Product ${productData['product_id']}: firstVendorPrice=$firstVendorPrice, vendorprice_price=${productData['vendorprice_price']}, msrp=${productData['msrp']}, discount=$discountPercent%');
+
+          return VendorProduct.fromJson(productData);
+        }).toList();
 
         allFetchedProducts.addAll(fetchedProducts);
         log('Page $pageNumber: ${fetchedProducts.length} products, Total: ${allFetchedProducts.length}');
@@ -1316,7 +1542,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           finalList = limitedProducts;
           filterVendor = [];
           loadingMessage = 'Loading complete!';
-          isLoading = false;
+          _isLoadingBrandProducts =
+              false; // Set brand products loading to false
         });
       }
 
@@ -1327,7 +1554,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          isLoading = false;
+          _isLoadingBrandProducts =
+              false; // Set brand products loading to false on error
         });
       }
       log('Error in fetching Brand Product list: $e');
@@ -2337,108 +2565,150 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Widget _buildSubscribeButton() {
     return Container(
       width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.shade300,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            _priceAlertDialog();
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_isLoadingPriceAlert)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      // _isSubscribedToPriceAlert
-                      //     ?
-                      Icons.notifications_active,
-                      // : Icons.notifications_none,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      // _isSubscribedToPriceAlert
-                      'Price Alert Active',
-                      //  : 'Get Price Alerts',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _isSubscribedToPriceAlert
-                          ? 'Alert set for \$${_priceThreshold.toStringAsFixed(2)}'
-                          : 'Subscribe for price drops',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                // Container(
-                //   padding: const EdgeInsets.all(6),
-                //   decoration: BoxDecoration(
-                //     color: Colors.white.withOpacity(0.2),
-                //     borderRadius: BorderRadius.circular(8),
-                //   ),
-                //   child: Icon(
-                //     _isSubscribedToPriceAlert ? Icons.remove : Icons.add,
-                //     color: Colors.white,
-                //     size: 16,
-                //   ),
-                // ),
-              ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          Text(
+            'Wish to have a better price?',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
             ),
           ),
-        ),
+          const SizedBox(height: 12),
+          // Description
+          Text(
+            'We will bargain with the vendors and get you a special discount on this product.',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade700,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Email input field
+          TextField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              hintText: 'Enter your email',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade400,
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Submit button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isLoadingPriceAlert
+                  ? null
+                  : () {
+                      if (_emailController.text.trim().isEmpty) {
+                        CommonToasts.centeredMobile(
+                          context: context,
+                          msg: 'Please enter your email address',
+                        );
+                        return;
+                      }
+                      // Validate email format
+                      final emailRegex = RegExp(
+                          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                      if (!emailRegex.hasMatch(_emailController.text.trim())) {
+                        CommonToasts.centeredMobile(
+                          context: context,
+                          msg: 'Please enter a valid email address',
+                        );
+                        return;
+                      }
+                      saveAlertedProductData();
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: _isLoadingPriceAlert
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Submit',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Privacy statement
+          Text(
+            'We respect your privacy and will never share your email with third parties.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -2558,101 +2828,372 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Widget _buildMoreDesign() {
     log('_buildMoreDesign method is running');
-    log('finalList length: ${finalList.length}');
+    log('finalList length: ${finalList.length}, _isLoadingBrandProducts: $_isLoadingBrandProducts');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          controller: _scrollController,
-          child: Row(
-            children: finalList.map((product) {
-              return Container(
-                width: 160,
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+    // Show loader when brand products data is being fetched
+    if (_isLoadingBrandProducts) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        child: const Center(
+          child: StylishLoader(
+            type: LoaderType.wave,
+            size: 60.0,
+            primaryColor: AppColors.primary,
+            text: "Loading products...",
+            textStyle: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Show empty state only when loading is complete and list is empty
+    if (finalList.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'No products available',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'More products will appear here when available.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(), // because parent scrolls
+      shrinkWrap: true,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      itemCount: finalList.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio:
+            0.65, // Adjusted to accommodate larger bottom price section
+      ),
+      itemBuilder: (context, index) {
+        final product = finalList[index];
+
+        // Parse prices - handle "--" and invalid values
+        String msrpStr = product.msrp;
+        String vendorPriceStr = product.vendorpricePrice;
+
+        // Clean and validate price strings
+        if (msrpStr == '--' || msrpStr.isEmpty || msrpStr == 'null') {
+          msrpStr = '0';
+        }
+        if (vendorPriceStr == '--' ||
+            vendorPriceStr.isEmpty ||
+            vendorPriceStr == 'null') {
+          vendorPriceStr = '0';
+        }
+
+        final msrp =
+            double.tryParse(msrpStr.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+        final vendorPrice =
+            double.tryParse(vendorPriceStr.replaceAll(RegExp(r'[^\d.]'), '')) ??
+                0.0;
+
+        // Calculate discount percentage
+        double discountPercent = 0.0;
+        if (msrp > 0 && vendorPrice > 0 && vendorPrice < msrp) {
+          discountPercent = ((msrp - vendorPrice) / msrp) * 100;
+        }
+
+        // Log for debugging
+        log('Product ${product.productId}: vendorPrice=$vendorPriceStr (parsed: $vendorPrice), msrp=$msrpStr (parsed: $msrp), discount=$discountPercent%');
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProductDetailsScreen(
+                  productId: product.productId,
+                  brandName: product.brandName.isNotEmpty
+                      ? product.brandName
+                      : widget.brandName,
+                  productMPN: product.productMpn,
+                  productImage: product.productImage,
+                  productPrice: product.vendorpricePrice,
+                ),
+              ),
+            );
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey[200]!, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product Image
+                Container(
+                  height: 90,
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
                   ),
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductDetailsScreen(
-                            productId: product.productId,
-                            brandName: widget.brandName ?? 'Unknown Brand',
-                            productMPN: product.productMpn,
-                            productImage: product.productImage,
-                            productPrice: product.vendorpricePrice,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              product.productImage ?? '',
-                              height: 80,
-                              width: double.infinity,
-                              fit: BoxFit.fill,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Image.asset('assets/no_image/no_image.jpg',
-                                      height: 80, fit: BoxFit.cover),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: product.productImage.isEmpty ||
+                            product.productImage.contains('no_image')
+                        ? Container(
+                            color: Colors.grey[100],
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.image_not_supported_outlined,
+                                  size: 40,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'No image',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
                             ),
+                          )
+                        : Image.network(
+                            product.productImage,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[100],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image_not_supported_outlined,
+                                      size: 40,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'No image',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            product.productName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              ...List.generate(
-                                  4,
-                                  (index) => const Icon(Icons.star,
-                                      color: Colors.amber, size: 14)),
-                              const Icon(Icons.star_border,
-                                  color: Colors.amber, size: 14),
-                              const SizedBox(width: 4),
-                              Text(
-                                '(1)',
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '\$${product.vendorpricePrice}',
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
+                  ),
+                ),
+
+                // Brand Logo
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+                  child: SizedBox(
+                    height: 30,
+                    width: 70,
+                    child: BrandImageWidget(
+                      brand: {
+                        'brand_name': product.brandName.isNotEmpty
+                            ? product.brandName
+                            : widget.brandName,
+                        'brand_key': product.brandName.isNotEmpty
+                            ? product.brandName
+                                .replaceAll(' ', '-')
+                                .toLowerCase()
+                            : widget.brandName
+                                .replaceAll(' ', '-')
+                                .toLowerCase(),
+                        'brand_id': 0,
+                      },
+                      width: 70,
+                      height: 30,
                     ),
                   ),
                 ),
-              );
-            }).toList(),
+
+                // Product Details
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        // Model Number
+                        if (product.productMpn.isNotEmpty &&
+                            product.productMpn != '--')
+                          Text(
+                            product.productMpn,
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        if (product.productMpn.isNotEmpty &&
+                            product.productMpn != '--')
+                          const SizedBox(height: 2),
+
+                        // Product Name - Constrained to show 2 lines completely
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Text(
+                              product.productName,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                height: 1.2,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+
+                        // Spacer to push price section to bottom
+                        const SizedBox(height: 8),
+
+                        // Price Section Container - Fixed at bottom with increased size
+                        Container(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Price Section - Fixed at bottom
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Current Price (discounted) - on the left
+                                  Flexible(
+                                    child: Text(
+                                      vendorPrice > 0
+                                          ? '\$${_formatPrice(vendorPriceStr)}'
+                                          : '--',
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  // Original Price (strikethrough) - on the right, only show if discounted
+                                  if (discountPercent > 0 && msrp > 0)
+                                    Flexible(
+                                      child: Text(
+                                        '\$${_formatPrice(product.msrp)}',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 16,
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                          decorationColor: Colors.grey[600],
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              // Discount Badge - only show if there's a discount
+                              if (discountPercent > 0) ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[50],
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                        color: Colors.red[200]!, width: 1),
+                                  ),
+                                  child: Text(
+                                    '${discountPercent.toStringAsFixed(0)}% OFF',
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        );
+      },
     );
+  }
+
+  /// Format price string to remove non-numeric characters and format
+  String _formatPrice(String price) {
+    try {
+      final double? priceValue =
+          double.tryParse(price.replaceAll(RegExp(r'[^\d.]'), ''));
+
+      if (priceValue == null) {
+        return price;
+      }
+
+      final formatter = NumberFormat('#,###.##');
+      return formatter.format(priceValue);
+    } catch (e) {
+      return price;
+    }
   }
 
   Widget _buyAtName() {
@@ -2699,120 +3240,279 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          controller: _scrollController,
-          child: Row(
-            children: vendorProductData.map((product) {
-              log('Rendering vendor: ${product.vendorName} with price: ${product.vendorpricePrice}');
-              return Container(
-                width: 160,
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: InkWell(
-                    onTap: () async {
-                      log('Selected vendor: ${product.vendorName}');
-                      await MyInAppBrowser().openUrlRequest(
-                        urlRequest: URLRequest(
-                          url: WebUri(
-                            '${product.vendorUrl}',
+        Builder(
+          builder: (context) {
+            // Initialize scroll state after layout
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                // Reset initial state
+                setState(() {
+                  _canScrollLeft = false;
+                  _canScrollRight = vendorProductData.length > 1;
+                });
+                // Multiple attempts to ensure scroll controller is ready
+                Future.delayed(const Duration(milliseconds: 50), () {
+                  if (mounted) {
+                    _updateScrollButtons();
+                  }
+                });
+                Future.delayed(const Duration(milliseconds: 200), () {
+                  if (mounted) {
+                    _updateScrollButtons();
+                  }
+                });
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (mounted) {
+                    _updateScrollButtons();
+                  }
+                });
+              }
+            });
+
+            return Stack(
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: vendorProductData.map((product) {
+                      log('Rendering vendor: ${product.vendorName} with price: ${product.vendorpricePrice}');
+                      return Container(
+                        width: 160,
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                        child: Card(
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: () async {
+                              log('Selected vendor: ${product.vendorName}');
+                              await MyInAppBrowser().openUrlRequest(
+                                urlRequest: URLRequest(
+                                  url: WebUri(
+                                    '${product.vendorUrl}',
+                                  ),
+                                ),
+                              );
+                              log('vendor URL: ${product.vendorUrl}');
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      height: 80,
+                                      width: double.infinity,
+                                      color: Colors.white,
+                                      child: _buildVendorLogo(
+                                          product.vendorName ?? ''),
+                                    ),
+                                  ),
+                                  Divider(
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Padding(
+                                    padding: EdgeInsets.only(right: 10.0),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              '\$122',
+                                              //'\$${_formatPrice(product.msrp)}',
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontFamily: 'Segoe UI',
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                decoration:
+                                                    TextDecoration.lineThrough,
+                                                decorationThickness: 2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              right: 0.0, top: 5),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                'Add to Cart Price:',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontFamily: 'Segoe UI',
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 3.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '\$${product.vendorpricePrice ?? '--'} ',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 20),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${product.vendorpriceDate ?? '--'}',
+                                    style: const TextStyle(
+                                        color: Colors.grey, fontSize: 16),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       );
-                      log('vendor URL: ${product.vendorUrl}');
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              height: 80,
-                              width: double.infinity,
-                              color: Colors.white,
-                              child: _buildVendorLogo(product.vendorName ?? ''),
+                    }).toList(),
+                  ),
+                ),
+                // Previous button on the left
+                if (vendorProductData.length > 1)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: AnimatedOpacity(
+                      opacity: _canScrollLeft ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: IgnorePointer(
+                        ignoring: !_canScrollLeft,
+                        child: GestureDetector(
+                          onTap: _canScrollLeft ? _scrollToPrevious : null,
+                          child: Container(
+                            width: 50,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerRight,
+                                end: Alignment.centerLeft,
+                                colors: [
+                                  Colors.white.withOpacity(0.0),
+                                  Colors.white.withOpacity(0.9),
+                                  Colors.white,
+                                ],
+                              ),
                             ),
-                          ),
-                          Divider(
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(height: 4),
-                          const Padding(
-                            padding: EdgeInsets.only(right: 10.0),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '\$122',
-                                      //'\$${_formatPrice(product.msrp)}',
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontFamily: 'Segoe UI',
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        decoration: TextDecoration.lineThrough,
-                                        decorationThickness: 2,
+                            child: Center(
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: _scrollToPrevious,
+                                  borderRadius: BorderRadius.circular(25),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          AppColors.primary.withOpacity(0.15),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color:
+                                            AppColors.primary.withOpacity(0.4),
+                                        width: 1.5,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 0.0, top: 5),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        'Add to Cart Price:',
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontFamily: 'Segoe UI',
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
+                                    child: const Icon(
+                                      Icons.arrow_back_ios,
+                                      size: 18,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 3.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '\$${product.vendorpricePrice ?? '--'} ',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 20),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${product.vendorpriceDate ?? '--'}',
-                            style: const TextStyle(
-                                color: Colors.grey, fontSize: 16),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
+                // Next button on the right
+                if (vendorProductData.length > 1)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: AnimatedOpacity(
+                      opacity: _canScrollRight ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: IgnorePointer(
+                        ignoring: !_canScrollRight,
+                        child: GestureDetector(
+                          onTap: _canScrollRight ? _scrollToNext : null,
+                          child: Container(
+                            width: 50,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Colors.white.withOpacity(0.0),
+                                  Colors.white.withOpacity(0.9),
+                                  Colors.white,
+                                ],
+                              ),
+                            ),
+                            child: Center(
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: _scrollToNext,
+                                  borderRadius: BorderRadius.circular(25),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          AppColors.primary.withOpacity(0.15),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color:
+                                            AppColors.primary.withOpacity(0.4),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 18,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -3158,202 +3858,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
-  Widget _buildDebugSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.bug_report, color: Colors.orange),
-              SizedBox(width: 8),
-              Text(
-                'Debug Tools',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    log('🔍 Checking WorkManager status...');
-                    // Commented out - WorkManager no longer needed for auto-notifications
-                    log('WorkManager functionality commented out - using AppNotificationService instead');
-                  },
-                  child: Text('Check Timer System'),
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    log('🔍 Checking for notifications...');
-                    // Commented out - auto-notification logic now handled by AppNotificationService
-                    // await _checkForAutoNotifications();
-                  },
-                  child: Text('Check Notifications'),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    log('🚀 Restarting WorkManager...');
-                    await _startBackgroundWorkManager();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text('Restart Timer System'),
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    log('🔍 Checking SharedPreferences data...');
-                    final prefs = await SharedPreferences.getInstance();
-                    final lastData =
-                        prefs.getString('last_fetched_product_data');
-                    final lastStatus =
-                        prefs.getString('last_api_response_status');
-                    final lastTime = prefs.getString('last_api_response_time');
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('API Status: ${lastStatus ?? "Unknown"}'),
-                              Text('Last Run: ${lastTime ?? "Never"}'),
-                              Text(
-                                  'Data Length: ${lastData?.length ?? 0} chars'),
-                            ],
-                          ),
-                          duration: Duration(seconds: 5),
-                        ),
-                      );
-                    }
-
-                    log('📊 SharedPreferences Data:');
-                    log('   Status: $lastStatus');
-                    log('   Time: $lastTime');
-                    log('   Data Length: ${lastData?.length ?? 0}');
-                    if (lastData != null && lastData.isNotEmpty) {
-                      log('   Data Preview: ${lastData.substring(0, lastData.length > 200 ? 200 : lastData.length)}...');
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text('Check API Data'),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    log('🔍 Checking for API errors...');
-                    final prefs = await SharedPreferences.getInstance();
-                    final errorStatus =
-                        prefs.getString('last_api_response_status');
-                    final errorMessage = prefs.getString('last_api_error');
-                    final errorTime = prefs.getString('last_api_error_time');
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                  'API Error Status: ${errorStatus ?? "No errors"}'),
-                              if (errorMessage != null)
-                                Text('Error: $errorMessage'),
-                              if (errorTime != null)
-                                Text('Error Time: $errorTime'),
-                            ],
-                          ),
-                          backgroundColor: errorStatus == 'error'
-                              ? Colors.red
-                              : Colors.green,
-                          duration: Duration(seconds: 5),
-                        ),
-                      );
-                    }
-
-                    log('📊 API Error Details:');
-                    log('   Status: $errorStatus');
-                    log('   Error: $errorMessage');
-                    log('   Time: $errorTime');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text('Check API Errors'),
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    log('🚀 Testing API call manually...');
-                    try {
-                      // Call the API directly to test if it works
-                      await _testApiCall();
-                    } catch (e) {
-                      log('❌ Manual API call failed: $e');
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Manual API call failed: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text('Test API Call'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFloatingComparisonBar() {
     return Positioned(
       bottom: 20,
@@ -3453,457 +3957,4 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
   }
-}
-
-/// UNUSED CODE
-Widget _buildShippingInfo() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.local_shipping,
-              color: Colors.green,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            'Shipping & Returns',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 16),
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 2,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-          border: Border.all(
-            color: Colors.grey.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.05),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.local_shipping,
-                        color: Colors.green,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Free Shipping',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'FREE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'On orders over \$75. Delivery in 3-5 business days.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Delivery Options
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildShippingOption(
-                    Icons.flash_on,
-                    'Express Delivery',
-                    '1-2 business days',
-                    '\$15.99',
-                    Colors.orange,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildShippingOption(
-                    Icons.schedule,
-                    'Standard Delivery',
-                    '3-5 business days',
-                    'FREE',
-                    Colors.blue,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildShippingOption(
-                    Icons.store,
-                    'Store Pickup',
-                    'Ready in 2 hours',
-                    'FREE',
-                    Colors.purple,
-                  ),
-                ],
-              ),
-            ),
-
-            // Returns Section
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.05),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.assignment_return,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Easy Returns',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '• 30-day return policy\n• Free return shipping\n• Full refund or exchange\n• No restocking fees',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-Widget _buildSpecifications() {
-  final List<Map<String, String>> specifications = [
-    {'label': 'Brand', 'value': 'widget.brandName'},
-    {'label': 'Model', 'value': 'widget.productMPN'},
-    {'label': 'Material', 'value': 'Stainless Steel'},
-    {'label': 'Dimensions', 'value': '24" W x 18" D x 36" H'},
-    {'label': 'Weight', 'value': '45 lbs'},
-    {'label': 'Color', 'value': 'Matte Black'},
-    {'label': 'Warranty', 'value': '2 Year Limited'},
-    {'label': 'Country of Origin', 'value': 'USA'},
-    {'label': 'Certifications', 'value': 'UL Listed, CSA Approved'},
-    {'label': 'Features', 'value': 'Smart Controls, LED Display'},
-  ];
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.info_outline,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            'Product Specifications',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 16),
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 2,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-          border: Border.all(
-            color: Colors.grey.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.05),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.list_alt,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Technical Details',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            /// Creates a fixed-length scrollable linear array of list "items" separated
-            /// by list item "separators".
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              itemCount: specifications.length,
-              separatorBuilder: (context, index) => const Divider(
-                height: 1,
-                thickness: 0.5,
-                color: Colors.grey,
-              ),
-              itemBuilder: (context, index) {
-                final spec = specifications[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          spec['label']!,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          spec['value']!,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
-                            height: 1.3,
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-Widget _buildPriceAndRating() {
-  final data = ' widget.productPrice';
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        '\$${data ?? '--'}',
-        style: const TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(height: 8),
-      Row(
-        children: [
-          ...List.generate(4,
-              (index) => const Icon(Icons.star, color: Colors.amber, size: 20)),
-          const Icon(Icons.star_border, color: Colors.amber, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            '(1 Reviews)', // You can use data.reviewCount if available
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-}
-
-Widget _buildShippingText(String? shippingValue) {
-  bool isFree = false;
-  if (shippingValue != null) {
-    final doubleValue = double.tryParse(shippingValue);
-    isFree = doubleValue == 0.0;
-  }
-
-  if (isFree) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: const Text(
-        'FREE',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 22,
-        ),
-      ),
-    );
-  } else {
-    return Text(
-      ' \$${shippingValue ?? '--'}',
-      style: const TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 22,
-      ),
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-}
-
-Widget _buildShippingOption(
-    IconData icon, String title, String subtitle, String price, Color color) {
-  return Row(
-    children: [
-      Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 20,
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ),
-      Text(
-        price,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-          color: price == 'FREE' ? Colors.green : Colors.black87,
-        ),
-      ),
-    ],
-  );
 }

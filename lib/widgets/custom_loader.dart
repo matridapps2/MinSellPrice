@@ -7,15 +7,14 @@ import 'package:minsellprice/core/utils/constants/size.dart';
 
 class CustomLoader extends StatelessWidget {
   const CustomLoader({
-    Key? key,
+    super.key,
     this.width,
     this.height,
     this.loaderString,
     required this.vendorName,
     required this.imageString,
     required bool isAssetImage,
-  })  : _isAssetImage = isAssetImage,
-        super(key: key);
+  })  : _isAssetImage = isAssetImage;
 
   final double? width, height;
   final String vendorName, imageString;
@@ -73,7 +72,7 @@ class CustomLoader extends StatelessWidget {
           animate: true,
           width: width ?? 80,
           height: height ?? 80,
-          frameRate: FrameRate(
+          frameRate: const FrameRate(
             60,
           ),
         ),

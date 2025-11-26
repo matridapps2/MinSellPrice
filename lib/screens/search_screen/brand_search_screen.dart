@@ -368,7 +368,7 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
         children: [
           // Fixed Header with Search
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.primary,
               // gradient: LinearGradient(
               //   begin: Alignment.topLeft,
@@ -467,7 +467,7 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                             color: AppColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.search_rounded,
                             color: AppColors.primary,
                             size: 24,
@@ -515,7 +515,7 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide:
-                              BorderSide(color: AppColors.primary, width: 2),
+                              const BorderSide(color: AppColors.primary, width: 2),
                           borderRadius: BorderRadius.circular(25),
                         ),
                         disabledBorder: OutlineInputBorder(
@@ -658,7 +658,7 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                                                 BorderRadius.circular(12),
                                             child: BrandImageWidget(
                                               key: ValueKey(
-                                                  'brand_${brand['brand_id']}_${index}'),
+                                                  'brand_${brand['brand_id']}_$index'),
                                               brand: brand,
                                               width: 70,
                                               height: 70,
@@ -700,7 +700,7 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
-                                          child: Icon(
+                                          child: const Icon(
                                             Icons.arrow_forward_ios,
                                             color: AppColors.primary,
                                             size: 16,

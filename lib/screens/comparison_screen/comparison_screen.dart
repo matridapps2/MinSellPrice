@@ -3,15 +3,13 @@ import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/service_new/comparison_db.dart';
 
-/**
- * ComparisonScreen - Displays products side-by-side for comparison
- * 
- * Features:
- * - Shows up to 4 products in a comparison table
- * - Displays product images, names, prices, and specs
- * - Allows removing products from comparison
- * - Shows "No products to compare" message when empty
- */
+/// ComparisonScreen - Displays products side-by-side for comparison
+/// 
+/// Features:
+/// - Shows up to 4 products in a comparison table
+/// - Displays product images, names, prices, and specs
+/// - Allows removing products from comparison
+/// - Shows "No products to compare" message when empty
 class ComparisonScreen extends StatefulWidget {
   const ComparisonScreen({super.key});
 
@@ -56,7 +54,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       await _loadComparisonProducts(); // Refresh the list
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Product removed from comparison'),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 2),
@@ -64,7 +62,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Error removing product from comparison'),
           backgroundColor: Colors.red,
         ),
@@ -79,7 +77,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       await _loadComparisonProducts(); // Refresh the list
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('All products cleared from comparison'),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 2),
@@ -87,7 +85,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Error clearing comparison'),
           backgroundColor: Colors.red,
         ),
@@ -106,7 +104,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
         actions: [
           if (comparisonProducts.isNotEmpty)
             IconButton(
-              icon: Icon(Icons.clear_all, color: Colors.red),
+              icon: const Icon(Icons.clear_all, color: Colors.red),
               onPressed: () {
                 _showClearAllDialog();
               },
@@ -115,7 +113,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
         ],
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : comparisonProducts.isEmpty
               ? _buildEmptyState()
               : _buildComparisonView(),
@@ -133,7 +131,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
             size: 80,
             color: Colors.grey[400],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'No Products to Compare',
             style: TextStyle(
@@ -142,7 +140,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
               color: Colors.grey[600],
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Add products to comparison from product details',
             style: TextStyle(
@@ -151,15 +149,15 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: Text('Browse Products'),
+            child: const Text('Browse Products'),
           ),
         ],
       ),
@@ -174,7 +172,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           // Product Cards Row
           Container(
            height: 400,
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: comparisonProducts.length,
@@ -188,7 +186,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           // Comparison Table
           _buildComparisonTable(),
 
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -198,7 +196,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   Widget _buildProductCard(Map<String, dynamic> product, int index) {
     return Container(
       width: 300,
-      margin: EdgeInsets.only(right: 16),
+      margin: const EdgeInsets.only(right: 16),
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -210,14 +208,14 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
                   color: Colors.grey[100],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
@@ -229,14 +227,14 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               alignment: Alignment.center,
-                              child: Icon(Icons.image_not_supported,
+                              child: const Icon(Icons.image_not_supported,
                                   size: 40, color: Colors.grey),
                             );
                           },
                         )
                       : Container(
                           alignment: Alignment.center,
-                          child: Icon(Icons.image_not_supported,
+                          child: const Icon(Icons.image_not_supported,
                               size: 40, color: Colors.grey),
                         ),
                 ),
@@ -247,20 +245,20 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
             Expanded(
               flex: 1,
               child: Padding(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       product['product_name'] ?? 'Unknown Product',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       product['brand_name'] ?? 'Unknown Brand',
                       style: TextStyle(
@@ -276,7 +274,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                           children: [
                             Text(
                               '\$${product['product_price'] ?? '0'}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
@@ -284,12 +282,12 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                               maxLines: 3,
                             ),
                             IconButton(
-                              icon: Icon(Icons.close, color: Colors.red, size: 20),
+                              icon: const Icon(Icons.close, color: Colors.red, size: 20),
                               onPressed: () {
                                 _removeFromComparison(product['vendor_product_id']);
                               },
                               padding: EdgeInsets.zero,
-                              constraints: BoxConstraints(),
+                              constraints: const BoxConstraints(),
                             ),
                           ],
                         ),
@@ -314,7 +312,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
     ];
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -323,7 +321,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -331,15 +329,15 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
         children: [
           // Header
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
             ),
-            child: Row(
+            child: const Row(
               children: [
                 Icon(Icons.compare_arrows, color: AppColors.primary),
                 SizedBox(width: 8),
@@ -356,16 +354,16 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
           ),
 
           // Feature Rows
-          ...features.map((feature) => _buildFeatureRow(feature)).toList(),
+          ...features.map((feature) => _buildFeatureRow(feature)),
 
           // Action Buttons Row
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: comparisonProducts.map((product) {
                 return Expanded(
                   child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 4),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -384,9 +382,9 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
-                      child: Text(
+                      child: const Text(
                         'View Details',
                         style: TextStyle(fontSize: 12),
                       ),
@@ -404,7 +402,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
   /// Build a single feature comparison row
   Widget _buildFeatureRow(Map<String, dynamic> feature) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: Colors.grey[200]!, width: 1),
@@ -417,7 +415,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
             flex: 2,
             child: Text(
               feature['label'],
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
                 color: Colors.black87,
@@ -434,10 +432,10 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
 
             return Expanded(
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   value,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
                   ),
@@ -445,7 +443,7 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -457,20 +455,20 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Clear All Comparisons'),
-          content: Text(
+          title: const Text('Clear All Comparisons'),
+          content: const Text(
               'Are you sure you want to remove all products from comparison?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 _clearAllComparisons();
               },
-              child: Text('Clear All', style: TextStyle(color: Colors.red)),
+              child: const Text('Clear All', style: TextStyle(color: Colors.red)),
             ),
           ],
         );

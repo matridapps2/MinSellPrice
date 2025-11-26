@@ -1,7 +1,6 @@
 import 'dart:developer';
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
 

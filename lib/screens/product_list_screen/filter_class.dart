@@ -1,10 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../model/product_list_model_new.dart';
 import 'dart:developer';
 import 'package:intl/intl.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/rendering.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 
@@ -92,7 +89,7 @@ class _FilterMenuState extends State<FilterMenuProductList> {
             elevation: 2,
             leading: InkWell(
               onTap: () => Navigator.pop(context),
-              child: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+              child: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
             ),
             surfaceTintColor: Colors.white,
             toolbarHeight: .14 * w,
@@ -107,7 +104,7 @@ class _FilterMenuState extends State<FilterMenuProductList> {
               ),
             ),
             automaticallyImplyLeading: false,
-            actionsPadding: EdgeInsets.only(right: 15),
+            actionsPadding: const EdgeInsets.only(right: 15),
             actions: [
               TextButton(
                 onPressed: () async {
@@ -167,11 +164,11 @@ class _FilterMenuState extends State<FilterMenuProductList> {
                             children: [
                               Text(
                                 '\$${NumberFormat('#,###').format(priceRange.start.round())}',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                               Text(
                                 '\$${NumberFormat('#,###').format(priceRange.end.round())}',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -293,12 +290,12 @@ class _FilterMenuState extends State<FilterMenuProductList> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary),
+                      side: const BorderSide(color: AppColors.primary),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Cancel',
                       style: TextStyle(
                           color: AppColors.primary,

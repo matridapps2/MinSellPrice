@@ -111,7 +111,7 @@ class _DashboardShimmer extends State<ShimmerDesign> {
 }
 
 class BrandsShimmer extends StatelessWidget {
-  const BrandsShimmer({Key? key}) : super(key: key);
+  const BrandsShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +242,7 @@ class BrandsShimmer extends StatelessWidget {
 }
 
 class CategoryShimmer extends StatelessWidget {
-  const CategoryShimmer({Key? key}) : super(key: key);
+  const CategoryShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -400,9 +400,9 @@ class ProductSectionShimmer extends StatelessWidget {
   final double? height;
 
   const ProductSectionShimmer({
-    Key? key,
+    super.key,
     this.height,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -592,7 +592,7 @@ class ProductSectionShimmer extends StatelessWidget {
 }
 
 class HomeBoxDealsGridShimmer extends StatelessWidget {
-  const HomeBoxDealsGridShimmer({Key? key}) : super(key: key);
+  const HomeBoxDealsGridShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -639,7 +639,7 @@ class HomeBoxDealsGridShimmer extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
-                childAspectRatio: 0.72,
+                childAspectRatio: 0.75,
               ),
               itemCount: 4,
               itemBuilder: (context, index) {
@@ -662,9 +662,9 @@ class HomeBoxDealsGridShimmer extends StatelessWidget {
                     children: [
                       // Product Image Shimmer
                       Container(
-                        height: 130,
+                        height: 140,
                         width: double.infinity,
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.grey[200]!,
                           borderRadius: const BorderRadius.only(
@@ -682,9 +682,9 @@ class HomeBoxDealsGridShimmer extends StatelessWidget {
                       // Brand Logo Shimmer
                       Padding(
                         padding:
-                            const EdgeInsets.only(left: 8, top: 4, bottom: 2),
+                            const EdgeInsets.only(left: 8, top: 6, bottom: 4),
                         child: Container(
-                          height: 28,
+                          height: 32,
                           width: 70,
                           decoration: BoxDecoration(
                             color: Colors.grey[200]!,
@@ -695,71 +695,57 @@ class HomeBoxDealsGridShimmer extends StatelessWidget {
                       // Product Details Shimmer
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Column(
-                            mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Model Number Shimmer
-                                  Container(
-                                    width: 100,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200]!,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  // Product Name Shimmer
-                                  Container(
-                                    width: double.infinity,
-                                    height: 11,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200]!,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Container(
-                                    width: 120,
-                                    height: 11,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200]!,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                ],
+                              // Model Number Shimmer
+                              Container(
+                                width: 100,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200]!,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Price Shimmer
-                                  Container(
-                                    width: 80,
-                                    height: 15,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200]!,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  // Discount Badge Shimmer
-                                  Container(
-                                    width: 60,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200]!,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                ],
+                              const SizedBox(height: 4),
+                              // Product Name Shimmer
+                              Container(
+                                width: double.infinity,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200]!,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                width: 120,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200]!,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // Price Shimmer
+                              Container(
+                                width: 80,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200]!,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              // Discount Badge Shimmer
+                              Container(
+                                width: 60,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200]!,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
                             ],
                           ),

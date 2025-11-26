@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:card_swiper/card_swiper.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
@@ -532,7 +530,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
+                          borderSide: const BorderSide(
                             color: AppColors.primary,
                             width: 2,
                           ),
@@ -640,7 +638,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(
+                          borderSide: const BorderSide(
                             color: AppColors.primary,
                             width: 2,
                           ),
@@ -676,8 +674,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     const SizedBox(height: 15),
 
                     // Top Categories Slider
-                    _buildCategoriesSlider(),
-                    const SizedBox(height: 25),
+                    /*   _buildCategoriesSlider(),
+                    const SizedBox(height: 25),*/
 
                     // Kitchen Appliances Horizontal Section
                     _buildKitchenAppliancesSection(),
@@ -903,7 +901,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                               ],
                             ),
                           ),
-                          child: Center(
+                          child: const Center(
                             child: CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 AppColors.primary,
@@ -1111,10 +1109,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                             ),
                           ],
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
+                            Text(
                               'Explore Now',
                               style: TextStyle(
                                 color: Colors.white,
@@ -1123,7 +1121,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                                 letterSpacing: 0.5,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Icon(
                               Icons.arrow_forward_rounded,
                               color: Colors.white,
@@ -1363,7 +1361,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     const SizedBox(width: 14),
                     Expanded(
                       child: Text(
-                        '$categoryTitle',
+                        categoryTitle,
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -1390,8 +1388,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 },
                 child: Text(
                   _showAllKitchenDeals ? 'Show Less' : 'View All Deals',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: const TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,
                     decoration: TextDecoration.underline,
@@ -1405,7 +1403,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllKitchenDeals)
             SizedBox(
-              height: 370,
+              height: 380,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -1440,7 +1438,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       onTap: () => _navigateToProductDetailsFromData(product),
       child: Container(
         width: 280,
-        height: 370,
         margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -1455,16 +1452,14 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             ),
           ],
         ),
-        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
           children: [
             // Product Image
             Container(
-              height: 160,
+              height: 180,
               width: double.infinity,
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
                 borderRadius: const BorderRadius.only(
@@ -1537,9 +1532,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
             // Brand Logo
             Padding(
-              padding: const EdgeInsets.only(left: 12, top: 4, bottom: 2),
-              child: Container(
-                height: 30,
+              padding: const EdgeInsets.only(left: 12, top: 8, bottom: 4),
+              child: SizedBox(
+                height: 40,
                 width: 80,
                 child: BrandImageWidget(
                   brand: {
@@ -1548,7 +1543,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     'brand_id': product['brand_id'] ?? 0,
                   },
                   width: 80,
-                  height: 30,
+                  height: 40,
                 ),
               ),
             ),
@@ -1556,110 +1551,85 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             // Product Details
             Expanded(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Model Number
-                          if (model.isNotEmpty)
-                            Text(
-                              model,
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          if (model.isNotEmpty) const SizedBox(height: 2),
-
-                          // Product Name
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Price Section
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            // Original Price (strikethrough) - only show if discounted
-                            if (discountPercent > 0 && msrp > 0) ...[
-                              Flexible(
-                                child: Text(
-                                  '\$${_formatPrice(msrp.toString())}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 11,
-                                    decoration: TextDecoration.lineThrough,
-                                    decorationColor: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                            ],
-                            // Current Price
-                            Flexible(
-                              child: Text(
-                                '\$${_formatPrice(firstVendorPrice.toString())}',
-                                style: const TextStyle(
-                                  color: Colors.black87,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                    // Model Number
+                    if (model.isNotEmpty)
+                      Text(
+                        model,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
-                        // Discount Badge - only show if there's a discount
-                        if (discountPercent > 0) ...[
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.red[50],
-                              borderRadius: BorderRadius.circular(6),
-                              border:
-                                  Border.all(color: Colors.red[200]!, width: 1),
-                            ),
-                            child: Text(
-                              '${discountPercent.toStringAsFixed(0)}% OFF',
-                              style: TextStyle(
-                                color: Colors.red[700],
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      ),
+                    if (model.isNotEmpty) const SizedBox(height: 6),
+
+                    // Product Name
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Price Section
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Current Price (discounted) - on the left
+                        Text(
+                          '\$${_formatPrice(firstVendorPrice.toString())}',
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // Original Price (strikethrough) - on the right, only show if discounted
+                        if (discountPercent > 0 && msrp > 0)
+                          Text(
+                            '\$${_formatPrice(msrp.toString())}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 18,
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: Colors.grey[600],
                             ),
                           ),
-                        ],
                       ],
                     ),
+                    // Discount Badge - only show if there's a discount
+                    if (discountPercent > 0) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.red[200]!, width: 1),
+                        ),
+                        child: Text(
+                          '${discountPercent.toStringAsFixed(0)}% OFF',
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),
@@ -1722,7 +1692,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           children: [
             // Product Image
             Container(
-              height: 100,
+              height: 90,
               width: double.infinity,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -1797,9 +1767,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
             // Brand Logo
             Padding(
-              padding: const EdgeInsets.only(left: 8, top: 6, bottom: 4),
-              child: Container(
-                height: 35,
+              padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+              child: SizedBox(
+                height: 30,
                 width: 70,
                 child: BrandImageWidget(
                   brand: {
@@ -1808,7 +1778,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     'brand_id': product['brand_id'] ?? 0,
                   },
                   width: 70,
-                  height: 35,
+                  height: 30,
                 ),
               ),
             ),
@@ -1819,6 +1789,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     // Model Number
                     if (model.isNotEmpty)
@@ -1826,64 +1797,75 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         model,
                         style: TextStyle(
                           color: Colors.grey[700],
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    if (model.isNotEmpty) const SizedBox(height: 4),
+                    if (model.isNotEmpty) const SizedBox(height: 2),
 
-                    // Product Name
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Price Section
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        // Original Price (strikethrough) - only show if discounted
-                        if (discountPercent > 0 && msrp > 0) ...[
-                          Text(
-                            '\$${_formatPrice(msrp.toString())}',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 15,
-                              decoration: TextDecoration.lineThrough,
-                              decorationColor: Colors.grey[600],
-                            ),
+                    // Product Name - Constrained to show 2 lines completely
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          name,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            height: 1.2,
                           ),
-                          const SizedBox(width: 4),
-                        ],
-                        // Current Price
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Price Section - Fixed at bottom
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Current Price (discounted) - on the left
                         Flexible(
                           child: Text(
                             '\$${_formatPrice(firstVendorPrice.toString())}',
                             style: const TextStyle(
                               color: Colors.black87,
-                              fontSize: 17,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        // Original Price (strikethrough) - on the right, only show if discounted
+                        if (discountPercent > 0 && msrp > 0)
+                          Flexible(
+                            child: Text(
+                              '\$${_formatPrice(msrp.toString())}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
                       ],
                     ),
                     // Discount Badge - only show if there's a discount
                     if (discountPercent > 0) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 0),
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.red[50],
                           borderRadius: BorderRadius.circular(4),
@@ -1891,15 +1873,14 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         ),
                         child: Text(
                           '${discountPercent.toStringAsFixed(0)}% OFF',
-                          style: TextStyle(
-                            color: Colors.red[700],
-                            fontSize: 12,
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 0),
                   ],
                 ),
               ),
@@ -2017,7 +1998,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Brand Logo
           Padding(
             padding: const EdgeInsets.only(left: 12, top: 8, bottom: 4),
-            child: Container(
+            child: SizedBox(
               height: 40,
               width: 80,
               child: BrandImageWidget(
@@ -2099,14 +2080,14 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.red[50],
+                        color: Colors.green,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: Colors.red[200]!, width: 1),
                       ),
                       child: Text(
                         '$discountPercent% OFF',
-                        style: TextStyle(
-                          color: Colors.red[700],
+                        style: const TextStyle(
+                          color: Colors.green,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -2203,8 +2184,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 },
                 child: Text(
                   _showAllOutdoorDeals ? 'Show Less' : 'View All Deals',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: const TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,
                     decoration: TextDecoration.underline,
@@ -2218,7 +2199,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllOutdoorDeals)
             SizedBox(
-              height: 370,
+              height: 400,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2317,8 +2298,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 },
                 child: Text(
                   _showAllFaucetDeals ? 'Show Less' : 'View All Deals',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: const TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,
                     decoration: TextDecoration.underline,
@@ -2332,7 +2313,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllFaucetDeals)
             SizedBox(
-              height: 370,
+              height: 380,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2431,8 +2412,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                 },
                 child: Text(
                   _showAllSinkDeals ? 'Show Less' : 'View All Deals',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: const TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,
                     decoration: TextDecoration.underline,
@@ -2446,7 +2427,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllSinkDeals)
             SizedBox(
-              height: 370,
+              height: 380,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2591,7 +2572,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          // const SizedBox(height: 20),
 
           // Products Grid (2x2)
           GridView.builder(
@@ -2601,7 +2582,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               crossAxisCount: 2,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              childAspectRatio: 0.72,
+              childAspectRatio: 0.62,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -2611,7 +2592,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           ),
 
           // View All Deals Link
-          const SizedBox(height: 16),
+          // const SizedBox(height: 16),
           Center(
             child: GestureDetector(
               onTap: () {
@@ -2626,7 +2607,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                   log('View All Deals tapped for: $categoryTitle - No route available');
                 }
               },
-              child: Text(
+              child: const Text(
                 'View All Deals',
                 style: TextStyle(
                   fontSize: 16,
@@ -2644,15 +2625,35 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   /// Build Home Box Product Card (2x2 grid style)
   Widget _buildHomeBoxProductCard(Map<String, dynamic> product) {
+    // Debug: Log all product keys to see available fields
+    log('HomeBox Product Keys: ${product.keys.toList()}');
+    log('HomeBox Product Data: $product');
+
     final brand = product['brand_name']?.toString() ?? '';
     final model = product['product_mpn']?.toString() ?? '';
     final name = product['product_name']?.toString() ?? '';
-    final image = product['product_image']?.toString() ?? '';
+
+    // Try multiple possible field names for image
+    final image = (product['product_image']?.toString() ??
+            product['image']?.toString() ??
+            product['productImage']?.toString() ??
+            '')
+        .trim();
+
     final msrp = double.tryParse(product['msrp']?.toString() ?? '0') ?? 0.0;
     final firstVendorPrice =
         double.tryParse(product['firstVendorPrice']?.toString() ?? '0') ?? 0.0;
     final discountPercent =
         double.tryParse(product['discount_percent']?.toString() ?? '0') ?? 0.0;
+
+    // Debug: Log image URL for troubleshooting
+    log('HomeBox Product - Image field value: $image');
+    log('HomeBox Product - Image isEmpty: ${image.isEmpty}');
+    log('HomeBox Product - Image contains no_image: ${image.contains('no_image')}');
+    if (image.isNotEmpty && !image.contains('no_image')) {
+      log('HomeBox Product Image URL: $image');
+      log('Processed Image URL: ${_getProperImageUrl(image)}');
+    }
 
     return GestureDetector(
       onTap: () => _navigateToProductDetailsFromData(product),
@@ -2672,10 +2673,11 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Product Image
             Container(
-              height: 130,
+              height: 120,
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -2687,7 +2689,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: image.isEmpty || image.contains('no_image')
+                child: image.isEmpty ||
+                        image.contains('no_image') ||
+                        image.toLowerCase() == 'null'
                     ? Container(
                         color: Colors.grey[100],
                         child: Column(
@@ -2709,41 +2713,96 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           ],
                         ),
                       )
-                    : CachedNetworkImage(
-                        imageUrl: _getProperImageUrl(image),
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[50],
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
-                              ),
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[100],
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.image_not_supported_outlined,
-                                size: 40,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'No image',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 10,
+                    : Builder(
+                        builder: (context) {
+                          final processedUrl = _getProperImageUrl(image);
+                          log('Attempting to load image from: $processedUrl');
+
+                          return CachedNetworkImage(
+                            imageUrl: processedUrl,
+                            fit: BoxFit.contain,
+                            httpHeaders: const {
+                              'Accept': 'image/*',
+                            },
+                            placeholder: (context, url) {
+                              log('Loading placeholder for: $url');
+                              return Container(
+                                color: Colors.grey[50],
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.primary,
+                                    ),
+                                    strokeWidth: 2,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
+                              );
+                            },
+                            errorWidget: (context, url, error) {
+                              // Log detailed error for debugging
+                              log('Image load error for URL: $url');
+                              log('Error type: ${error.runtimeType}');
+                              log('Error details: $error');
+                              log('Original image value: $image');
+
+                              // Try to show the original URL if processed one fails
+                              if (url != image && image.isNotEmpty) {
+                                log('Retrying with original URL: $image');
+                                return CachedNetworkImage(
+                                  imageUrl: image,
+                                  fit: BoxFit.contain,
+                                  errorWidget: (context, url2, error2) {
+                                    log('Original URL also failed: $url2, Error: $error2');
+                                    return Container(
+                                      color: Colors.grey[100],
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.image_not_supported_outlined,
+                                            size: 40,
+                                            color: Colors.grey[400],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'No image',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+
+                              return Container(
+                                color: Colors.grey[100],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image_not_supported_outlined,
+                                      size: 40,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'No image',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
               ),
             ),
@@ -2751,16 +2810,16 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             // Brand Logo
             Padding(
               padding: const EdgeInsets.only(left: 8, top: 4, bottom: 2),
-              child: Container(
+              child: SizedBox(
                 height: 28,
-                width: 70,
+                width: 65,
                 child: BrandImageWidget(
                   brand: {
                     'brand_name': brand,
                     'brand_key': product['brand_key']?.toString() ?? brand,
                     'brand_id': product['brand_id'] ?? 0,
                   },
-                  width: 70,
+                  width: 65,
                   height: 28,
                 ),
               ),
@@ -2771,106 +2830,89 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Model Number
-                        if (model.isNotEmpty)
-                          Text(
-                            model,
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        if (model.isNotEmpty) const SizedBox(height: 2),
+                    // Model Number
+                    if (model.isNotEmpty) ...[
+                      Text(
+                        model,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                    ],
 
-                        // Product Name
+                    // Product Name
+                    Flexible(
+                      child: Text(
+                        name,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          height: 1.15,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Price Section
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Current Price (discounted) - on the left
                         Text(
-                          name,
+                          '\$${_formatPrice(firstVendorPrice.toString())}',
                           style: const TextStyle(
                             color: Colors.black87,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            height: 1.3,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Price Section
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            // Original Price (strikethrough) - only show if discounted
-                            if (discountPercent > 0 && msrp > 0) ...[
-                              Flexible(
-                                child: Text(
-                                  '\$${_formatPrice(msrp.toString())}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 10,
-                                    decoration: TextDecoration.lineThrough,
-                                    decorationColor: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 3),
-                            ],
-                            // Current Price (green color to match design)
-                            Flexible(
-                              child: Text(
-                                '\$${_formatPrice(firstVendorPrice.toString())}',
-                                style: TextStyle(
-                                  color: Colors.green[700],
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        // Discount Badge - only show if there's a discount
-                        if (discountPercent > 0) ...[
-                          const SizedBox(height: 3),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: Colors.green[50],
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                  color: Colors.green[200]!, width: 1),
-                            ),
-                            child: Text(
-                              '${discountPercent.toStringAsFixed(0)}% OFF',
-                              style: TextStyle(
-                                color: Colors.green[700],
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        // Original Price (strikethrough) - on the right, only show if discounted
+                        if (discountPercent > 0 && msrp > 0)
+                          Text(
+                            '\$${_formatPrice(msrp.toString())}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 18,
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: Colors.grey[600],
                             ),
                           ),
-                        ],
                       ],
                     ),
+                    // Discount Badge - only show if there's a discount
+                    if (discountPercent > 0) ...[
+                      const SizedBox(height: 3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(4),
+                          border:
+                              Border.all(color: Colors.green[200]!, width: 1),
+                        ),
+                        child: Text(
+                          '${discountPercent.toStringAsFixed(0)}% OFF',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -3077,7 +3119,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Brand Logo
           Padding(
             padding: const EdgeInsets.only(left: 8, top: 6, bottom: 4),
-            child: Container(
+            child: SizedBox(
               height: 35,
               width: 70,
               child: BrandImageWidget(
@@ -3167,8 +3209,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       ),
                       child: Text(
                         '$discountPercent% OFF',
-                        style: TextStyle(
-                          color: Colors.red[700],
+                        style: const TextStyle(
+                          color: Colors.green,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -3608,14 +3650,24 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       return 'https://www.minsellprice.com/assets/no_image/no_image.jpg';
     }
 
-    if (imageUrl.startsWith('//')) {
-      return 'https:$imageUrl';
+    // Trim whitespace
+    String trimmedUrl = imageUrl.trim();
+
+    // Check for null string
+    if (trimmedUrl.toLowerCase() == 'null' || trimmedUrl.isEmpty) {
+      return 'https://www.minsellprice.com/assets/no_image/no_image.jpg';
     }
 
-    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-      return 'https://$imageUrl';
+    if (trimmedUrl.startsWith('//')) {
+      return 'https:$trimmedUrl';
     }
-    return imageUrl;
+
+    if (!trimmedUrl.startsWith('http://') &&
+        !trimmedUrl.startsWith('https://')) {
+      return 'https://$trimmedUrl';
+    }
+
+    return trimmedUrl;
   }
 
   /// Format price with comma separators
@@ -3648,7 +3700,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         child: Column(
           children: [
             // Vendor logo
-            Container(
+            SizedBox(
               height: 30,
               width: double.infinity,
               child: CachedNetworkImage(
@@ -3771,7 +3823,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             const Text(
               'Failed to load brands',

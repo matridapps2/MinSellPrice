@@ -84,7 +84,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.update,
                     color: Colors.blue,
                     size: 16,
@@ -187,7 +187,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.verified_user,
                     color: AppColors.primary,
                     size: 32,
@@ -211,7 +211,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'A Venture of PricingMix.com',
                     style: TextStyle(
                       fontSize: 12,

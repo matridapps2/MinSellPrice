@@ -1,13 +1,8 @@
-import 'dart:convert';
 import 'dart:developer';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
-import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
 import 'package:minsellprice/screens/product_list_screen/product_list.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common/sqlite_api.dart';
@@ -122,22 +117,22 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  SizedBox(height: 16),
-                  Text(
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text(
                     'Failed to load categories',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
                     brandsProvider.errorMessage,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey[600]),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => brandsProvider.retry(),
-                    child: Text('Retry'),
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
@@ -231,7 +226,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),
@@ -274,7 +269,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                       size: 64,
                                       color: Colors.grey[400],
                                     ),
-                                    SizedBox(height: 16),
+                                    const SizedBox(height: 16),
                                     Text(
                                       'No brands available',
                                       style: TextStyle(
@@ -283,7 +278,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                    SizedBox(height: 8),
+                                    const SizedBox(height: 8),
                                     Text(
                                       'Check back later for updates',
                                       style: TextStyle(

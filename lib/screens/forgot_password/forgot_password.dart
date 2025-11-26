@@ -8,7 +8,7 @@ import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
-  const ForgotPasswordPage({Key? key}) : super(key: key);
+  const ForgotPasswordPage({super.key});
 
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
@@ -16,7 +16,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController _emailController = TextEditingController();
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {
@@ -105,7 +105,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                 ],
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -114,17 +114,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     color: Colors.transparent,
                     child: Column(
                       children: [
-                        Text(
+                        const Text(
                           "Forget Password",
                           style: TextStyle(
-                            color: const Color.fromARGB(255, 51, 102, 153),
+                            color: Color.fromARGB(255, 51, 102, 153),
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 1,
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Text(
+                        const Text(
                           "Enter the email address and we’ll send reset instructions to reset your password.",
                           style: TextStyle(
                             color: Colors.grey,
@@ -195,7 +195,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
+                            const Text(
                               "Back to log in page?",
                               style: TextStyle(
                                 fontWeight: FontWeight.w500,

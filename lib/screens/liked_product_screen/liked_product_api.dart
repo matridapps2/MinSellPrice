@@ -2,17 +2,13 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
-import 'package:minsellprice/core/utils/constants/constants.dart';
 import 'package:minsellprice/model/product_list_model_new.dart';
-import 'package:minsellprice/screens/loging_page/loging_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
-import 'package:minsellprice/screens/register_page/register_page.dart';
 import 'package:minsellprice/service_new/filter_preferences_db.dart';
 import 'package:minsellprice/widgets/product_list_shimmer.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
@@ -55,7 +51,7 @@ class _LikedProductScreen extends State<LikedProductScreen> {
   bool isLoggedIn = false;
   bool _isCheckingAuth = true;
   bool _hasInitialDataLoaded = false; // Track if initial data has been loaded
-  Set<int> _unlikingProducts = {}; // Track products being unliked
+  final Set<int> _unlikingProducts = {}; // Track products being unliked
 
   List<String> filterVendor = [];
   List<VendorProduct> allProducts = [];
@@ -147,19 +143,101 @@ class _LikedProductScreen extends State<LikedProductScreen> {
     try {
       final allProductsResponse =
           await BrandsApi.getLikedProduct(emailId: emailId, context: context);
-      final Map<String, dynamic> decoded =
-          jsonDecode(allProductsResponse ?? '{}');
+
+      if (allProductsResponse == 'error' || allProductsResponse.isEmpty) {
+        log('API returned error or empty response');
+        setState(() {
+          _isLoading = false;
+          _isError = true;
+        });
+        return;
+      }
+
+      final Map<String, dynamic> decoded = jsonDecode(allProductsResponse);
 
       final List<dynamic> jsonList = decoded['brand_product'] ?? [];
-      final List<VendorProduct> fetchedProducts =
-          jsonList.map((e) => VendorProduct.fromJson(e)).toList();
+
+      log('Liked Products API Response: ${decoded.keys.toList()}');
+      log('Number of products in response: ${jsonList.length}');
+      if (jsonList.isNotEmpty) {
+        log('First product keys: ${(jsonList[0] as Map).keys.toList()}');
+        log('First product data: ${jsonList[0]}');
+      }
+
+      // Transform the API response to match VendorProduct model structure
+      final List<VendorProduct> fetchedProducts = [];
+
+      for (var e in jsonList) {
+        try {
+          final productData = Map<String, dynamic>.from(e);
+
+          // Check if lowest_vendor array exists and get price from there
+          String? vendorPrice;
+          String? vendorName;
+          String? vendorUrl;
+
+          if (productData['lowest_vendor'] != null &&
+              (productData['lowest_vendor'] as List).isNotEmpty) {
+            final lowestVendor = (productData['lowest_vendor'] as List).first;
+            vendorPrice = lowestVendor['vendorprice_price']?.toString();
+            vendorName = lowestVendor['vendor_name']?.toString();
+            vendorUrl = lowestVendor['vendor_url']?.toString();
+          }
+
+          // Transform the data to match VendorProduct.fromJson expectations
+          final transformedData = <String, dynamic>{
+            'product_id': productData['product_id'] ?? 0,
+            'brand_name': productData['brand_name'] ?? '--',
+            'product_mpn': productData['product_mpn'] ?? '--',
+            'product_name': productData['product_name'] ?? '--',
+            'product_image': productData['product_image'] ?? '',
+            'msrp': productData['msrp']?.toString() ?? '--',
+            // Map vendor_count to vendorIdCount
+            'vendorIdCount': productData['vendor_count'] ??
+                productData['vendorIdCount'] ??
+                (productData['total_vendor_count'] != null ? 1 : 0),
+            // Map total_vendor_count to total_count
+            'total_count': productData['total_vendor_count'] ??
+                productData['total_count'] ??
+                0,
+            // Get price from multiple possible sources
+            'vendorprice_price': productData['vendorprice_price']?.toString() ??
+                productData['firstVendorPrice']?.toString() ??
+                vendorPrice ??
+                '--',
+            'vendor_name':
+                productData['vendor_name']?.toString() ?? vendorName ?? '--',
+            'vendorprice_date':
+                productData['vendorprice_date']?.toString() ?? '--',
+            'vendor_url':
+                productData['vendor_url']?.toString() ?? vendorUrl ?? '--',
+            'image_name': productData['image_name']?.toString() ?? '',
+            'lowest_vendor': productData['lowest_vendor'],
+          };
+
+          log('Transformed product ${transformedData['product_id']}: vendorprice_price=${transformedData['vendorprice_price']}, vendor_name=${transformedData['vendor_name']}');
+
+          final product = VendorProduct.fromJson(transformedData);
+          fetchedProducts.add(product);
+        } catch (parseError, stackTrace) {
+          log('Error parsing product: $parseError');
+          log('Stack trace: $stackTrace');
+          log('Product data: $e');
+          // Continue with next product instead of failing completely
+        }
+      }
 
       // Get total product count from API response
-      totalProductCount = decoded['productCount'] ?? 0;
+      totalProductCount = decoded['productCount'] ??
+          (decoded['total_count'] != null
+              ? decoded['total_count'] as int
+              : null) ??
+          jsonList.length;
       totalPages = (totalProductCount / itemsPerPage).ceil();
 
       log('Total products from API: $totalProductCount');
       log('Total pages calculated: $totalPages');
+      log('Successfully parsed ${fetchedProducts.length} products');
 
       // Add fetched products to allProducts list
       allProducts.addAll(fetchedProducts);
@@ -283,7 +361,7 @@ class _LikedProductScreen extends State<LikedProductScreen> {
         SnackBar(
           content: Text(message),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -315,7 +393,8 @@ class _LikedProductScreen extends State<LikedProductScreen> {
             : _isLoading
                 ? Scaffold(
                     appBar: AppBar(),
-                    body: const ProductListLoadingShimmer(itemCount: 5,isVisible: false)
+                    body: const ProductListLoadingShimmer(
+                        itemCount: 5, isVisible: false)
                     // const Center(
                     //   child: StylishLoader(
                     //     type: LoaderType.wave,
@@ -329,7 +408,7 @@ class _LikedProductScreen extends State<LikedProductScreen> {
                     //     ),
                     //   ),
                     // )
-        )
+                    )
                 : _isError
                     ? Scaffold(
                         appBar: AppBar(),
@@ -694,7 +773,7 @@ class _LikedProductScreen extends State<LikedProductScreen> {
                                                                                       maxLines: 1,
                                                                                       overflow: TextOverflow.ellipsis,
                                                                                     ),
-                                                                                    SizedBox(height: 20),
+                                                                                    const SizedBox(height: 20),
                                                                                     Row(
                                                                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                                       children: [
@@ -721,7 +800,7 @@ class _LikedProductScreen extends State<LikedProductScreen> {
                                                                                               borderRadius: BorderRadius.circular(20),
                                                                                             ),
                                                                                             child: _unlikingProducts.contains(finalList[index].productId)
-                                                                                                ? SizedBox(
+                                                                                                ? const SizedBox(
                                                                                                     width: 20,
                                                                                                     height: 20,
                                                                                                     child: CircularProgressIndicator(
@@ -767,7 +846,7 @@ class _LikedProductScreen extends State<LikedProductScreen> {
                                           child: Center(
                                             child: Column(
                                               children: [
-                                                CircularProgressIndicator(
+                                                const CircularProgressIndicator(
                                                   valueColor:
                                                       AlwaysStoppedAnimation<
                                                               Color>(
@@ -824,7 +903,7 @@ class _LikedProductScreen extends State<LikedProductScreen> {
                                                   mainAxisSize:
                                                       MainAxisSize.min,
                                                   children: [
-                                                    Icon(
+                                                    const Icon(
                                                       Icons.pageview,
                                                       size: 18,
                                                       color: AppColors.primary,
@@ -1127,7 +1206,7 @@ class _FilterMenuState extends State<FilterMenu> {
             elevation: 2,
             leading: InkWell(
               onTap: () => Navigator.pop(context),
-              child: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+              child: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
             ),
             surfaceTintColor: Colors.white,
             toolbarHeight: .14 * w,
@@ -1142,7 +1221,7 @@ class _FilterMenuState extends State<FilterMenu> {
               ),
             ),
             automaticallyImplyLeading: false,
-            actionsPadding: EdgeInsets.only(right: 15),
+            actionsPadding: const EdgeInsets.only(right: 15),
             actions: [
               TextButton(
                 onPressed: () async {
@@ -1206,11 +1285,11 @@ class _FilterMenuState extends State<FilterMenu> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text('\$${priceRange.start.round()}',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.w600)),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
                               Text('\$${priceRange.end.round()}',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.w600)),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ],
@@ -1324,12 +1403,12 @@ class _FilterMenuState extends State<FilterMenu> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary),
+                      side: const BorderSide(color: AppColors.primary),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Cancel',
                       style: TextStyle(
                           color: AppColors.primary,

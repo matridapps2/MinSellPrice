@@ -25,7 +25,7 @@ class CategorySubcategoriesScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 2,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(

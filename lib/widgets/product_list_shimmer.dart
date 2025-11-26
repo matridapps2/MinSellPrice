@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 
 class ProductListShimmer extends StatelessWidget {
-  const ProductListShimmer({Key? key}) : super(key: key);
+  const ProductListShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +168,7 @@ class ProductListShimmer extends StatelessWidget {
 
 class ProductCardShimmer extends StatefulWidget {
   final bool isShow;
-  const ProductCardShimmer({Key? key, required this.isShow}) : super(key: key);
+  const ProductCardShimmer({super.key, required this.isShow});
 
   @override
   State<ProductCardShimmer> createState() => _ProductCardShimmerState();
@@ -352,10 +351,10 @@ class ProductListLoadingShimmer extends StatelessWidget {
   final bool isVisible;
 
   const ProductListLoadingShimmer({
-    Key? key,
+    super.key,
     this.itemCount = 8,
     required this.isVisible,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

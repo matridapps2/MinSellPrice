@@ -4,10 +4,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
@@ -15,20 +12,15 @@ import 'package:minsellprice/model/saved_product_model.dart';
 import 'package:minsellprice/reposotory_services/database/database_functions.dart';
 import 'package:minsellprice/screens/account_screen/account_screen.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
-import 'package:minsellprice/screens/categories_screen/categories_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/liked_product_screen/liked_product_api.dart';
-import 'package:minsellprice/screens/liked_product_screen/liked_product_screen.dart';
-import 'package:minsellprice/services/notification_service.dart';
 import 'package:minsellprice/widgets/category_shimmer.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../categories_menu_screen.dart';
 import 'notification_screen/notification_screen.dart';
-import 'package:minsellprice/services/work_manager_service.dart';
 import 'package:minsellprice/services/app_notification_service.dart';
 import 'package:minsellprice/core/mixins/notification_mixin.dart';
 
@@ -242,9 +234,9 @@ class _HomePageState extends State<HomePage>
                 });
                 return provider;
               },
-              child: CategoriesMenuScreen(),
+              child: const CategoriesMenuScreen(),
             ),
-            AccountScreen(),
+            const AccountScreen(),
           ];
         });
       }
@@ -479,7 +471,7 @@ class _HomePageState extends State<HomePage>
                                               child: Container(
                                                 width: 8,
                                                 height: 8,
-                                                decoration: BoxDecoration(
+                                                decoration: const BoxDecoration(
                                                   color: Colors.red,
                                                   shape: BoxShape.circle,
                                                 ),

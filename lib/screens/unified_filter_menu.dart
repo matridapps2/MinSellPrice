@@ -98,7 +98,7 @@ class _UnifiedFilterMenuState extends State<UnifiedFilterMenu> {
             elevation: 2,
             leading: InkWell(
               onTap: () => Navigator.pop(context),
-              child: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+              child: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
             ),
             surfaceTintColor: Colors.white,
             toolbarHeight: .14 * w,
@@ -113,7 +113,7 @@ class _UnifiedFilterMenuState extends State<UnifiedFilterMenu> {
               ),
             ),
             automaticallyImplyLeading: false,
-            actionsPadding: EdgeInsets.only(right: 15),
+            actionsPadding: const EdgeInsets.only(right: 15),
             actions: [
               TextButton(
                 onPressed: () async {
@@ -172,11 +172,11 @@ class _UnifiedFilterMenuState extends State<UnifiedFilterMenu> {
                             children: [
                               Text(
                                 '\$${NumberFormat('#,###').format(priceRange.start.round())}',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                               Text(
                                 '\$${NumberFormat('#,###').format(priceRange.end.round())}',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -298,12 +298,12 @@ class _UnifiedFilterMenuState extends State<UnifiedFilterMenu> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary),
+                      side: const BorderSide(color: AppColors.primary),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Cancel',
                       style: TextStyle(
                           color: AppColors.primary,

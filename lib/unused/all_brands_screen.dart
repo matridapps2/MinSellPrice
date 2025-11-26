@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:developer';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
-import 'package:minsellprice/screens/product_list_screen/brand_product_list_screen.dart';
 import 'package:minsellprice/screens/product_list_screen/product_list.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -14,11 +12,11 @@ class BrandSearchScreen extends StatefulWidget {
   final String? initialSearchQuery;
 
   const BrandSearchScreen({
-    Key? key,
+    super.key,
     required this.brands,
     required this.database,
     this.initialSearchQuery,
-  }) : super(key: key);
+  });
 
   @override
   State<BrandSearchScreen> createState() => _BrandSearchScreenState();
@@ -127,12 +125,12 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: AppColors.primary),
+                      borderSide: const BorderSide(color: AppColors.primary),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide:
-                          BorderSide(color: AppColors.primary, width: 2),
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                   ),
                 );

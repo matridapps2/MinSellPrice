@@ -242,15 +242,68 @@ class UnifiedProductListController {
 
       final products = result['products'] as List<VendorProduct>;
       final totalCount = result['totalCount'] as int;
+      // Get hasMore from API response if available, otherwise calculate it
+      final bool? apiHasMore = result['hasMore'] as bool?;
+      final int? currentPageNo = result['currentPage'] as int?;
+      final int? totalPages = result['totalPages'] as int?;
 
-      if (products.isNotEmpty) {
+      // Determine if there's more data
+      bool hasMoreData;
+      if (apiHasMore != null) {
+        // Use API's has_more field directly (most reliable)
+        hasMoreData = apiHasMore;
+        log('Using API has_more field: $hasMoreData');
+      } else if (currentPageNo != null && totalPages != null && totalPages > 0) {
+        // Fallback: check if current page is less than total pages
+        hasMoreData = currentPageNo < totalPages;
+        log('Using page comparison: currentPage=$currentPageNo, totalPages=$totalPages, hasMore=$hasMoreData');
+      } else {
+        // Last fallback: use the old calculation method
         final currentProducts = stateNotifier.value.products;
         final newProducts =
             loadMore ? [...currentProducts, ...products] : products;
+        hasMoreData = _calculateHasMoreDataFromTotalCount(newProducts.length, totalCount);
+        log('Using fallback calculation: loaded=${loadMore ? currentProducts.length + products.length : products.length}, total=$totalCount, hasMore=$hasMoreData');
+      }
 
-        // Calculate if there's more data to load based on API total count
-        final hasMoreData =
-            _calculateHasMoreDataFromTotalCount(newProducts.length, totalCount);
+      // Sync current page with API's returned page number
+      if (currentPageNo != null && currentPageNo != _currentPage) {
+        log('Page number mismatch: requested $_currentPage, API returned $currentPageNo - syncing');
+        _currentPage = currentPageNo;
+      }
+
+      // If products list is empty, there's definitely no more data
+      if (products.isEmpty) {
+        hasMoreData = false;
+        log('No products returned - setting hasMoreData to false');
+      }
+
+      // If on initial load and we got an invalid page (page_no > total_no_of_pages), reset to page 1
+      if (!loadMore && currentPageNo != null && totalPages != null && totalPages > 0 && currentPageNo > totalPages) {
+        log('Invalid page detected on initial load: page $currentPageNo > total pages $totalPages - resetting to page 1');
+        _currentPage = 1;
+        // Retry with page 1
+        await loadProducts(context, loadMore: false);
+        return;
+      }
+
+      if (products.isNotEmpty || loadMore) {
+        // If loading more and got empty products, don't update the list
+        // but still update the state to reflect no more data
+        if (products.isEmpty && loadMore) {
+          log('Load more returned empty products - stopping pagination');
+          _updateState(
+            isLoading: false,
+            isLoadingMore: false,
+            hasMoreData: false,
+            totalCount: totalCount,
+          );
+          return;
+        }
+
+        final currentProducts = stateNotifier.value.products;
+        final newProducts =
+            loadMore ? [...currentProducts, ...products] : products;
 
         // Check if filters are active
         final isFiltered = isAnyFilterActive();
@@ -871,19 +924,31 @@ class BrandApiStrategy implements ProductListApiStrategy {
         final List<VendorProduct> products =
             jsonList.map((e) => VendorProduct.fromJson(e)).toList();
         final int totalCount = decoded['productCount'] ?? 0;
+        
+        // Extract pagination fields from API response
+        final bool hasMore = decoded['has_more'] ?? false;
+        final int currentPageNo = int.tryParse(decoded['page_no']?.toString() ?? '') ?? page;
+        final int totalNoOfPages = int.tryParse(decoded['total_no_of_pages']?.toString() ?? '') ?? 0;
 
-        log('Brand API - Products: ${products.length}, Total Count: $totalCount');
+        log('Brand API - Page: $currentPageNo, Products: ${products.length}, Total Count: $totalCount, Total Pages: $totalNoOfPages, Has More: $hasMore');
+
+        // Determine if there's more data based on API response
+        // If has_more is false OR current page >= total pages, there's no more data
+        final bool hasMoreData = hasMore && (totalNoOfPages == 0 || currentPageNo < totalNoOfPages);
 
         return {
           'products': products,
           'totalCount': totalCount,
+          'hasMore': hasMoreData,
+          'currentPage': currentPageNo,
+          'totalPages': totalNoOfPages,
         };
       } catch (e) {
         log('Error parsing brand API response: $e');
-        return {'products': <VendorProduct>[], 'totalCount': 0};
+        return {'products': <VendorProduct>[], 'totalCount': 0, 'hasMore': false};
       }
     }
-    return {'products': <VendorProduct>[], 'totalCount': 0};
+    return {'products': <VendorProduct>[], 'totalCount': 0, 'hasMore': false};
   }
 
   @override

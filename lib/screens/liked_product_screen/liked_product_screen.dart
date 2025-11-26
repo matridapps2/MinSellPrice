@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
@@ -252,7 +251,7 @@ class _LikedProductState extends State<LikedProduct>
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    SizedBox(height: 20),
+                                    const SizedBox(height: 20),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
@@ -334,7 +333,7 @@ class _LikedProductState extends State<LikedProduct>
 
       // Show feedback
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Row(
             children: [
               Icon(Icons.favorite_border, color: Colors.white),
@@ -349,7 +348,7 @@ class _LikedProductState extends State<LikedProduct>
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Error updating favorite status'),
           backgroundColor: Colors.red,
         ),

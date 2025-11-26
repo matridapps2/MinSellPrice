@@ -283,7 +283,7 @@ class _AccountScreenState extends State<AccountScreen> {
     return ListTile(
       leading: Icon(icon, color: Colors.blue),
       title: Text(text),
-      trailing: Icon(Icons.chevron_right),
+      trailing: const Icon(Icons.chevron_right),
       onTap: onTap ?? () {},
       contentPadding: EdgeInsets.zero,
       dense: true,
@@ -294,7 +294,7 @@ class _AccountScreenState extends State<AccountScreen> {
     return ListTile(
       leading: Icon(icon, color: Colors.blue),
       title: Text(text),
-      trailing: Icon(Icons.chevron_right),
+      trailing: const Icon(Icons.chevron_right),
       onTap: () {
         if (text == 'My Wishlist' && _database != null) {
           Navigator.push(
@@ -314,7 +314,7 @@ class _AccountScreenState extends State<AccountScreen> {
     return ListTile(
       leading: Icon(icon, color: Colors.blue),
       title: Text(text),
-      trailing: Icon(Icons.chevron_right),
+      trailing: const Icon(Icons.chevron_right),
       onTap: onTap ?? () {},
       contentPadding: EdgeInsets.zero,
       dense: true,

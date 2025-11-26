@@ -1,10 +1,8 @@
-import 'package:auto_size_text/auto_size_text.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/utils/constants/size.dart';
 
 class NavigationDrawerPanel extends StatefulWidget {
-  const NavigationDrawerPanel({Key? key, required this.data}) : super(key: key);
+  const NavigationDrawerPanel({super.key, required this.data});
   final Map<String, dynamic> data;
 
   @override
@@ -52,7 +50,7 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
                 ),
                 indicatorColor: Colors.transparent,
                 indicatorPadding:
-                    EdgeInsets.only(bottom: 20, left: 0, right: 15),
+                    const EdgeInsets.only(bottom: 20, left: 0, right: 15),
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: Colors.black, // selected tab text color
                 unselectedLabelColor:
@@ -67,7 +65,7 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
             ),
             Container(
               height: 1,
-              color: Color(0xFFE0E0E0), // light gray divider
+              color: const Color(0xFFE0E0E0), // light gray divider
             ),
             // Tab Views
             Expanded(
@@ -76,37 +74,37 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
                   // Menu Tab
                   ListView(
                     children: [
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('GRILLS & OUTDOOR COOKING'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('BRANDS'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('SHOP BY GRILL SIZE'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('BBQ ACCESSORIES'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('OUTDOOR KITCHENS'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('COOKING'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('OUTDOOR FURNITURE'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('HEATING & MORE'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('REFRIGERATORS'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('CATEGORY'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('LAUNDRY'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       _buildExpansionTile('BIG GREEN EGG'),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                     ],
                   ),
                   // Account Tab
                   ListView(
                     children: [
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       const ListTile(
                         title: Text('Default welcome msg!',
                             style: TextStyle(
@@ -117,7 +115,7 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
                         contentPadding: EdgeInsets.symmetric(horizontal: 17),
                         dense: true,
                       ),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       const ListTile(
                         title: Text('Sign In',
                             style: TextStyle(
@@ -128,7 +126,7 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
                         contentPadding: EdgeInsets.symmetric(horizontal: 17),
                         dense: true,
                       ),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                       const ListTile(
                         title: Text('Create an Account',
                             style: TextStyle(
@@ -139,7 +137,7 @@ class _NavigationDrawerPanelState extends State<NavigationDrawerPanel> {
                         contentPadding: EdgeInsets.symmetric(horizontal: 17),
                         dense: true,
                       ),
-                      Container(height: 1, color: Color(0xFFE0E0E0)),
+                      Container(height: 1, color: const Color(0xFFE0E0E0)),
                     ],
                   ),
                 ],

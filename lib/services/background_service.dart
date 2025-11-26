@@ -1,15 +1,10 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:ui';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_background_service_android/flutter_background_service_android.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:http/http.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> initializeService() async {
@@ -96,7 +91,7 @@ void onStart(ServiceInstance service) async {
 }
 
 class BackgroundServiceClass extends StatefulWidget {
-  const BackgroundServiceClass({Key? key}) : super(key: key);
+  const BackgroundServiceClass({super.key});
 
   @override
   State<BackgroundServiceClass> createState() => _BackgroundServiceClassState();

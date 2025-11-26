@@ -2,7 +2,6 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/reposotory_services/database/database_functions.dart';
-import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
@@ -294,7 +293,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                                 const SizedBox(height: 8),
                                 // MSP initials
-                                Text(
+                                const Text(
                                   'MSP',
                                   style: TextStyle(
                                     fontSize: 16,
@@ -412,7 +411,7 @@ class _SplashScreenState extends State<SplashScreen>
                                             ),
                                             child: Text(
                                               taglines[currentTaglineIndex],
-                                              style: TextStyle(
+                                              style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w500,
                                                 color: Colors.white,

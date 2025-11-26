@@ -462,7 +462,7 @@ class AppNotificationService {
       log('   📊 Savings Percentage: ${savingsPercentage.toStringAsFixed(1)}%');
 
       // ✅ Check for minimum price difference (prevents $0.00 savings notifications)
-      final minimumPriceDifference = 0.01; // $0.01 minimum difference
+      const minimumPriceDifference = 0.01; // $0.01 minimum difference
       if (priceDifference < minimumPriceDifference) {
         log('❌ Validation failed: Price difference too small');
         log('   Price Difference: \$${priceDifference.toStringAsFixed(2)}');

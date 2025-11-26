@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   final VoidCallback onLoginSuccess;
-  const LoginPage({Key? key, required this.onLoginSuccess}) : super(key: key);
+  const LoginPage({super.key, required this.onLoginSuccess});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -87,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
 
       CommonToasts.centeredMobile(msg: 'Login successfully', context: context);
       Navigator.of(context).pushReplacement(MaterialPageRoute(
-        builder: (context) => HomePage(),
+        builder: (context) => const HomePage(),
       ));
     } on FirebaseAuthException catch (e) {
       log('Exception in log in ${e.code}');
@@ -217,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute(
                                       builder: (context) =>
-                                          ForgotPasswordPage()),
+                                          const ForgotPasswordPage()),
                                 );
                               },
                               child: const Text('Forgot Password?',
@@ -308,7 +308,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: GestureDetector(
                   onTap: () {
                     Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) => RegisterPage()),
+                      MaterialPageRoute(builder: (context) => const RegisterPage()),
                     );
                   },
                   child: const Padding(

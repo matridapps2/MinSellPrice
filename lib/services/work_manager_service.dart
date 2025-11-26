@@ -29,7 +29,7 @@ class WorkManagerService {
       await Workmanager().registerPeriodicTask(
         'backgroundTask', // taskId
         'backgroundTask', // taskName (must match dispatcher)
-        frequency: Duration(minutes: 15),
+        frequency: const Duration(minutes: 15),
         constraints: Constraints(
           networkType: NetworkType.connected,
           requiresBatteryNotLow: false,
@@ -418,7 +418,7 @@ class WorkManagerService {
   static Timer? _fallbackTimer;
   static void _startTimerBasedFallback() {
     _fallbackTimer?.cancel();
-    _fallbackTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+    _fallbackTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       log('⏰ Timer-based fallback executing...');
       _fetchProductData();
     });
@@ -537,7 +537,7 @@ void callbackDispatcher() {
           await prefs.setString(
               'workmanager_rescheduled_time', DateTime.now().toIso8601String());
           await prefs.setString('workmanager_next_execution_time',
-              DateTime.now().add(Duration(minutes: 15)).toIso8601String());
+              DateTime.now().add(const Duration(minutes: 15)).toIso8601String());
           log('💾 Background task reschedule time stored in SharedPreferences');
         } catch (e) {
           log('❌ Failed to reschedule background task: $e');

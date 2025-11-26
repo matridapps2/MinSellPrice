@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:minsellprice/core/utils/constants/colors.dart';
 import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
@@ -8,7 +7,7 @@ import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
   @override
   _RegisterPageState createState() => _RegisterPageState();
 }
@@ -180,7 +179,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       onPressed: () async {
                         await registerInFirebase();
                         Navigator.of(context).pushReplacement(MaterialPageRoute(
-                            builder: (context) => HomePage()));
+                            builder: (context) => const HomePage()));
                       },
                       child: const Text('Register',
                           style: TextStyle(

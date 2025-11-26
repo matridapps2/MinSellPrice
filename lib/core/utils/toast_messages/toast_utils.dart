@@ -6,8 +6,8 @@ import 'cherry_toast/cherry_toast.dart';
 class ToastUtils {
   ToastUtils._();
 
-  static Color toastBackGroundColor = Color.fromARGB(255, 76, 76, 76);
-  static Color appColor = Color.fromARGB(255, 237, 63, 69);
+  static Color toastBackGroundColor = const Color.fromARGB(255, 76, 76, 76);
+  static Color appColor = const Color.fromARGB(255, 237, 63, 69);
 
   static mobileToast1500MSCenter({
     required String message,

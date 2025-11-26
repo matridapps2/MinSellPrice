@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:intl/intl.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:minsellprice/widgets/product_list_shimmer.dart';
@@ -179,7 +178,7 @@ class _ProductList extends State<ProductList> {
 
           if (!isValid) {
             if (!isCurrentBrand) {
-              log('Filtering out product from different brand: ${brandName} (current: ${widget.brandName})');
+              log('Filtering out product from different brand: $brandName (current: ${widget.brandName})');
             } else {
               log('Filtering out invalid product: ID=$productId, MPN=$productMpn, Name=$productName, Brand=$brandName');
             }
@@ -526,7 +525,7 @@ class _ProductList extends State<ProductList> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             const Text(
               'Failed to load products',
@@ -648,7 +647,7 @@ class _ProductList extends State<ProductList> {
                           color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.search_rounded,
                           color: AppColors.primary,
                           size: 20,
@@ -696,7 +695,7 @@ class _ProductList extends State<ProductList> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderSide:
-                            BorderSide(color: AppColors.primary, width: 2),
+                            const BorderSide(color: AppColors.primary, width: 2),
                         borderRadius: BorderRadius.circular(25),
                       ),
                       disabledBorder: OutlineInputBorder(
@@ -1631,9 +1630,9 @@ class _ProductList extends State<ProductList> {
             child: RichText(
               text: TextSpan(
                 children: [
-                  TextSpan(
+                  const TextSpan(
                     text: 'Model: ',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Segoe UI',
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -1963,7 +1962,7 @@ class _ProductList extends State<ProductList> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Vendor logo - using same pattern as product details screen
-            Container(
+            SizedBox(
               height: h * 0.03,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -2946,7 +2945,7 @@ class _ProductList extends State<ProductList> {
       log('Total products after all filters: ${tempProductList.length}');
       log('Vendor filter active: ${filterVendor.isNotEmpty}');
       log('Price range: \$${currentPriceRange.start.toStringAsFixed(2)} - \$${currentPriceRange.end.toStringAsFixed(2)}');
-      log('Sorting: ${priceSorting != null ? "Active (${priceSorting})" : "None"}');
+      log('Sorting: ${priceSorting != null ? "Active ($priceSorting)" : "None"}');
       log('In stock only: $currentInStockOnly');
       log('On sale only: $currentOnSaleOnly');
       log('=== END FILTER RESULTS ===');

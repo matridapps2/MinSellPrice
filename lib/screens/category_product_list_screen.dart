@@ -33,7 +33,7 @@ class _CategoryProductListState extends State<CategoryProductList> {
   int _currentPage = 1;
   bool _hasMoreData = true;
   bool _isLoadingMore = false;
-  int _totalProductCount = 0;
+  final int _totalProductCount = 0;
   DateTime? _lastLoadMoreTime;
 
   @override
@@ -259,7 +259,7 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
   bool _onSaleOnly = false;
 
   // Vendor data
-  Map<String, int> _vendorProductCounts = {};
+  final Map<String, int> _vendorProductCounts = {};
 
   @override
   void initState() {
@@ -693,7 +693,7 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.search_rounded,
                     color: AppColors.primary,
                     size: 20,
@@ -740,7 +740,7 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
                   borderRadius: BorderRadius.circular(25),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   borderRadius: BorderRadius.circular(25),
                 ),
                 disabledBorder: OutlineInputBorder(
@@ -1535,9 +1535,9 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
             child: RichText(
               text: TextSpan(
                 children: [
-                  TextSpan(
+                  const TextSpan(
                     text: 'Model: ',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Segoe UI',
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -1853,7 +1853,7 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Vendor logo - using same pattern as product details screen
-            Container(
+            SizedBox(
               height: h * 0.03,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -1965,7 +1965,7 @@ class _CategoryFilterMenuState extends State<CategoryFilterMenu> {
             elevation: 2,
             leading: InkWell(
               onTap: () => Navigator.pop(context),
-              child: Icon(Icons.arrow_back_ios, color: AppColors.primary),
+              child: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
             ),
             surfaceTintColor: Colors.white,
             toolbarHeight: .14 * w,
@@ -2166,12 +2166,12 @@ class _CategoryFilterMenuState extends State<CategoryFilterMenu> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary),
+                      side: const BorderSide(color: AppColors.primary),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Cancel',
                       style: TextStyle(
                           color: AppColors.primary,

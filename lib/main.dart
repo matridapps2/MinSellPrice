@@ -159,7 +159,7 @@ void main() async {
             ),
             cardColor: Colors.white,
             appBarTheme:
-                AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
+                const AppBarTheme(iconTheme: IconThemeData(color: primaryColor)),
             cardTheme: CardTheme(
               color: Colors.white,
               margin: const EdgeInsets.all(2),
