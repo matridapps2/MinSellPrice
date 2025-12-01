@@ -3149,15 +3149,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.red[50],
+                                    color: Colors.green[50],
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                        color: Colors.red[200]!, width: 1),
+                                    border: Border.all(color: Colors.green[200]!, width: 1),
                                   ),
                                   child: Text(
                                     '${discountPercent.toStringAsFixed(0)}% OFF',
-                                    style: const TextStyle(
-                                      color: Colors.green,
+                                    style: TextStyle(
+                                      color: Colors.green[700],
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                     ),

@@ -29,6 +29,7 @@ class DashboardScreenWidget extends StatefulWidget {
 
 class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     with KeepAliveParentDataMixin {
+
   List<Map<String, dynamic>> databaseData = [];
 
   final _brandSearchController = TextEditingController();
@@ -50,10 +51,11 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   String? _verifiedProductsError;
 
   // Visibility states for expanded sections
-  bool _showAllKitchenDeals = false;
   bool _showAllOutdoorDeals = false;
   bool _showAllFaucetDeals = false;
   bool _showAllSinkDeals = false;
+  bool _showAllRestaurantDeals = false;
+  bool _showAllFurnitureDeals = false;
 
   // Home slider products deals from API
   List<Map<String, dynamic>> _homeSliderDeals = [];
@@ -64,6 +66,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   List<Map<String, dynamic>> _homeBoxDeals = [];
   bool _isHomeBoxDealsLoading = true;
   String? _homeBoxDealsError;
+
+  // Price section spacing constant - used in all product card methods
+  static const double _priceSectionSpacing = 12.0;
 
   @override
   void initState() {
@@ -76,8 +81,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   }
 
   void _initCall() async {
-    await _fetchTopCategories();
-    await _fetchVerifiedProducts();
+    // await _fetchTopCategories();
+    //await _fetchVerifiedProducts();
     await _fetchHomeSliderProductsDeals();
     await _fetchHomeBoxProductsDeals();
   }
@@ -671,15 +676,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    const SizedBox(height: 15),
-
-                    // Top Categories Slider
-                    /*   _buildCategoriesSlider(),
-                    const SizedBox(height: 25),*/
-
-                    // Kitchen Appliances Horizontal Section
-                    _buildKitchenAppliancesSection(),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 20),
 
                     // Outdoor Kitchen Deals Horizontal Section
                     _buildOutdoorKitchenSection(),
@@ -693,21 +690,21 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     _buildKitchenSinksSaleSection(),
                     const SizedBox(height: 25),
 
+                    // Restaurant Equipment Deals Section
+                    _buildRestaurantEquipmentDealsSection(),
+                    const SizedBox(height: 25),
+
+                    // Furniture Deals Section
+                    _buildFurnitureDealsSection(),
+                    const SizedBox(height: 25),
+
                     // Home Box Products Deals Section
                     _buildHomeBoxProductsDealsSection(),
                     const SizedBox(height: 25),
 
                     // Home Repairs Section
-                    _buildHomeRepairsSection(),
-                    const SizedBox(height: 25),
-
-                    // Top Deals Across the Web Section
-                    /* _buildVerifiedProductsSection(),
+             /*       _buildHomeRepairsSection(),
                     const SizedBox(height: 25),*/
-
-                    // Promotional Slider
-                    // _buildPromotionalSlider(),
-                    // const SizedBox(height: 25),
 
                     Consumer<BrandsProvider>(
                       builder: (context, brandsProvider, child) {
@@ -1292,136 +1289,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     }
   }
 
-  /// Kitchen Appliances Horizontal Section Widget
-  Widget _buildKitchenAppliancesSection() {
-    // Get products from API - try multiple search patterns
-    List<Map<String, dynamic>> products = [];
-    String? categoryTitle;
-
-    // Try different search patterns
-    final searchPatterns = [
-      'Ranges, Cooktops, Microwaves',
-      'Ranges',
-      'Cooktops',
-      'Microwaves',
-    ];
-
-    for (var pattern in searchPatterns) {
-      products = _getProductsForCategory(pattern);
-      categoryTitle = _getCategoryTitle(pattern);
-      if (products.isNotEmpty && categoryTitle != null) {
-        break;
-      }
-    }
-
-    // Show shimmer when loading
-    if (_isHomeSliderDealsLoading) {
-      return const ProductSectionShimmer();
-    }
-
-    // Hide section when no products or when no category title
-    if (products.isEmpty || categoryTitle == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Enhanced Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        categoryTitle,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          letterSpacing: 1.0,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black12,
-                              offset: Offset(0, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showAllKitchenDeals = !_showAllKitchenDeals;
-                  });
-                },
-                child: Text(
-                  _showAllKitchenDeals ? 'Show Less' : 'View All Deals',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Products - Show horizontal scroll or grid based on visibility
-          if (!_showAllKitchenDeals)
-            SizedBox(
-              height: 380,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return _buildApiProductCard(product);
-                },
-              ),
-            )
-          else
-            // Expanded Grid View
-            _buildExpandedApiProductGrid(products),
-        ],
-      ),
-    );
-  }
-
   /// Build API Product Card (for products from API)
   Widget _buildApiProductCard(Map<String, dynamic> product) {
     final brand = product['brand_name']?.toString() ?? '';
@@ -1534,8 +1401,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             Padding(
               padding: const EdgeInsets.only(left: 12, top: 8, bottom: 4),
               child: SizedBox(
-                height: 40,
-                width: 80,
+                height: 60,
+                width: 90,
                 child: BrandImageWidget(
                   brand: {
                     'brand_name': brand,
@@ -1548,6 +1415,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ),
             ),
 
+            const SizedBox(height: 10),
             // Product Details
             Expanded(
               child: Padding(
@@ -1573,13 +1441,14 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       style: const TextStyle(
                         color: Colors.black87,
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Segoe UI',
+                        // fontWeight: Segoe UI,
                         height: 1.3,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: _priceSectionSpacing),
 
                     // Price Section
                     Row(
@@ -1615,14 +1484,15 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.red[200]!, width: 1),
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(4),
+                          border:
+                              Border.all(color: Colors.green[200]!, width: 1),
                         ),
                         child: Text(
                           '${discountPercent.toStringAsFixed(0)}% OFF',
-                          style: const TextStyle(
-                            color: Colors.green,
+                          style: TextStyle(
+                            color: Colors.green[700],
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1645,11 +1515,12 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
-        childAspectRatio: 0.70,
+        childAspectRatio: 0.47,
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {
@@ -1692,9 +1563,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           children: [
             // Product Image
             Container(
-              height: 90,
+              height: 120,
               width: double.infinity,
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
                 borderRadius: const BorderRadius.only(
@@ -1767,10 +1638,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
             // Brand Logo
             Padding(
-              padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+              padding: const EdgeInsets.only(left: 8, top: 4, bottom: 2),
               child: SizedBox(
-                height: 30,
-                width: 70,
+                height: 60,
+                width: 90,
                 child: BrandImageWidget(
                   brand: {
                     'brand_name': brand,
@@ -1786,10 +1657,10 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             // Product Details
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
                   children: [
                     // Model Number
                     if (model.isNotEmpty)
@@ -1813,7 +1684,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                           name,
                           style: const TextStyle(
                             color: Colors.black87,
-                            fontSize: 13,
+                            fontSize: 15,
                             fontWeight: FontWeight.w500,
                             height: 1.2,
                           ),
@@ -1822,7 +1693,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: _priceSectionSpacing),
 
                     // Price Section - Fixed at bottom
                     Row(
@@ -1844,7 +1715,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                         ),
                         // Original Price (strikethrough) - on the right, only show if discounted
                         if (discountPercent > 0 && msrp > 0)
-                          Flexible(
+                          Padding(
+                            padding: const EdgeInsets.only(right: 5.0),
                             child: Text(
                               '\$${_formatPrice(msrp.toString())}',
                               style: TextStyle(
@@ -1862,19 +1734,20 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     ),
                     // Discount Badge - only show if there's a discount
                     if (discountPercent > 0) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                            horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
-                          color: Colors.red[50],
+                          color: Colors.green[50],
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.red[200]!, width: 1),
+                          border:
+                              Border.all(color: Colors.green[200]!, width: 1),
                         ),
                         child: Text(
                           '${discountPercent.toStringAsFixed(0)}% OFF',
-                          style: const TextStyle(
-                            color: Colors.green,
+                          style: TextStyle(
+                            color: Colors.green[700],
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
@@ -2199,7 +2072,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllOutdoorDeals)
             SizedBox(
-              height: 400,
+              height: 410,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2313,7 +2186,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllFaucetDeals)
             SizedBox(
-              height: 380,
+              height: 410,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2427,7 +2300,240 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           // Products - Show horizontal scroll or grid based on visibility
           if (!_showAllSinkDeals)
             SizedBox(
-              height: 380,
+              height: 410,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return _buildApiProductCard(product);
+                },
+              ),
+            )
+          else
+            // Expanded Grid View
+            _buildExpandedApiProductGrid(products),
+        ],
+      ),
+    );
+  }
+
+  /// Restaurant Equipment Deals Section Widget
+  Widget _buildRestaurantEquipmentDealsSection() {
+    // Get products from API - search for kitchen sinks related categories
+    final products = _getProductsForCategory('Restaurant Equipment');
+    final categoryTitle = _getCategoryTitle('Restaurant Equipment');
+
+    // Show shimmer when loading
+    if (_isHomeSliderDealsLoading) {
+      return const ProductSectionShimmer();
+    }
+
+    // Hide section when no products or when no category title
+    if (products.isEmpty || categoryTitle == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Enhanced Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Container(
+                       // color: Colors.red,
+                      width: 220,
+                      height: 50,
+                      child: Text(
+                        categoryTitle,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black12,
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
+                        ),
+                        maxLines: 2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAllRestaurantDeals = !_showAllRestaurantDeals;
+                  });
+                },
+                child: Text(
+                  _showAllRestaurantDeals ? 'Show Less' : 'View All Deals',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Products - Show horizontal scroll or grid based on visibility
+          if (!_showAllRestaurantDeals)
+            SizedBox(
+              height: 410,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return _buildApiProductCard(product);
+                },
+              ),
+            )
+          else
+            // Expanded Grid View
+            _buildExpandedApiProductGrid(products),
+        ],
+      ),
+    );
+  }
+
+  /// Furniture Deals Section Widget
+  Widget _buildFurnitureDealsSection() {
+    // Get products from API - search for kitchen sinks related categories
+    final products = _getProductsForCategory('Furniture');
+    final categoryTitle = _getCategoryTitle('Furniture');
+
+    // Show shimmer when loading
+    if (_isHomeSliderDealsLoading) {
+      return const ProductSectionShimmer();
+    }
+
+    // Hide section when no products or when no category title
+    if (products.isEmpty || categoryTitle == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Enhanced Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        categoryTitle,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black12,
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAllFurnitureDeals = !_showAllFurnitureDeals;
+                  });
+                },
+                child: Text(
+                  _showAllFurnitureDeals ? 'Show Less' : 'View All Deals',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Products - Show horizontal scroll or grid based on visibility
+          if (!_showAllFurnitureDeals)
+            SizedBox(
+              height: 410,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2572,17 +2678,18 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ),
             ],
           ),
-          // const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
           // Products Grid (2x2)
           GridView.builder(
+            padding: const EdgeInsets.only(bottom: 20),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              childAspectRatio: 0.62,
+              childAspectRatio: 0.56,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -2625,7 +2732,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   /// Build Home Box Product Card (2x2 grid style)
   Widget _buildHomeBoxProductCard(Map<String, dynamic> product) {
-    // Debug: Log all product keys to see available fields
     log('HomeBox Product Keys: ${product.keys.toList()}');
     log('HomeBox Product Data: $product');
 
@@ -2826,61 +2932,60 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
             ),
 
             // Product Details
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Model Number
-                    if (model.isNotEmpty) ...[
-                      Text(
-                        model,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Model Number
+                  if (model.isNotEmpty) ...[
+                    Text(
+                      model,
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 2),
-                    ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                  ],
 
-                    // Product Name
-                    Flexible(
-                      child: Text(
-                        name,
+                  // Product Name
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      height: 1.15,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: _priceSectionSpacing),
+
+                  // Price Section
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Current Price (discounted) - on the left
+                      Text(
+                        '\$${_formatPrice(firstVendorPrice.toString())}',
                         style: const TextStyle(
                           color: Colors.black87,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          height: 1.15,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Price Section
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Current Price (discounted) - on the left
-                        Text(
-                          '\$${_formatPrice(firstVendorPrice.toString())}',
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Original Price (strikethrough) - on the right, only show if discounted
-                        if (discountPercent > 0 && msrp > 0)
-                          Text(
+                      // Original Price (strikethrough) - on the right, only show if discounted
+                      if (discountPercent > 0 && msrp > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 5),
+                          child: Text(
                             '\$${_formatPrice(msrp.toString())}',
                             style: TextStyle(
                               color: Colors.grey[600],
@@ -2889,32 +2994,31 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                               decorationColor: Colors.grey[600],
                             ),
                           ),
-                      ],
-                    ),
-                    // Discount Badge - only show if there's a discount
-                    if (discountPercent > 0) ...[
-                      const SizedBox(height: 3),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(4),
-                          border:
-                              Border.all(color: Colors.green[200]!, width: 1),
                         ),
-                        child: Text(
-                          '${discountPercent.toStringAsFixed(0)}% OFF',
-                          style: TextStyle(
-                            color: Colors.green[700],
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    ],
+                  ),
+                  // Discount Badge - only show if there's a discount
+                  if (discountPercent > 0) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.green[200]!, width: 1),
+                      ),
+                      child: Text(
+                        '${discountPercent.toStringAsFixed(0)}% OFF',
+                        style: TextStyle(
+                          color: Colors.green[700],
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ],
@@ -2990,25 +3094,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           ),
         ],
       ),
-    );
-  }
-
-  /// Build Expanded Product Grid View
-  Widget _buildExpandedProductGrid(List<Map<String, dynamic>> products) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 0.70,
-      ),
-      itemCount: products.length,
-      itemBuilder: (context, index) {
-        final product = products[index];
-        return _buildStaticProductCardGrid(product);
-      },
     );
   }
 
@@ -3402,191 +3487,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   //     ),
   //   );
   // }
-
-  /// Build Individual Verified Product Card
-  Widget _buildVerifiedProductCard(VendorProduct product) {
-    // Get vendor data from product's lowest_vendor array
-    final vendors = _getVendorsFromVerifiedProduct(product);
-
-    return Container(
-      width: 180,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Product Image
-          GestureDetector(
-            onTap: () => _navigateToProductDetails(product),
-            child: Container(
-              height: 140,
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: _getProperImageUrl(product.productImage),
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey[50],
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
-                        ),
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[50],
-                    child: Icon(
-                      Icons.image_not_supported_outlined,
-                      size: 40,
-                      color: Colors.grey[400],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Brand Logo using existing BrandImageWidget - Clickable
-          GestureDetector(
-            onTap: () => _navigateToProductDetails(product),
-            child: Container(
-              height: 55,
-              width: 55,
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BrandImageWidget(
-                  brand: {
-                    'brand_name': product.brandName,
-                    'brand_key': product.brandName,
-                    // Let BrandImageWidget handle the processing
-                    'brand_id': product.productId,
-                    // Using productId as fallback
-                  },
-                  width: 55,
-                  height: 55,
-                ),
-              ),
-            ),
-          ),
-
-          // Product Details
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Product Name
-                  GestureDetector(
-                    onTap: () => _navigateToProductDetails(product),
-                    child: Text(
-                      product.productName.isEmpty
-                          ? 'Product Name Not Available'
-                          : product.productName,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Model Number
-                  if (product.productMpn.isNotEmpty)
-                    Row(
-                      children: [
-                        Text(
-                          'Model: ',
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          //textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          product.productMpn.toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          //textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-
-                  const Spacer(),
-
-                  // Vendor Prices (side by side)
-                  if (vendors.isNotEmpty)
-                    Row(
-                      children: [
-                        // First vendor
-                        Expanded(
-                          child: _buildVendorPriceWidget(vendors.first),
-                        ),
-                        // Second vendor if available
-                        if (vendors.length > 1) ...[
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildVendorPriceWidget(vendors[1]),
-                          ),
-                        ],
-                      ],
-                    ),
-                  const SizedBox(height: 6),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Navigate to product details
-  void _navigateToProductDetails(VendorProduct product) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProductDetailsScreen(
-          productId: product.productId,
-          brandName: product.brandName,
-          productMPN: product.productMpn,
-          productImage: product.productImage,
-          productPrice: double.tryParse(product.vendorpricePrice) ?? 0.0,
-        ),
-      ),
-    );
-  }
 
   /// Open vendor website
   void _openVendorWebsite(Map<String, dynamic> vendor) async {
