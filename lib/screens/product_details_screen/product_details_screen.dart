@@ -30,6 +30,7 @@ import 'package:minsellprice/services/app_notification_service.dart';
 import 'package:minsellprice/widgets/stylish_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../widgets/brand_image.dart';
 import '../loging_page/loging_page.dart';
 import 'all_alert_product.dart';
 

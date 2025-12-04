@@ -131,8 +131,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       hintStyle: const TextStyle(fontFamily: 'Segoe UI'),
                       suffixIcon: IconButton(
                         icon: Icon(showPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility),
+                            ? Icons.visibility
+                            : Icons.visibility_off
+                        ),
                         onPressed: () {
                           setState(() {
                             showPassword = !showPassword;

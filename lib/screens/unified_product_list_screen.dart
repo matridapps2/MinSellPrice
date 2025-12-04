@@ -14,6 +14,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:minsellprice/screens/unified_product_list_controller.dart';
 import 'package:minsellprice/screens/unified_filter_menu.dart';
 
+import '../widgets/brand_image.dart';
 import '../widgets/stylish_loader.dart';
 
 /// Enum to define different types of product list sources
@@ -328,8 +329,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                         borderRadius: BorderRadius.circular(25),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: AppColors.primary, width: 2),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
                         borderRadius: BorderRadius.circular(25),
                       ),
                       disabledBorder: OutlineInputBorder(
@@ -531,13 +532,21 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
               child: Column(
                 children: [
-                  Wrap(
-                    runSpacing: 10,
-                    children: List.generate(
-                      productsToDisplay.length,
-                      (index) => _buildProductCard(productsToDisplay[index]),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 1,
+                      childAspectRatio: 0.4,
                     ),
+                    itemCount: productsToDisplay.length,
+                    itemBuilder: (context, index) =>
+                        _buildProductCard(productsToDisplay[index]),
                   ),
+
                   // Loading indicator inside the scrollable area
                   _buildLoadingMoreIndicator(),
                   // No more products indicator
@@ -1049,6 +1058,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: Container(
         width: w * .45,
+        height: 470,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -1133,22 +1143,22 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
             children: [
               // Brand logo using BrandImageWidget
               Container(
-                width: 80,
-                height: 80,
+                width: 90,
+                height: 90,
                 margin: const EdgeInsets.only(right: 8),
                 child: BrandImageWidget(brand: {
                   'brand_name': product.brandName,
                   'brand_key':
                       product.brandName.toLowerCase().replaceAll(' ', '-'),
                   'brand_id': product.productId, // Using productId as fallback
-                }, width: 80, height: 80),
+                }, width: 90, height: 90),
               ),
             ],
           ),
           const SizedBox(height: 8),
           // Product name
-          SizedBox(
-            height: w * .25,
+          Container(
+            height: w * .1,
             child: GestureDetector(
               onTap: () {
                 ProductListNavigation.navigateToProductDetails(
@@ -1166,7 +1176,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                 (product.productName.isEmpty)
                     ? 'Product Name Not Available'
                     : product.productName,
-                maxLines: 4,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.grey[800],
@@ -1178,114 +1188,107 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 0),
+
+          const SizedBox(height: 8),
           // Model number
-          SizedBox(
-            height: h * .05, // Reduced height to make room for vendor info
-            child: RichText(
-              text: TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Model: ',
-                    style: TextStyle(
-                      fontFamily: 'Segoe UI',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  TextSpan(
-                    text: (product.productMpn).toUpperCase(),
-                    style: const TextStyle(
-                      fontFamily: 'Segoe UI',
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
+          Row(
+            children: [
+              const Text(
+                'Model: ',
+                style: TextStyle(
+                  fontFamily: 'Segoe UI',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-            ),
+              Expanded(
+                child: Text(
+                  (product.productMpn).toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: 'Segoe UI',
+                    fontSize: 16,
+                    fontWeight: FontWeight.normal,
+                    color: Colors.black,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10), // Reduced spacing
           _buildPriceSection(product),
+          // Price Section - Fixed at bottom
         ],
       ),
     );
   }
 
   Widget _buildPriceSection(VendorProduct product) {
-    // Use actual vendor data from the product's lowest_vendor array
-    final vendors = _getVendorsFromProduct(product);
+    // Parse prices and discount - same logic as dashboard_screen.dart
+    final msrp = double.tryParse(product.msrp.toString()) ?? 0.0;
+    // Use firstVendorPrice (same as dashboard_screen.dart) with fallback handling
+    final firstVendorPriceStr = product.firstVendorPrice.toString();
+    final firstVendorPrice = double.tryParse(
+            firstVendorPriceStr == '--' || firstVendorPriceStr.isEmpty
+                ? '0'
+                : firstVendorPriceStr) ??
+        0.0;
+    final discountPercent = product.discountPercent;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Show up to 2 vendors side by side
-          if (vendors.isNotEmpty)
-            Row(
-              children: [
-                // First vendor
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 1.0),
-                    child: _buildVendorRow(vendors.first),
-                  ),
-                ),
-                // Second vendor if available
-                if (vendors.length > 1)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 1.0),
-                      child: _buildVendorRow(vendors[1]),
-                    ),
-                  ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Price Section - same design as dashboard_screen.dart
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Current Price (discounted) - on the left
+            Text(
+              '\$${_formatPrice(firstVendorPrice.toString())}',
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-
-          // Show "Show Prices (Total Vendor Count)"
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    // Handle show prices action
-                    log('Show prices tapped for ${vendors.length} vendors');
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProductDetailsScreen(
-                          productId: product.productId,
-                          brandName: widget.displayName,
-                          productMPN: product.productMpn,
-                          productImage: product.productImage,
-                          productPrice: product.vendorpricePrice,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'Show Prices (${product.vendorIdCount})',
-                    style: const TextStyle(
-                      color: Colors.blue,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            // Original Price (strikethrough) - on the right, only show if discounted
+            if (discountPercent > 0 && msrp > 0)
+              Text(
+                '\$${_formatPrice(msrp.toString())}',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 18,
+                  decoration: TextDecoration.lineThrough,
+                  decorationColor: Colors.grey[600],
                 ),
-              ],
+              ),
+          ],
+        ),
+        // Discount Badge - only show if there's a discount
+        if (discountPercent > 0) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.green[200]!, width: 1),
+            ),
+            child: Text(
+              '${discountPercent.toStringAsFixed(0)}% OFF',
+              style: TextStyle(
+                color: Colors.green[700],
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
-      ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 
@@ -1628,7 +1631,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
     }
   }
 
-  /// Format price with comma separators for thousands
+  /// Format price with 2 decimal places (no comma separators)
   String _formatPrice(String price) {
     try {
       final double? priceValue = _parsePrice(price);
@@ -1637,9 +1640,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         return price; // Return original if parsing fails
       }
 
-      // Format with commas for thousands
-      final formatter = NumberFormat('#,###.##');
-      return formatter.format(priceValue);
+      // Format with 2 decimal places, no comma separators (e.g., 14.00, 4544.00)
+      return priceValue.toStringAsFixed(2);
     } catch (e) {
       log('Error formatting price: $e');
       return price; // Return original if formatting fails
@@ -1685,7 +1687,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
               elevation: 2,
               leading: InkWell(
                 onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
+                child:
+                    const Icon(Icons.arrow_back_ios, color: AppColors.primary),
               ),
               surfaceTintColor: Colors.white,
               toolbarHeight: .14 * w,

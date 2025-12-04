@@ -253,7 +253,9 @@ class UnifiedProductListController {
         // Use API's has_more field directly (most reliable)
         hasMoreData = apiHasMore;
         log('Using API has_more field: $hasMoreData');
-      } else if (currentPageNo != null && totalPages != null && totalPages > 0) {
+      } else if (currentPageNo != null &&
+          totalPages != null &&
+          totalPages > 0) {
         // Fallback: check if current page is less than total pages
         hasMoreData = currentPageNo < totalPages;
         log('Using page comparison: currentPage=$currentPageNo, totalPages=$totalPages, hasMore=$hasMoreData');
@@ -262,7 +264,8 @@ class UnifiedProductListController {
         final currentProducts = stateNotifier.value.products;
         final newProducts =
             loadMore ? [...currentProducts, ...products] : products;
-        hasMoreData = _calculateHasMoreDataFromTotalCount(newProducts.length, totalCount);
+        hasMoreData =
+            _calculateHasMoreDataFromTotalCount(newProducts.length, totalCount);
         log('Using fallback calculation: loaded=${loadMore ? currentProducts.length + products.length : products.length}, total=$totalCount, hasMore=$hasMoreData');
       }
 
@@ -279,7 +282,11 @@ class UnifiedProductListController {
       }
 
       // If on initial load and we got an invalid page (page_no > total_no_of_pages), reset to page 1
-      if (!loadMore && currentPageNo != null && totalPages != null && totalPages > 0 && currentPageNo > totalPages) {
+      if (!loadMore &&
+          currentPageNo != null &&
+          totalPages != null &&
+          totalPages > 0 &&
+          currentPageNo > totalPages) {
         log('Invalid page detected on initial load: page $currentPageNo > total pages $totalPages - resetting to page 1');
         _currentPage = 1;
         // Retry with page 1
@@ -924,17 +931,20 @@ class BrandApiStrategy implements ProductListApiStrategy {
         final List<VendorProduct> products =
             jsonList.map((e) => VendorProduct.fromJson(e)).toList();
         final int totalCount = decoded['productCount'] ?? 0;
-        
+
         // Extract pagination fields from API response
         final bool hasMore = decoded['has_more'] ?? false;
-        final int currentPageNo = int.tryParse(decoded['page_no']?.toString() ?? '') ?? page;
-        final int totalNoOfPages = int.tryParse(decoded['total_no_of_pages']?.toString() ?? '') ?? 0;
+        final int currentPageNo =
+            int.tryParse(decoded['page_no']?.toString() ?? '') ?? page;
+        final int totalNoOfPages =
+            int.tryParse(decoded['total_no_of_pages']?.toString() ?? '') ?? 0;
 
         log('Brand API - Page: $currentPageNo, Products: ${products.length}, Total Count: $totalCount, Total Pages: $totalNoOfPages, Has More: $hasMore');
 
         // Determine if there's more data based on API response
         // If has_more is false OR current page >= total pages, there's no more data
-        final bool hasMoreData = hasMore && (totalNoOfPages == 0 || currentPageNo < totalNoOfPages);
+        final bool hasMoreData =
+            hasMore && (totalNoOfPages == 0 || currentPageNo < totalNoOfPages);
 
         return {
           'products': products,
@@ -945,7 +955,11 @@ class BrandApiStrategy implements ProductListApiStrategy {
         };
       } catch (e) {
         log('Error parsing brand API response: $e');
-        return {'products': <VendorProduct>[], 'totalCount': 0, 'hasMore': false};
+        return {
+          'products': <VendorProduct>[],
+          'totalCount': 0,
+          'hasMore': false
+        };
       }
     }
     return {'products': <VendorProduct>[], 'totalCount': 0, 'hasMore': false};
@@ -1136,6 +1150,9 @@ class CategoryApiStrategy implements ProductListApiStrategy {
         imageName: categoryProduct["image_name"]?.toString() ?? '',
         totalCount: categoryProduct["total_count"] ?? 0,
         lowestVendor: lowestVendorList,
+        firstVendorPrice:
+            categoryProduct["firstVendorPrice"]?.toString() ?? '--',
+        discountPercent: 0.00,
       );
     } catch (e) {
       log('Error converting category product: $e');
@@ -1144,10 +1161,10 @@ class CategoryApiStrategy implements ProductListApiStrategy {
       // Return a safe fallback product
       return VendorProduct(
         productId: 0,
-        vendorpricePrice: '0.00',
+        vendorpricePrice: '--',
         brandName: 'Unknown',
         vendorName: 'Unknown',
-        msrp: '0.00',
+        msrp: '--',
         vendorIdCount: 0,
         vendorpriceDate: '',
         vendorUrl: '',
@@ -1157,6 +1174,8 @@ class CategoryApiStrategy implements ProductListApiStrategy {
         imageName: '',
         totalCount: 0,
         lowestVendor: null,
+        firstVendorPrice: '--',
+        discountPercent: 0.00,
       );
     }
   }

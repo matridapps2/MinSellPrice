@@ -914,9 +914,8 @@ class BrandsApi {
   static Future<List<Map<String, dynamic>>> fetchHomeSliderProductsDeals(
       [BuildContext? context]) async {
     try {
-      log('Fetching home slider products deals from API');
       const url = 'https://www.minsellprice.com/api/home-slider-products-deals';
-
+      log('Fetching home slider products deals from API $url');
       final response = await retry(
         () async => await http.get(
           Uri.parse(url),
@@ -941,11 +940,38 @@ class BrandsApi {
 
       if (response.statusCode == 200) {
         log('Home Slider Products Deals API Response received');
-        final List<dynamic> jsonData = json.decode(response.body);
+        final dynamic decodedData = json.decode(response.body);
 
-        // Convert to List<Map<String, dynamic>>
-        final List<Map<String, dynamic>> deals =
-            jsonData.map((item) => item as Map<String, dynamic>).toList();
+        List<dynamic> jsonData;
+
+        // Handle both List and Map response structures
+        if (decodedData is List) {
+          jsonData = decodedData;
+        } else if (decodedData is Map<String, dynamic>) {
+          // Try common keys that might contain the list
+          if (decodedData.containsKey('data')) {
+            jsonData = decodedData['data'] as List<dynamic>? ?? [];
+          } else if (decodedData.containsKey('results')) {
+            jsonData = decodedData['results'] as List<dynamic>? ?? [];
+          } else if (decodedData.containsKey('items')) {
+            jsonData = decodedData['items'] as List<dynamic>? ?? [];
+          } else if (decodedData.containsKey('deals')) {
+            jsonData = decodedData['deals'] as List<dynamic>? ?? [];
+          } else {
+            // If it's a Map but doesn't have expected keys, log and return empty
+            log('Unexpected response structure: ${decodedData.keys}');
+            return [];
+          }
+        } else {
+          log('Unexpected response type: ${decodedData.runtimeType}');
+          return [];
+        }
+
+        // Convert to List<Map<String, dynamic>> with proper error handling
+        final List<Map<String, dynamic>> deals = jsonData
+            .where((item) => item is Map<String, dynamic>)
+            .map((item) => item as Map<String, dynamic>)
+            .toList();
 
         log('Home Slider Products Deals count: ${deals.length}');
         return deals;

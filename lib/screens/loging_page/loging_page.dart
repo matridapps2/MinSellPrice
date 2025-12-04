@@ -124,15 +124,166 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        surfaceTintColor: Colors.white,
-        toolbarHeight: .18 * w,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 80,
         centerTitle: true,
-        title: Image.asset(
-          // 'assets/logo.png',
-          'assets/minsellprice_logo.png',
-          height: .2 * w,
+        automaticallyImplyLeading: false,
+        title: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white,
+                Colors.grey[50]!,
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header Section
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 20),
+                child: Row(
+                  children: [
+                    // App Logo
+                    Expanded(
+                      child: Row(
+                        children: [
+                          // Container(
+                          //   padding: const EdgeInsets.all(8),
+                          //   decoration: BoxDecoration(
+                          //     color: AppColors.primary,
+                          //     borderRadius: BorderRadius.circular(12),
+                          //     boxShadow: [
+                          //       BoxShadow(
+                          //         color:
+                          //         AppColors.primary.withOpacity(0.3),
+                          //         spreadRadius: 1,
+                          //         blurRadius: 4,
+                          //         offset: const Offset(0, 2),
+                          //       ),
+                          //     ],
+                          //   ),
+                          //   child: Icon(
+                          //     Icons.shopping_bag,
+                          //     color: Colors.white,
+                          //     size: w * .06,
+                          //   ),
+                          // ),
+                            Icon(
+                              Icons.arrow_back_ios,
+                              color: Colors.black,
+                              size: w * .06,
+                            ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'MinSellPrice',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: w * .05,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Segoe UI',
+                                  ),
+                                ),
+                                Text(
+                                  'Find the best prices',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: w * .025,
+                                    fontWeight: FontWeight.w500,
+                                    fontFamily: 'Segoe UI',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Action Buttons
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              // onTap: () async {
+                              //   Navigator.push(
+                              //     context,
+                              //     MaterialPageRoute(
+                              //       builder: (context) =>
+                              //       const NotificationScreen(),
+                              //     ),
+                              //   );
+                              //   await _checkNotificationStatus();
+                              // },
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                child: Stack(
+                                  children: [
+                                    Icon(
+                                      Icons.notifications_outlined,
+                                      color: Colors.grey[700],
+                                      size: w * .07,
+                                    ),
+                                  //  if (hasUnreadNotifications)
+                                      Positioned(
+                                        right: 0,
+                                        top: 0,
+                                        child: Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        shape: Border.all(color: AppColors.primary, width: 0),
       ),
       resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
@@ -241,8 +392,9 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(_showPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility),
+                                  ? Icons.visibility
+                                  : Icons.visibility_off
+                              ),
                               onPressed: () {
                                 setState(() {
                                   _showPassword = !_showPassword;

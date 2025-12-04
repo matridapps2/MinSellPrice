@@ -63,6 +63,7 @@ class VendorProduct {
   //**************************************************************************//
   final int productId;
   final String vendorpricePrice;
+  final String firstVendorPrice;
   final String brandName;
   final String vendorName;
   final String msrp;
@@ -74,6 +75,7 @@ class VendorProduct {
   final String productImage;
   final String imageName;
   final int totalCount;
+  final double discountPercent;
   final List<LowestVendor>? lowestVendor;
 
   VendorProduct({
@@ -82,6 +84,7 @@ class VendorProduct {
     //************************************************************************//
     required this.productId,
     required this.vendorpricePrice,
+    required this.firstVendorPrice,
     required this.vendorName,
     required this.msrp,
     required this.vendorIdCount,
@@ -93,37 +96,55 @@ class VendorProduct {
     required this.imageName,
     required this.totalCount,
     required this.brandName,
+    required this.discountPercent,
     this.lowestVendor,
   });
 
-  factory VendorProduct.fromJson(Map<String, dynamic> json) => VendorProduct(
-        //************************************************************************//
-        ///         FIELDS FROM BRAND PRODUCTS API RESPONSE                    ///
-        //************************************************************************//
+  factory VendorProduct.fromJson(Map<String, dynamic> json) {
+    // Helper function to safely parse discount percent
+    double parseDiscountPercent(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) {
+        if (value.isEmpty || value == '--' || value == 'null') return 0.0;
+        return double.tryParse(value.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+      }
+      return 0.0;
+    }
 
-        productId: json["product_id"] ?? 0,
-        vendorpricePrice: json["vendorprice_price"] ?? '--',
-        vendorName: json["vendor_name"] ?? '--',
-        vendorIdCount: json["vendorIdCount"] ?? 0,
-        vendorpriceDate: json["vendorprice_date"] ?? '--',
-        msrp: json['msrp'] ?? '--',
-        brandName: json["brand_name"] ?? '--',
-        vendorUrl: json["vendor_url"] ?? '--',
-        productMpn: json["product_mpn"] ?? '--',
-        productName: json["product_name"] ?? '--',
-        productImage: json["product_image"] ?? '',
-        imageName: json["image_name"] ?? '',
-        totalCount: json["total_count"] ?? 0,
-        lowestVendor: json["lowest_vendor"] != null
-            ? List<LowestVendor>.from(
-                json["lowest_vendor"].map((x) => LowestVendor.fromJson(x)))
-            : null,
-      );
+    return VendorProduct(
+      //************************************************************************//
+      ///         FIELDS FROM BRAND PRODUCTS API RESPONSE                    ///
+      //************************************************************************//
+
+      productId: json["product_id"] ?? 0,
+      vendorpricePrice: json["vendorprice_price"]?.toString() ?? '--',
+      firstVendorPrice: json["firstVendorPrice"]?.toString() ?? '--',
+      vendorName: json["vendor_name"]?.toString() ?? '--',
+      vendorIdCount: json["vendorIdCount"] ?? 0,
+      vendorpriceDate: json["vendorprice_date"]?.toString() ?? '--',
+      msrp: json['msrp']?.toString() ?? '--',
+      brandName: json["brand_name"]?.toString() ?? '--',
+      vendorUrl: json["vendor_url"]?.toString() ?? '--',
+      productMpn: json["product_mpn"]?.toString() ?? '--',
+      productName: json["product_name"]?.toString() ?? '--',
+      productImage: json["product_image"]?.toString() ?? '',
+      imageName: json["image_name"]?.toString() ?? '',
+      totalCount: json["total_count"] ?? 0,
+      discountPercent: parseDiscountPercent(json["discount_percent"]),
+      lowestVendor: json["lowest_vendor"] != null
+          ? List<LowestVendor>.from(
+              json["lowest_vendor"].map((x) => LowestVendor.fromJson(x)))
+          : null,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
       "product_id": productId,
       "vendorprice_price": vendorpricePrice,
+      "firstVendorPrice": firstVendorPrice,
       "vendor_name": vendorName,
       "vendorIdCount": vendorIdCount,
       "vendorprice_date": vendorpriceDate,
@@ -135,6 +156,7 @@ class VendorProduct {
       "product_image": productImage,
       "image_name": imageName,
       "total_count": totalCount,
+      "discount_percent": discountPercent,
       "lowest_vendor": lowestVendor != null
           ? List<dynamic>.from(lowestVendor!.map((x) => x.toJson()))
           : null,

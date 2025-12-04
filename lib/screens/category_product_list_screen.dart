@@ -11,6 +11,8 @@ import 'package:minsellprice/core/apis/apis_calls.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 
+import '../widgets/brand_image.dart';
+
 /// Wrapper for ProductList that handles category-specific API calls with pagination
 class CategoryProductList extends StatefulWidget {
   final String categoryPath;

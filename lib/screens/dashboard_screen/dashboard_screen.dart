@@ -20,6 +20,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../widgets/brand_image.dart';
+
 class DashboardScreenWidget extends StatefulWidget {
   const DashboardScreenWidget({super.key});
 
@@ -29,7 +31,6 @@ class DashboardScreenWidget extends StatefulWidget {
 
 class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     with KeepAliveParentDataMixin {
-
   List<Map<String, dynamic>> databaseData = [];
 
   final _brandSearchController = TextEditingController();
@@ -73,109 +74,20 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   @override
   void initState() {
     super.initState();
+    // Unfocus search fields after widget tree is built
+    // Execute callback after current frame is rendered
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _brandSearchFocusNode.unfocus();
       _productSearchFocusNode.unfocus();
     });
+    // Initialize API calls
     _initCall();
   }
 
+  // Initialize all API calls
   void _initCall() async {
-    // await _fetchTopCategories();
-    //await _fetchVerifiedProducts();
     await _fetchHomeSliderProductsDeals();
     await _fetchHomeBoxProductsDeals();
-  }
-
-  /// Fetch top categories from API
-  Future<void> _fetchTopCategories() async {
-    try {
-      setState(() {
-        _isCategoriesLoading = true;
-        _categoriesError = null;
-      });
-
-      final categories = await BrandsApi.fetchTopCategories(context);
-
-      if (mounted) {
-        setState(() {
-          _topCategories = categories;
-          _isCategoriesLoading = false;
-        });
-        log('Top categories loaded: ${_topCategories.length}');
-      }
-    } catch (e) {
-      log('Error fetching top categories: $e');
-      if (mounted) {
-        setState(() {
-          _isCategoriesLoading = false;
-          _categoriesError = 'Failed to load categories';
-        });
-      }
-    }
-  }
-
-  /// Fetch verified products from API
-  Future<void> _fetchVerifiedProducts() async {
-    try {
-      setState(() {
-        _isVerifiedProductsLoading = true;
-        _verifiedProductsError = null;
-      });
-
-      final verifiedProductsData =
-          await BrandsApi.fetchVerifiedProducts(context);
-
-      if (mounted) {
-        // Convert to VendorProduct objects
-        final List<VendorProduct> products =
-            verifiedProductsData.map((productData) {
-          // Convert lowest_vendor array
-          List<LowestVendor>? lowestVendors;
-          if (productData['lowest_vendor'] != null) {
-            lowestVendors = (productData['lowest_vendor'] as List)
-                .map((vendor) => LowestVendor.fromJson(vendor))
-                .toList();
-          }
-
-          return VendorProduct(
-            productId: productData['product_id'] ?? 0,
-            vendorpricePrice:
-                productData['vendorprice_price']?.toString() ?? '0.00',
-            brandName: productData['brand_name']?.toString() ?? '',
-            vendorName: productData['vendor_name']?.toString() ?? '',
-            msrp: productData['msrp']?.toString() ?? '0.00',
-            vendorIdCount: 1,
-            // Default since API doesn't provide this
-            vendorpriceDate: '',
-            // API doesn't provide main vendor date
-            vendorUrl: productData['vendor_url']?.toString() ?? '',
-            productMpn: productData['product_mpn']?.toString() ?? '',
-            productName: productData['product_name']?.toString() ?? '',
-            productImage: productData['product_image']?.toString() ?? '',
-            imageName: '',
-            // API doesn't provide this
-            totalCount: 0,
-            // API doesn't provide this
-            lowestVendor: lowestVendors,
-          );
-        }).toList();
-
-        setState(() {
-          _verifiedProducts = products;
-          _isVerifiedProductsLoading = false;
-        });
-        log('Verified products loaded: ${_verifiedProducts.length}');
-      }
-    } catch (e) {
-      log('Error fetching verified products: $e');
-      if (mounted) {
-        setState(() {
-          _isVerifiedProductsLoading = false;
-          _verifiedProductsError = 'Failed to load verified products';
-        });
-      }
-    }
   }
 
   /// Fetch home slider products deals from API
@@ -417,6 +329,69 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     return null;
   }
 
+  /// Check if Outdoor Kitchen section has data
+  bool _hasOutdoorKitchenData() {
+    if (_isHomeSliderDealsLoading) return false;
+    final products = _getProductsForCategory('Outdoor Kitchen');
+    final categoryTitle = _getCategoryTitle('Outdoor Kitchen');
+    return products.isNotEmpty && categoryTitle != null;
+  }
+
+  /// Check if Kitchen Faucet section has data
+  bool _hasKitchenFaucetData() {
+    if (_isHomeSliderDealsLoading) return false;
+    final products = _getProductsForCategory('Kitchen Faucet');
+    final categoryTitle = _getCategoryTitle('Kitchen Faucet');
+    return products.isNotEmpty && categoryTitle != null;
+  }
+
+  /// Check if Kitchen Sinks section has data
+  bool _hasKitchenSinksData() {
+    if (_isHomeSliderDealsLoading) return false;
+    final products = _getProductsForCategory('Kitchen Sinks');
+    final categoryTitle = _getCategoryTitle('Kitchen Sinks');
+    return products.isNotEmpty && categoryTitle != null;
+  }
+
+  /// Check if Restaurant Equipment section has data
+  bool _hasRestaurantEquipmentData() {
+    if (_isHomeSliderDealsLoading) return false;
+    final products = _getProductsForCategory('Restaurant Equipment');
+    final categoryTitle = _getCategoryTitle('Restaurant Equipment');
+    return products.isNotEmpty && categoryTitle != null;
+  }
+
+  /// Check if Furniture section has data
+  bool _hasFurnitureData() {
+    if (_isHomeSliderDealsLoading) return false;
+    final products = _getProductsForCategory('Furniture');
+    final categoryTitle = _getCategoryTitle('Furniture');
+    return products.isNotEmpty && categoryTitle != null;
+  }
+
+  /// Check if Home Box Products section has data
+  bool _hasHomeBoxProductsData() {
+    if (_isHomeBoxDealsLoading) return false;
+    return _homeBoxDeals.isNotEmpty;
+  }
+
+  /// Check if all APIs are loaded
+  bool _areAllApisLoaded(BrandsProvider brandsProvider) {
+    // Home slider deals API check
+    if (_isHomeSliderDealsLoading) return false;
+
+    // Home box deals API check
+    if (_isHomeBoxDealsLoading) return false;
+
+    // Brands API check (loading or initial state)
+    if (brandsProvider.state == BrandsState.loading ||
+        brandsProvider.state == BrandsState.initial) {
+      return false;
+    }
+
+    return true; // All APIs loaded
+  }
+
   /// Navigate to product details from product data
   void _navigateToProductDetailsFromData(Map<String, dynamic> product) {
     final productId = product['product_id'] ?? 0;
@@ -451,842 +426,278 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color.fromARGB(255, 245, 245, 245),
-      width: w,
-      child: Column(
-        children: [
-          /// TEXT FIELD CONTROLLER
-          Container(
-            padding: const EdgeInsets.only(top: 1, bottom: 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, Colors.grey[50]!],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Enhanced Search Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextFormField(
-                      controller: _productSearchController,
-                      focusNode: _productSearchFocusNode,
-                      textInputAction: TextInputAction.search,
-                      cursorColor: AppColors.primary,
-                      onTap: () {
-                        _productSearchFocusNode.unfocus();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProductSearchScreen(),
-                          ),
-                        );
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search products...',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: w * .035,
-                        ),
-                        prefixIcon: Container(
-                          margin: const EdgeInsets.all(8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.search,
-                            color: AppColors.primary,
-                            size: w * .06,
-                          ),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    // Listen to BrandsProvider for state changes
+    return Consumer<BrandsProvider>(
+      builder: (context, brandsProvider, child) {
+        // Show shimmer while APIs are loading
+        if (!_areAllApisLoaded(brandsProvider)) {
+          return const DashboardFullShimmer();
+        }
 
-          // WorkManager Status Widget
-          // const WorkManagerStatusWidget(),
-
-          Container(
-            padding: const EdgeInsets.only(top: 1, bottom: 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, Colors.grey[50]!],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Enhanced Search Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextFormField(
-                      controller: _brandSearchController,
-                      focusNode: _brandSearchFocusNode,
-                      textInputAction: TextInputAction.search,
-                      cursorColor: AppColors.primary,
-                      onTap: () {
-                        _brandSearchFocusNode.unfocus();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const BrandSearchScreen(),
-                          ),
-                        );
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search brands...',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: w * .035,
-                        ),
-                        prefixIcon: Container(
-                          margin: const EdgeInsets.all(8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.search,
-                            color: AppColors.primary,
-                            size: w * .06,
-                          ),
-                        ),
-                        // suffixIcon: Container(
-                        //   margin: const EdgeInsets.all(8),
-                        //   child: Icon(
-                        //     Icons.mic,
-                        //     color: Colors.grey[600],
-                        //     size: w * .06,
-                        //   ),
-                        // ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          /// ALL BRANDS
-          Expanded(
-            child: Scrollbar(
-              controller: _scrollController,
-              thickness: 4,
-              thumbVisibility: true,
-              trackVisibility: true,
-              interactive: true,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    const SizedBox(height: 20),
-
-                    // Outdoor Kitchen Deals Horizontal Section
-                    _buildOutdoorKitchenSection(),
-                    const SizedBox(height: 25),
-
-                    // Kitchen Faucet Deals Section
-                    _buildKitchenFaucetDealsSection(),
-                    const SizedBox(height: 25),
-
-                    // Kitchen Sinks Sale Section
-                    _buildKitchenSinksSaleSection(),
-                    const SizedBox(height: 25),
-
-                    // Restaurant Equipment Deals Section
-                    _buildRestaurantEquipmentDealsSection(),
-                    const SizedBox(height: 25),
-
-                    // Furniture Deals Section
-                    _buildFurnitureDealsSection(),
-                    const SizedBox(height: 25),
-
-                    // Home Box Products Deals Section
-                    _buildHomeBoxProductsDealsSection(),
-                    const SizedBox(height: 25),
-
-                    // Home Repairs Section
-             /*       _buildHomeRepairsSection(),
-                    const SizedBox(height: 25),*/
-
-                    Consumer<BrandsProvider>(
-                      builder: (context, brandsProvider, child) {
-                        return _buildBrandsSections(brandsProvider);
-                      },
-                    ),
-                    const SizedBox(height: 45),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Top Categories Slider Widget
-  Widget _buildCategoriesSlider() {
-    if (_isCategoriesLoading) {
-      return const CategoryShimmer();
-    }
-
-    if (_categoriesError != null || _topCategories.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Enhanced Section Header
-          Row(
+        // Show actual dashboard content when all APIs loaded
+        return Container(
+          color: const Color.fromARGB(255, 245, 245, 245),
+          width: w,
+          child: Column(
             children: [
+              /// TEXT FIELD CONTROLLER
               Container(
-                width: 5,
-                height: 28,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.7),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 14),
-              const Text(
-                'Shop by Category',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                  letterSpacing: 1.0,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black12,
-                      offset: Offset(0, 1),
-                      blurRadius: 2,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Enhanced Slider Container with modern styling
-          Container(
-            height: 220,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  spreadRadius: 0,
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  spreadRadius: 0,
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Swiper(
-                itemCount: _topCategories.length,
-                autoplay: true,
-                autoplayDelay: 4000,
-                duration: 600,
-                viewportFraction: 0.92,
-                scale: 0.90,
-                pagination: SwiperPagination(
-                  alignment: Alignment.bottomCenter,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  builder: DotSwiperPaginationBuilder(
-                    color: Colors.white.withOpacity(0.4),
-                    activeColor: AppColors.primary,
-                    size: 10,
-                    activeSize: 12,
-                    space: 8,
-                  ),
-                ),
-                itemBuilder: (context, index) {
-                  final category = _topCategories[index];
-                  return _buildCategorySlideItem(category);
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build Individual Category Slide Item
-  Widget _buildCategorySlideItem(Map<String, dynamic> category) {
-    final categoryName = category['category_name'] ?? 'Category';
-    final categoryUrl = category['category_url'] ?? '';
-    final categoryImage = category['category_image'] ?? '';
-
-    return GestureDetector(
-      onTap: () => _handleCategoryTap(categoryName, categoryUrl),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              spreadRadius: 0,
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 0,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Background Image with better fit
-              Container(
+                padding: const EdgeInsets.only(top: 1, bottom: 20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.grey[100]!,
-                      Colors.grey[200]!,
-                    ],
+                    colors: [Colors.white, Colors.grey[50]!],
                   ),
-                ),
-                child: categoryImage.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: categoryImage,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[100]!,
-                                Colors.grey[200]!,
-                              ],
-                            ),
-                          ),
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
-                              ),
-                              strokeWidth: 3,
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.primary.withOpacity(0.1),
-                                AppColors.primary.withOpacity(0.05),
-                              ],
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.category_outlined,
-                                  size: 56,
-                                  color: AppColors.primary.withOpacity(0.7),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                child: Text(
-                                  categoryName,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.primary.withOpacity(0.1),
-                              AppColors.primary.withOpacity(0.05),
-                            ],
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.category_outlined,
-                                size: 56,
-                                color: AppColors.primary.withOpacity(0.7),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(
-                                categoryName,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
-
-              // Enhanced Gradient Overlay for better text visibility
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.75),
-                      Colors.black.withOpacity(0.85),
-                    ],
-                    stops: const [0.0, 0.4, 0.7, 0.9, 1.0],
-                  ),
-                ),
-              ),
-
-              // Decorative Top Accent
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withOpacity(0.8),
-                        AppColors.primary.withOpacity(0.0),
-                      ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
+                  ],
                 ),
-              ),
-
-              // Category Content at Bottom
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.8),
-                      ],
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Category Name with enhanced styling
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              categoryName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black87,
-                                    offset: Offset(0, 2),
-                                    blurRadius: 8,
-                                  ),
-                                  Shadow(
-                                    color: Colors.black54,
-                                    offset: Offset(0, 1),
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Explore Button Style Text
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                child: Column(
+                  children: [
+                    // Enhanced Search Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.4),
+                              color: Colors.grey.withOpacity(0.1),
+                              spreadRadius: 1,
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Explore Now',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
+                        child: TextFormField(
+                          controller: _productSearchController,
+                          focusNode: _productSearchFocusNode,
+                          textInputAction: TextInputAction.search,
+                          cursorColor: AppColors.primary,
+                          onTap: () {
+                            _productSearchFocusNode.unfocus();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ProductSearchScreen(),
+                              ),
+                            );
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Search products...',
+                            hintStyle: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: w * .035,
+                            ),
+                            prefixIcon: Container(
+                              margin: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.search,
+                                color: AppColors.primary,
+                                size: w * .06,
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              color: Colors.white,
-                              size: 16,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.only(top: 1, bottom: 20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.white, Colors.grey[50]!],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Enhanced Search Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
+                        child: TextFormField(
+                          controller: _brandSearchController,
+                          focusNode: _brandSearchFocusNode,
+                          textInputAction: TextInputAction.search,
+                          cursorColor: AppColors.primary,
+                          onTap: () {
+                            _brandSearchFocusNode.unfocus();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BrandSearchScreen(),
+                              ),
+                            );
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Search brands...',
+                            hintStyle: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: w * .035,
+                            ),
+                            prefixIcon: Container(
+                              margin: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.search,
+                                color: AppColors.primary,
+                                size: w * .06,
+                              ),
+                            ),
+                            // suffixIcon: Container(
+                            //   margin: const EdgeInsets.all(8),
+                            //   child: Icon(
+                            //     Icons.mic,
+                            //     color: Colors.grey[600],
+                            //     size: w * .06,
+                            //   ),
+                            // ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
 
-              // Shimmer effect overlay (optional)
-              Positioned.fill(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: () => _handleCategoryTap(categoryName, categoryUrl),
-                    splashColor: Colors.white.withOpacity(0.2),
-                    highlightColor: Colors.white.withOpacity(0.1),
-                    child: Container(),
+              /// ALL BRANDS AND PRODUCT SLIDER
+              Expanded(
+                child: Scrollbar(
+                  controller: _scrollController,
+                  thickness: 4,
+                  thumbVisibility: true,
+                  trackVisibility: true,
+                  interactive: true,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        const SizedBox(height: 20),
+
+                        // Outdoor Kitchen Deals Horizontal Section
+                        _buildOutdoorKitchenSection(),
+                        if (_hasOutdoorKitchenData())
+                          const SizedBox(height: 25),
+
+                        // Kitchen Faucet Deals Section
+                        _buildKitchenFaucetDealsSection(),
+                        if (_hasKitchenFaucetData()) const SizedBox(height: 25),
+
+                        // Kitchen Sinks Sale Section
+                        _buildKitchenSinksSaleSection(),
+                        if (_hasKitchenSinksData()) const SizedBox(height: 25),
+
+                        // Restaurant Equipment Deals Section
+                        _buildRestaurantEquipmentDealsSection(),
+                        if (_hasRestaurantEquipmentData())
+                          const SizedBox(height: 25),
+
+                        // Furniture Deals Section
+                        _buildFurnitureDealsSection(),
+                        if (_hasFurnitureData()) const SizedBox(height: 25),
+
+                        // Home Box Products Deals Section
+                        _buildHomeBoxProductsDealsSection(),
+                        if (_hasHomeBoxProductsData())
+                          const SizedBox(height: 25),
+
+                        _buildBrandsSections(brandsProvider),
+                        const SizedBox(height: 45),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
-  }
-
-  /// Handle category tap navigation
-  Future<void> _handleCategoryTap(
-      String categoryName, String categoryUrl) async {
-    log('Category tapped: $categoryName');
-    if (categoryUrl.isEmpty) return;
-
-    // Remove leading slash if present
-    String cleanUrl =
-        categoryUrl.startsWith('/') ? categoryUrl.substring(1) : categoryUrl;
-
-    // Remove 'category/' prefix if present to avoid duplication
-    if (cleanUrl.startsWith('category/')) {
-      cleanUrl = cleanUrl.substring(9); // Remove 'category/'
-    }
-
-    // Extract only the last segment of the path
-    final pathSegments = cleanUrl.split('/');
-    cleanUrl = pathSegments.last;
-
-    log('Original path from API: $categoryUrl');
-    log('Clean category path: $cleanUrl');
-
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => PopScope(
-        canPop: false,
-        child: Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    // Small delay to ensure dialog is shown
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    try {
-      // Try to fetch subcategories
-      final subcategories = await BrandsApi.fetchCategorySubcategories(
-        cleanUrl,
-        context,
-      );
-
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-        log('✅ Loading dialog closed');
-      }
-
-      // Small delay before navigation
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      if (subcategories.isNotEmpty) {
-        // Navigate to subcategories screen
-        log('✅ Found ${subcategories.length} subcategories, navigating to subcategories screen');
-        if (context.mounted) {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategorySubcategoriesScreen(
-                categoryName: categoryName,
-                categoryPath: cleanUrl,
-                subcategories: subcategories,
-              ),
-            ),
-          );
-        }
-      } else {
-        // No subcategories found - show message, don't navigate
-        log('⚠️ No subcategories found for category: $categoryName');
-        log('Category path: $cleanUrl');
-        log('❌ NOT navigating to products - subcategories should exist');
-
-        // Show error message to user
-        if (context.mounted) {
-          CommonToasts.centeredMobile(
-            msg: 'No subcategories available for $categoryName',
-            context: context,
-          );
-        }
-      }
-    } catch (e) {
-      log('❌ Error loading subcategories: $e');
-      // Close loading dialog on error
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-        log('✅ Loading dialog closed (error case)');
-
-        // Small delay before showing error
-        await Future.delayed(const Duration(milliseconds: 100));
-
-        // Show error message to user
-        if (context.mounted) {
-          CommonToasts.centeredMobile(
-            msg: 'Failed to load $categoryName',
-            context: context,
-          );
-        }
-        log('❌ Error displayed to user, NOT navigating to products');
-      }
-    }
   }
 
   /// Build API Product Card (for products from API)
@@ -1764,219 +1175,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-  /// Build Static Product Card
-  Widget _buildStaticProductCard(Map<String, dynamic> product) {
-    final brand = product['brand'] ?? '';
-    final model = product['model'] ?? '';
-    final name = product['name'] ?? '';
-    final image = product['image'] ?? '';
-    final originalPrice = product['originalPrice'] ?? 0.0;
-    final discountedPrice = product['discountedPrice'] ?? 0.0;
-    final discountPercent = product['discountPercent'] ?? 0;
-
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Product Image
-          Container(
-            height: 180,
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: image.isNotEmpty && image.contains('no_image')
-                  ? Container(
-                      color: Colors.grey[100],
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 48,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'No image available',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : CachedNetworkImage(
-                      imageUrl: image,
-                      fit: BoxFit.contain,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey[50],
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primary,
-                            ),
-                            strokeWidth: 2,
-                          ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[100],
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'No image available',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-
-          // Brand Logo
-          Padding(
-            padding: const EdgeInsets.only(left: 12, top: 8, bottom: 4),
-            child: SizedBox(
-              height: 40,
-              width: 80,
-              child: BrandImageWidget(
-                brand: {
-                  'brand_name': brand,
-                  'brand_key': brand,
-                  'brand_id': 0,
-                },
-                width: 80,
-                height: 40,
-              ),
-            ),
-          ),
-
-          // Product Details
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Model Number
-                  Text(
-                    model,
-                    style: TextStyle(
-                      color: Colors.grey[700],
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-
-                  // Product Name
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Price Section
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // Original Price (strikethrough) - only show if discounted
-                      if (discountPercent > 0) ...[
-                        Text(
-                          '\$${_formatPrice(originalPrice.toString())}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 15,
-                            decoration: TextDecoration.lineThrough,
-                            decorationColor: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      // Current Price
-                      Text(
-                        '\$${_formatPrice(discountedPrice.toString())}',
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Discount Badge - only show if there's a discount
-                  if (discountPercent > 0) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.red[200]!, width: 1),
-                      ),
-                      child: Text(
-                        '$discountPercent% OFF',
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Outdoor Kitchen Deals Horizontal Section Widget
   Widget _buildOutdoorKitchenSection() {
     // Get products from API - search for outdoor kitchen related categories
@@ -2370,8 +1568,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       ),
                     ),
                     const SizedBox(width: 14),
-                    Container(
-                       // color: Colors.red,
+                    SizedBox(
+                      // color: Colors.red,
                       width: 220,
                       height: 50,
                       child: Text(
@@ -2409,7 +1607,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     color: AppColors.primary,
                     decoration: TextDecoration.underline,
                   ),
-
                 ),
               ),
             ],
@@ -3108,8 +2305,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     final discountPercent = product['discountPercent'] ?? 0;
 
     return Container(
-      //  height: 1000,
-      //     margin: const EdgeInsets.symmetric(horizontal: 0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -3570,7 +2765,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     return trimmedUrl;
   }
 
-  /// Format price with comma separators
+  /// Format price with 2 decimal places (no comma separators)
   String _formatPrice(String price) {
     try {
       final double? priceValue =
@@ -3580,8 +2775,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         return price;
       }
 
-      final formatter = NumberFormat('#,###.##');
-      return formatter.format(priceValue);
+      // Format with 2 decimal places, no comma separators (e.g., 14.00, 4544.00)
+      return priceValue.toStringAsFixed(2);
     } catch (e) {
       return price;
     }
@@ -4008,268 +3203,4 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
   bool get keptAlive => true;
 }
 
-class BrandImageWidget extends StatefulWidget {
-  final Map<String, dynamic> brand;
-  final double? width;
-  final double? height;
 
-  const BrandImageWidget({
-    super.key,
-    required this.brand,
-    this.width,
-    this.height,
-  });
-
-  @override
-  State<BrandImageWidget> createState() => _BrandImageWidgetState();
-}
-
-class _BrandImageWidgetState extends State<BrandImageWidget> {
-  late String _imageUrl1;
-  late String _imageUrl2;
-  late String _currentUrl;
-  int _attempt = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _initCall();
-  }
-
-  void _initCall() async {
-    await _initializeImageUrls();
-  }
-
-  Future<void> _initializeImageUrls() async {
-    log('Get Image From Site');
-    log('width: ${widget.width}');
-    log('height: ${widget.height}');
-    try {
-      String brandName = widget.brand['brand_name']?.toString() ?? '';
-      String brandKey = widget.brand['brand_key']?.toString() ?? '';
-      int brandId = widget.brand['brand_id'] ?? 0;
-
-      // Clean and process brand names more thoroughly
-      String processedBrandName = brandName
-          .trim()
-          .replaceAll(RegExp(r'[^\w\s-]'),
-              '') // Remove special characters except hyphens
-          .replaceAll(
-              RegExp(r'\s+'), '-') // Replace multiple spaces with single hyphen
-          .replaceAll(
-              RegExp(r'-+'), '-') // Replace multiple hyphens with single hyphen
-          .replaceAll(RegExp(r'^-|-$'), '') // Remove leading/trailing hyphens
-          .toLowerCase();
-
-      String processedBrandKey = brandKey
-          .trim()
-          .replaceAll(RegExp(r'[^\w\s-]'),
-              '') // Remove special characters except hyphens
-          .replaceAll(
-              RegExp(r'\s+'), '-') // Replace multiple spaces with single hyphen
-          .replaceAll(
-              RegExp(r'-+'), '-') // Replace multiple hyphens with single hyphen
-          .replaceAll(RegExp(r'^-|-$'), '') // Remove leading/trailing hyphens
-          .toLowerCase();
-
-      _imageUrl1 =
-          'https://www.minsellprice.com/Brand-logo-images/$processedBrandName.png';
-      _imageUrl2 =
-          'https://growth.matridtech.net/brand-logo/brands/$processedBrandKey.png';
-
-      _currentUrl = _imageUrl1;
-
-      log(
-        'BrandImageWidget [ID:$brandId] - Brand: "$brandName", Key: "$brandKey"',
-      );
-      log(
-        'BrandImageWidget [ID:$brandId] - Processed Brand Name: "$processedBrandName"',
-      );
-      log('BrandImageWidget [ID:$brandId] - URL 1: $_imageUrl1');
-      log('BrandImageWidget [ID:$brandId] - URL 2: $_imageUrl2');
-      log('BrandImageWidget [ID:$brandId] - Full brand data: ${widget.brand}');
-    } catch (e) {
-      log('Error initializing image URLs: $e');
-      _currentUrl = '';
-    }
-  }
-
-  void _onImageError() {
-    setState(() {
-      if (_attempt == 0) {
-        // First failure: try second URL (growth.matridtech.net)
-        _currentUrl = _imageUrl2;
-        log('First URL failed, trying alternative URL: $_imageUrl2');
-        _attempt++;
-      } else {
-        // Second failure: show placeholder
-        _currentUrl = '';
-        log('Both image URLs failed, showing placeholder');
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: widget.width ?? double.infinity,
-      height: widget.height ?? 100,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        // color: Colors.white,
-      ),
-      child: _currentUrl.isEmpty
-          ? _buildPlaceholderWidget()
-          : CachedNetworkImage(
-              key: ValueKey(_currentUrl),
-              // Force rebuild when URL changes
-              imageUrl: _currentUrl,
-              fit: BoxFit.contain,
-              placeholder: (context, url) => _buildLoadingWidget(),
-              errorWidget: (context, url, error) {
-                log('Image load error for URL: $url, Error: $error');
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    _onImageError();
-                  }
-                });
-                return _buildErrorWidget();
-              },
-            ),
-    );
-  }
-
-  Widget _buildPlaceholderWidget() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.red,
-        borderRadius: BorderRadius.circular(12),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.grey[100]!, Colors.grey[200]!],
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(Icons.image, color: Colors.grey[400], size: 28),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingWidget() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.grey[50]!, Colors.grey[100]!],
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 33,
-            height: 33,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.primary.withOpacity(0.7),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Loading...',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.red[50]!, Colors.red[100]!],
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.withOpacity(0.2),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.broken_image_outlined,
-              color: Colors.red[400],
-              size: 24,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Image Error',
-            style: TextStyle(
-              color: Colors.red[600],
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

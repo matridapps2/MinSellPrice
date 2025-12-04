@@ -62,8 +62,8 @@ class _DashboardShimmer extends State<ShimmerDesign> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Container(
-            height:
-                56, // Matches TextFormField height (contentPadding vertical: 16 * 2 + some space)
+            height: 56,
+            // Matches TextFormField height (contentPadding vertical: 16 * 2 + some space)
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -181,7 +181,8 @@ class BrandsShimmer extends StatelessWidget {
                 crossAxisSpacing: 16,
                 childAspectRatio: 0.85,
               ),
-              itemCount: 8, // Show 8 shimmer items (4 rows x 2 columns)
+              itemCount: 8,
+              // Show 8 shimmer items (4 rows x 2 columns)
               itemBuilder: (context, index) => Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
@@ -770,6 +771,64 @@ class HomeBoxDealsGridShimmer extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(4),
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full Dashboard Shimmer - Shows complete dashboard loading state
+class DashboardFullShimmer extends StatelessWidget {
+  const DashboardFullShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color.fromARGB(255, 245, 245, 245),
+      width: w,
+      child: const Column(
+        children: [
+          // Search Bars Shimmer
+          ShimmerDesign(isDone: true),
+
+          // Content Shimmer
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 20),
+
+                  // Product Sections Shimmer (multiple sections)
+                  ProductSectionShimmer(height: 400),
+                  SizedBox(height: 25),
+
+                  ProductSectionShimmer(),
+                  SizedBox(height: 25),
+
+                  ProductSectionShimmer(),
+                  SizedBox(height: 25),
+
+                  ProductSectionShimmer(),
+                  SizedBox(height: 25),
+
+                  ProductSectionShimmer(),
+                  SizedBox(height: 25),
+
+                  // Home Box Deals Shimmer
+                  HomeBoxDealsGridShimmer(),
+                  SizedBox(height: 25),
+
+                  // Brands Shimmer
+                  BrandsShimmer(),
+                  SizedBox(height: 25),
+
+                  BrandsShimmer(),
+                  SizedBox(height: 45),
+                ],
               ),
             ),
           ),

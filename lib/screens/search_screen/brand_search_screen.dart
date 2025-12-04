@@ -7,6 +7,8 @@ import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:minsellprice/navigation/product_list_navigation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../widgets/brand_image.dart';
+
 class BrandSearchScreen extends StatefulWidget {
   const BrandSearchScreen({
     super.key,
