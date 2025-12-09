@@ -2920,6 +2920,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           discountPercent = ((msrp - vendorPrice) / msrp) * 100;
         }
 
+        // Hide MSRP and discount when discount is 0% (or effectively 0%)
+        // Use epsilon for floating point comparison
+        const double discountEpsilon = 0.1; // 0.1% discount threshold - hide if discount is less than 0.1%
+        
+        final discountIsZero = discountPercent.abs() < discountEpsilon;
+        
+        // Hide if discount is 0% or effectively 0%
+        final shouldShowMsrpAndDiscount = !discountIsZero;
+
         // Log for debugging
         log('Product ${product.productId}: vendorPrice=$vendorPriceStr (parsed: $vendorPrice), msrp=$msrpStr (parsed: $msrp), discount=$discountPercent%');
 
@@ -3124,8 +3133,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  // Original Price (strikethrough) - on the right, only show if discounted
-                                  if (discountPercent > 0 && msrp > 0)
+                                  // Original Price (strikethrough) - on the right, only show if discounted and not same as current price
+                                  if (discountPercent > 0 &&
+                                      msrp > 0 &&
+                                      shouldShowMsrpAndDiscount)
                                     Flexible(
                                       child: Text(
                                         '\$${_formatPrice(product.msrp)}',
@@ -3143,8 +3154,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     ),
                                 ],
                               ),
-                              // Discount Badge - only show if there's a discount
-                              if (discountPercent > 0) ...[
+                              // Discount Badge - only show if there's a discount and not same as MSRP
+                              if (discountPercent > 0 &&
+                                  shouldShowMsrpAndDiscount) ...[
                                 const SizedBox(height: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -3152,7 +3164,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.green[50],
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.green[200]!, width: 1),
+                                    border: Border.all(
+                                        color: Colors.green[200]!, width: 1),
                                   ),
                                   child: Text(
                                     '${discountPercent.toStringAsFixed(0)}% OFF',

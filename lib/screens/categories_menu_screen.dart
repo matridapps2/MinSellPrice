@@ -67,7 +67,7 @@ class _CategoriesMenuScreenState extends State<CategoriesMenuScreen>
         _errorMessage = null;
       });
 
-      // Load categories from API
+      // Load categories from API only - no static fallback
       final categories =
           await CategoryService.fetchCategories(context: context);
 
@@ -79,87 +79,24 @@ class _CategoriesMenuScreenState extends State<CategoriesMenuScreen>
 
         log('✅ Loaded ${categories.length} main categories from API');
       } else {
-        // Fallback to static data if API fails
-        log('⚠️ API failed, using static data');
-        _loadStaticCategories();
+        // Show error if API returns empty or null
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'No categories available. Please try again later.';
+          _mainCategories = [];
+        });
+        log('⚠️ API returned empty categories');
       }
     } catch (e) {
       log('❌ Error loading categories: $e');
-      // Fallback to static data
-      _loadStaticCategories();
+      // Show error message instead of using static data
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            'Failed to load categories. Please check your connection and try again.';
+        _mainCategories = [];
+      });
     }
-  }
-
-  void _loadStaticCategories() {
-    setState(() {
-      _mainCategories = [
-        MainCategory(
-          id: 'grills-outdoor-cooking',
-          name: 'Grills Outdoor Cooking',
-          icon: '',
-          description: 'Gas, Pellet, Charcoal Grills and BBQ Equipment',
-          subcategories: [
-            SubCategory(
-              id: 'gas-grills',
-              name: 'Gas Grills',
-              parentId: 'grills-outdoor-cooking',
-              subSubcategories: [
-                'freestanding-gas-grills',
-                'propane-grills',
-                'natural-gas-grills',
-                'portable-gas-grills'
-              ],
-            ),
-            SubCategory(
-              id: 'pellet-grills',
-              name: 'Pellet Grills',
-              parentId: 'grills-outdoor-cooking',
-              subSubcategories: [
-                'wifi-pellet-grills',
-                'portable-pellet-grills',
-                'freestanding-pellet-grills'
-              ],
-            ),
-            SubCategory(
-              id: 'kamado-grills',
-              name: 'Kamado Grills',
-              parentId: 'grills-outdoor-cooking',
-              subSubcategories: [
-                'freestanding-kamado-grills',
-                'portable-kamado-grills'
-              ],
-            ),
-            SubCategory(
-              id: 'charcoal-grills',
-              name: 'Charcoal Grills',
-              parentId: 'grills-outdoor-cooking',
-              subSubcategories: [
-                'freestanding-charcoal-grills',
-                'portable-charcoal-grills',
-                'kettle-grills'
-              ],
-            ),
-            SubCategory(
-              id: 'bbq-smokers',
-              name: 'BBQ Smokers',
-              parentId: 'grills-outdoor-cooking',
-              subSubcategories: [
-                'electric-smokers',
-                'charcoal-smokers',
-                'pellet-smokers',
-                'wood-smokers',
-                'propane-smokers',
-                'offset-smokers',
-                'vertical-smokers'
-              ],
-            ),
-          ],
-        ),
-      ];
-      _isLoading = false;
-      _errorMessage = null;
-    });
-    log('✅ Loaded static categories as fallback');
   }
 
   void _onCategoryTap(MainCategory category) {

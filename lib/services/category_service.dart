@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:minsellprice/core/utils/constants/base_url.dart';
+import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/model/category_model.dart';
 import 'package:minsellprice/model/api_category_model.dart';
 
@@ -28,12 +29,12 @@ class CategoryService {
         },
       ).timeout(const Duration(seconds: 30));
 
-      log('📥 Categories API Response received');
-      log('📊 Response status: ${response.statusCode}');
-      log('📏 Response body length: ${response.body.length}');
+      log('Categories API Response received');
+      log('Response status: ${response.statusCode}');
+      log('Response body length: ${response.body.length}');
 
       if (response.statusCode == 200) {
-        log('✅ Successfully fetched categories');
+        log('Successfully fetched categories');
         final jsonResponse = response.body;
 
         if (jsonResponse.isNotEmpty) {
@@ -41,13 +42,22 @@ class CategoryService {
           log('📦 API Response categories count: ${apiResponse.categories.length}');
           log('📦 API Categories: ${apiResponse.categories.map((c) => c.categoryName).toList()}');
 
+          // Log filtering details for debugging
+          for (var category in apiResponse.categories) {
+            log('🔍 Category: ${category.categoryName}'
+                ' | isActive: ${category.isActiveCategory}'
+                ' | includeMenu: ${category.includeMenu}'
+                ' | shouldInclude: ${category.shouldIncludeInMenu}');
+          }
+
           final mainCategories = apiResponse.categories
               .where((category) =>
                   category.isActiveCategory && category.shouldIncludeInMenu)
               .map((category) => category.toMainCategory())
               .toList();
 
-          log('📦 Parsed ${mainCategories.length} main categories');
+          log('📦 Parsed ${mainCategories.length} main categories (filtered from ${apiResponse.categories.length})');
+          log('📦 Displayed categories: ${mainCategories.map((c) => c.name).toList()}');
           return mainCategories;
         } else {
           log('⚠️ Empty response received');
@@ -62,46 +72,6 @@ class CategoryService {
     } catch (e) {
       log('❌ Exception in fetchCategories: $e');
       _showErrorToast(context, 'Error loading categories');
-      return null;
-    }
-  }
-
-  /// Fetch products for a specific brand within a category
-  static Future<CategoryResponse?> fetchBrandCategoryProducts({
-    required String categoryPath,
-    required String brandName,
-    required BuildContext context,
-  }) async {
-    try {
-      final url = '$_baseUrl/category/$categoryPath?brand=$brandName';
-      log('🌐 Fetching brand category products from: $url');
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 30));
-
-      if (response.statusCode == 200) {
-        log('✅ Successfully fetched brand category products');
-        final jsonResponse = response.body;
-
-        if (jsonResponse.isNotEmpty) {
-          return categoryResponseFromJson(jsonResponse);
-        } else {
-          log('⚠️ Empty response received');
-          return null;
-        }
-      } else {
-        log('❌ API Error - Status: ${response.statusCode}');
-        _showErrorToast(context, 'Failed to load brand products');
-        return null;
-      }
-    } catch (e) {
-      log('❌ Exception in fetchBrandCategoryProducts: $e');
-      _showErrorToast(context, 'Error loading brand products');
       return null;
     }
   }
@@ -146,94 +116,20 @@ class CategoryService {
     }
   }
 
-  /// Get category statistics (product count, vendor count, etc.)
-  static Future<Map<String, dynamic>?> getCategoryStats({
-    required String categoryPath,
-    required BuildContext context,
-  }) async {
-    try {
-      final url = '$_baseUrl/category/$categoryPath/stats';
-      log('📊 Fetching category stats from: $url');
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200) {
-        log('✅ Successfully fetched category stats');
-        return {
-          'productCount': 0,
-          'vendorCount': 0,
-          'averagePrice': 0.0,
-          'lastUpdated': DateTime.now().toIso8601String(),
-        };
-      } else {
-        log('❌ Stats API Error - Status: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      log('❌ Exception in getCategoryStats: $e');
-      return null;
-    }
-  }
-
   /// Helper method to show error toast
   static void _showErrorToast(BuildContext context, String message) {
     try {
       // Show a simple snackbar for now
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(message),
+      //     backgroundColor: Colors.red,
+      //     duration: const Duration(seconds: 3),
+      //   ),
+      CommonToasts.centeredMobile(msg: message, context: context);
     } catch (e) {
       log('❌ Error showing toast: $e');
     }
-  }
-
-  /// Build category URL path from category hierarchy
-  static String buildCategoryPath({
-    required String mainCategory,
-    String? subCategory,
-    String? subSubCategory,
-  }) {
-    String path = mainCategory;
-
-    if (subCategory != null && subCategory.isNotEmpty) {
-      path += '/$subCategory';
-    }
-
-    if (subSubCategory != null && subSubCategory.isNotEmpty) {
-      path += '/$subSubCategory';
-    }
-
-    return path;
-  }
-
-  /// Parse category path to extract hierarchy
-  static Map<String, String> parseCategoryPath(String categoryPath) {
-    final parts = categoryPath.split('/');
-
-    return {
-      'mainCategory': parts.isNotEmpty ? parts[0] : '',
-      'subCategory': parts.length > 1 ? parts[1] : '',
-      'subSubCategory': parts.length > 2 ? parts[2] : '',
-    };
-  }
-
-  /// Validate category path format
-  static bool isValidCategoryPath(String categoryPath) {
-    if (categoryPath.isEmpty) return false;
-
-    // Check for valid characters (alphanumeric, hyphens, forward slashes)
-    final validPattern = RegExp(r'^[a-zA-Z0-9\-/]+$');
-    return validPattern.hasMatch(categoryPath);
   }
 
   /// Get category display name from path
@@ -250,33 +146,34 @@ class CategoryService {
         .join(' ');
   }
 
-  /// Get breadcrumb navigation for category path
-  static List<Map<String, String>> getCategoryBreadcrumbs(String categoryPath) {
-    final parts = categoryPath.split('/');
-    final breadcrumbs = <Map<String, String>>[];
-
-    String currentPath = '';
-
-    for (int i = 0; i < parts.length; i++) {
-      currentPath += (i > 0 ? '/' : '') + parts[i];
-      breadcrumbs.add({
-        'name': getCategoryDisplayName(parts[i]),
-        'path': currentPath,
-      });
-    }
-
-    return breadcrumbs;
-  }
-
   /// Fetch products for a specific category path with pagination
-  static Future<List<Map<String, dynamic>>?> fetchCategoryProducts({
+  /// Returns a Map containing 'products' list, 'productCount', and 'brands' from API
+  static Future<Map<String, dynamic>?> fetchCategoryProducts({
     required BuildContext context,
     required String categoryPath,
     int pageNumber = 1,
+    List<String>? brandKeys, // Optional list of brand_keys for filtering
   }) async {
     try {
       String ceche = '243322';
-      final url = '$_baseUrl/category/$categoryPath?page_no=$pageNumber&ceche=$ceche';
+      String url =
+          '$_baseUrl/category/$categoryPath?page_no=$pageNumber&ceche=$ceche';
+
+      // Add brand parameters if provided (API expects brand[] format for array)
+      if (brandKeys != null && brandKeys.isNotEmpty) {
+        // Add multiple brand[] parameters for each selected brand
+        for (final brandKey in brandKeys) {
+          if (brandKey.isNotEmpty) {
+            final encodedBrand = Uri.encodeComponent(brandKey);
+            url += '&brand[]=$encodedBrand';
+          }
+        }
+        log('🏷️ Adding brand filters to URL: ${brandKeys.length} brands selected');
+        log('🏷️ Brand keys: $brandKeys');
+      } else {
+        log('ℹ️ No brand filter - showing all brands in category');
+      }
+
       log('🌐 Fetching category products from: $url');
 
       final response = await http.get(
@@ -301,6 +198,28 @@ class CategoryService {
           // Log all keys in response for debugging
           log('🔍 API Response keys: ${responseData.keys.toList()}');
 
+          // Extract productCount from API response (accurate total count)
+          int productCount = 0;
+          if (responseData.containsKey('productCount')) {
+            final productCountValue = responseData['productCount'];
+            if (productCountValue is int) {
+              productCount = productCountValue;
+            } else if (productCountValue is String) {
+              productCount = int.tryParse(productCountValue) ?? 0;
+            }
+            log('📊 API productCount: $productCount');
+          }
+
+          // Extract brandRecord from API response
+          List<Map<String, dynamic>> brands = [];
+          if (responseData.containsKey('brandRecord') &&
+              responseData['brandRecord'] is List) {
+            brands = (responseData['brandRecord'] as List)
+                .map((brand) => Map<String, dynamic>.from(brand))
+                .toList();
+            log('🏷️ API brandRecord count: ${brands.length}');
+          }
+
           // Try multiple possible keys for products
           List<dynamic> products = responseData['brand_product'] ??
               responseData['products'] ??
@@ -309,7 +228,8 @@ class CategoryService {
               responseData['category_products'] ??
               [];
 
-          log('📦 API Response products count: ${products.length}');
+          log('📦 API Response products array length: ${products.length}');
+          log('📦 API productCount (total): $productCount');
 
           // If still no products, log the full response for debugging
           if (products.isEmpty) {
@@ -322,7 +242,16 @@ class CategoryService {
               .toList();
 
           log('📦 Parsed ${productList.length} products for category: $categoryPath');
-          return productList;
+          if (brandKeys != null && brandKeys.isNotEmpty) {
+            log('✅ Brand filters applied: $brandKeys - Found ${productList.length} products');
+          }
+
+          // Return products, productCount, and brands
+          return {
+            'products': productList,
+            'productCount': productCount,
+            'brands': brands,
+          };
         } else {
           log('⚠️ Empty response received for category: $categoryPath');
           return null;

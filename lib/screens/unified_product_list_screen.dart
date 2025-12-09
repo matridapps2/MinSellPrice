@@ -15,7 +15,9 @@ import 'package:minsellprice/screens/unified_product_list_controller.dart';
 import 'package:minsellprice/screens/unified_filter_menu.dart';
 
 import '../widgets/brand_image.dart';
+import '../widgets/product_list.dart';
 import '../widgets/stylish_loader.dart';
+import '../widgets/brand_dropdown_widget.dart';
 
 /// Enum to define different types of product list sources
 enum ProductListType {
@@ -142,6 +144,22 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                 const SizedBox(height: 5),
                 _buildProductCountBadge(),
                 const SizedBox(height: 5),
+                // Brand dropdown (only for category type)
+                if (widget.type == ProductListType.category)
+                  ValueListenableBuilder<UnifiedProductListState>(
+                    valueListenable: _controller.stateNotifier,
+                    builder: (context, state, child) {
+                      return BrandDropdownWidget(
+                        brands: state.brands,
+                        selectedBrandKeys: state.selectedBrandKeys,
+                        onBrandsChanged: (brandKeys) {
+                          _controller.selectBrands(brandKeys, context);
+                        },
+                      );
+                    },
+                  ),
+                if (widget.type == ProductListType.category)
+                  const SizedBox(height: 5),
                 _buildProductList(),
                 const SizedBox(height: 10),
               ],
@@ -496,6 +514,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
     List<VendorProduct> productsToDisplay;
     bool isSearching = _controller.searchController.text.isNotEmpty;
     bool isFiltered = _controller.isAnyFilterActive();
+    // If brands are selected, use products directly (brand filtering is server-side via API)
+    bool hasBrandFilter = state.selectedBrandKeys.isNotEmpty;
 
     if (isSearching) {
       if (state.isSearching) {
@@ -505,12 +525,15 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
       } else {
         productsToDisplay = state.searchResults;
       }
-    } else if (isFiltered) {
+    } else if (isFiltered && !hasBrandFilter) {
+      // Only use filteredProducts if no brand filter is active
+      // Brand filtering is done server-side, so use products directly
       if (state.filteredProducts.isEmpty) {
         return _buildFilteredEmptyState();
       }
       productsToDisplay = state.filteredProducts;
     } else {
+      // Use products directly (either no filters or brand filter is active)
       if (state.products.isEmpty) {
         return _buildEmptyState();
       }
@@ -532,7 +555,14 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
               child: Column(
                 children: [
-                  GridView.builder(
+                  ProductListWidget(
+                    products: productsToDisplay,
+                    onProductTap: (product) {
+                      _navigateToProductDetailsFromVendorProduct(product);
+                    },
+                  ),
+
+                  /*GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
@@ -545,7 +575,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                     itemCount: productsToDisplay.length,
                     itemBuilder: (context, index) =>
                         _buildProductCard(productsToDisplay[index]),
-                  ),
+                  ),*/
 
                   // Loading indicator inside the scrollable area
                   _buildLoadingMoreIndicator(),
@@ -1040,7 +1070,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
           const SizedBox(height: 16),
           // No more products text
           Text(
-            'No more products to load',
+            'No more products found',
             style: TextStyle(
               fontSize: 12,
               fontFamily: 'Segoe UI',
@@ -1074,12 +1104,38 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProductImage(product),
             _buildProductDetails(product),
           ],
         ),
       ),
     );
+  }
+
+  /// Navigate to product details from VendorProduct
+  void _navigateToProductDetailsFromVendorProduct(VendorProduct product) {
+    final price = double.tryParse(product.firstVendorPrice.toString()) ?? 0.0;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailsScreen(
+          productId: product.productId,
+          brandName: product.brandName,
+          productMPN: product.productMpn,
+          productImage: product.productImage,
+          productPrice: price,
+        ),
+      ),
+    );
+  }
+
+  /// Convert List<Map<String, dynamic>> to List<VendorProduct>
+  /// Uses the VendorProduct.fromJson factory method from the model class
+  List<VendorProduct> _convertMapToVendorProducts(
+      List<Map<String, dynamic>> products) {
+    return products
+        .map((productMap) => VendorProduct.fromJson(productMap))
+        .toList();
   }
 
   Widget _buildProductImage(VendorProduct product) {
@@ -1157,7 +1213,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
           ),
           const SizedBox(height: 8),
           // Product name
-          Container(
+          SizedBox(
             height: w * .1,
             child: GestureDetector(
               onTap: () {
@@ -1237,6 +1293,16 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
         0.0;
     final discountPercent = product.discountPercent;
 
+    // Hide MSRP and discount when discount is 0% (or effectively 0%)
+    // Use epsilon for floating point comparison
+    const double discountEpsilon =
+        0.1; // 0.1% discount threshold - hide if discount is less than 0.1%
+
+    final discountIsZero = discountPercent.abs() < discountEpsilon;
+
+    // Hide if discount is 0% or effectively 0%
+    final shouldShowMsrpAndDiscount = !discountIsZero;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1254,8 +1320,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            // Original Price (strikethrough) - on the right, only show if discounted
-            if (discountPercent > 0 && msrp > 0)
+            // Original Price (strikethrough) - on the right, only show if discounted and not same as current price
+            if (discountPercent > 0 && msrp > 0 && shouldShowMsrpAndDiscount)
               Text(
                 '\$${_formatPrice(msrp.toString())}',
                 style: TextStyle(
@@ -1267,8 +1333,8 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
               ),
           ],
         ),
-        // Discount Badge - only show if there's a discount
-        if (discountPercent > 0) ...[
+        // Discount Badge - only show if there's a discount and not same as MSRP
+        if (discountPercent > 0 && shouldShowMsrpAndDiscount) ...[
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

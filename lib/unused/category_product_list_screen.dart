@@ -1,3 +1,4 @@
+/*
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -12,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 
 import '../widgets/brand_image.dart';
+import '../widgets/product_list.dart';
 
 /// Wrapper for ProductList that handles category-specific API calls with pagination
 class CategoryProductList extends StatefulWidget {
@@ -742,7 +744,8 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
                   borderRadius: BorderRadius.circular(25),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                  borderSide:
+                      const BorderSide(color: AppColors.primary, width: 2),
                   borderRadius: BorderRadius.circular(25),
                 ),
                 disabledBorder: OutlineInputBorder(
@@ -889,6 +892,24 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
     );
   }
 
+  /// Navigate to product details from VendorProduct
+  void _navigateToProductDetailsFromVendorProduct(VendorProduct product) {
+    final price = double.tryParse(product.firstVendorPrice.toString()) ?? 0.0;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailsScreen(
+          productId: product.productId,
+          brandName: product.brandName,
+          productMPN: product.productMpn,
+          productImage: product.productImage,
+          productPrice: price,
+        ),
+      ),
+    );
+  }
+
   Widget _buildProductList() {
     // Determine which products to display
     List<VendorProduct> productsToDisplay;
@@ -930,7 +951,15 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
               child: Column(
                 children: [
-                  Wrap(
+                */
+/*  ProductListWidget(
+                    products: productsToDisplay,
+                    onProductTap: (product) {
+                      _navigateToProductDetailsFromVendorProduct(product);
+                    },
+                  ),*//*
+
+                    Wrap(
                     runSpacing: 10,
                     children: List.generate(
                       productsToDisplay.length,
@@ -1886,7 +1915,9 @@ class _CategoryProductListWidgetState extends State<CategoryProductListWidget> {
   }
 }
 
-/* CATEGORY FILTER MENU */
+*/
+/* CATEGORY FILTER MENU *//*
+
 
 class CategoryFilterMenu extends StatefulWidget {
   final List<VendorProduct> allProducts;
@@ -2266,3 +2297,4 @@ class _CategoryFilterMenuState extends State<CategoryFilterMenu> {
     }
   }
 }
+*/

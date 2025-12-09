@@ -106,7 +106,8 @@ class ApiCategory {
       id: categoryKey,
       name: categoryName,
       icon: '', // No icons as requested
-      description: _getCategoryDescription(categoryKey),
+      description:
+          'Browse products in $categoryName', // Generic description from API data
       subcategories: children.map((child) => child.toSubCategory()).toList(),
     );
   }
@@ -125,33 +126,14 @@ class ApiCategory {
     );
   }
 
-  /// Get category description based on category key
-  String _getCategoryDescription(String categoryKey) {
-    switch (categoryKey) {
-      case 'grills-outdoor-cooking':
-        return 'Gas, Pellet, Charcoal Grills and BBQ Equipment';
-      case 'outdoor-kitchens':
-        return 'Built-in Grills, Outdoor Refrigerators & Kitchen Equipment';
-      case 'bbq-accessories':
-        return 'Grill Parts, Tools, Cookware & Accessories';
-      case 'outdoor-furniture':
-        return 'Dining Sets, Seating, Bar Furniture & More';
-      case 'refrigeration':
-        return 'Refrigerators, Freezers & Cooling Solutions';
-      case 'cooking':
-        return 'Ranges, Cooktops, Ovens & Cooking Appliances';
-      case 'dishwashers':
-        return 'Dishwashers, Disposers & Kitchen Cleanup';
-      default:
-        return 'Browse products in this category';
-    }
+  /// Check if category is active
+  bool get isActiveCategory {
+    return isActive == '1';
   }
 
-  /// Check if category is active
-  bool get isActiveCategory => isActive == '1';
-
   /// Check if category should be included in menu
-  bool get shouldIncludeInMenu => includeMenu == 1;
+  /// Returns true if includeMenu is 1 or null (null means include by default)
+  bool get shouldIncludeInMenu => includeMenu == null || includeMenu == 1;
 
   /// Get display image (prioritize main_image, then thumbnail, then homepage)
   String? get displayImage => mainImage ?? thumbnailImage ?? homepageImage;

@@ -30,6 +30,9 @@ class UnifiedProductListState {
   final bool onSaleOnly;
   final Map<String, int> vendorProductCounts;
   final Map<String, String> vendorCodes;
+  final List<Map<String, dynamic>> brands; // Brands from category API
+  final List<String>
+      selectedBrandKeys; // List of selected brand_keys for API filtering
 
   const UnifiedProductListState({
     this.products = const [],
@@ -52,6 +55,8 @@ class UnifiedProductListState {
     this.onSaleOnly = false,
     this.vendorProductCounts = const {},
     this.vendorCodes = const {},
+    this.brands = const [],
+    this.selectedBrandKeys = const [],
   });
 
   UnifiedProductListState copyWith({
@@ -75,6 +80,8 @@ class UnifiedProductListState {
     bool? onSaleOnly,
     Map<String, int>? vendorProductCounts,
     Map<String, String>? vendorCodes,
+    List<Map<String, dynamic>>? brands,
+    List<String>? selectedBrandKeys,
   }) {
     return UnifiedProductListState(
       products: products ?? this.products,
@@ -97,6 +104,8 @@ class UnifiedProductListState {
       onSaleOnly: onSaleOnly ?? this.onSaleOnly,
       vendorProductCounts: vendorProductCounts ?? this.vendorProductCounts,
       vendorCodes: vendorCodes ?? this.vendorCodes,
+      brands: brands ?? this.brands,
+      selectedBrandKeys: selectedBrandKeys ?? this.selectedBrandKeys,
     );
   }
 }
@@ -145,6 +154,43 @@ class UnifiedProductListController {
       case ProductListType.search:
         return SearchApiStrategy(identifier);
     }
+  }
+
+  /// Select brands and reload products (for category type only)
+  /// brandKeys: List of brand_keys to filter by (empty list for "All Brands")
+  Future<void> selectBrands(
+      List<String> brandKeys, BuildContext context) async {
+    if (type != ProductListType.category) return;
+
+    log('🏷️ Selecting brand_keys: $brandKeys');
+
+    if (_apiStrategy is CategoryApiStrategy) {
+      (_apiStrategy as CategoryApiStrategy).setBrands(brandKeys);
+      log('✅ Updated API strategy with brand_keys: $brandKeys');
+    }
+
+    // Reset pagination
+    _currentPage = 1;
+    _hasUserScrolled = false;
+
+    // Clear search if active
+    if (searchController.text.isNotEmpty) {
+      searchController.clear();
+      clearSearch();
+    }
+
+    // Clear existing products and filters, then update brand selection
+    _updateState(
+      selectedBrandKeys: brandKeys,
+      products: [],
+      filteredProducts: [],
+      searchResults: [],
+      totalCount: 0,
+      hasMoreData: true,
+    );
+
+    log('🔄 Reloading products with brand_keys filter: $brandKeys');
+    await loadProducts(context, loadMore: false);
   }
 
   /// Initialize the controller
@@ -242,12 +288,49 @@ class UnifiedProductListController {
 
       final products = result['products'] as List<VendorProduct>;
       final totalCount = result['totalCount'] as int;
+      // Extract brands from API response (for category type)
+      final List<Map<String, dynamic>> brands =
+          (result['brands'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       // Get hasMore from API response if available, otherwise calculate it
       final bool? apiHasMore = result['hasMore'] as bool?;
       final int? currentPageNo = result['currentPage'] as int?;
       final int? totalPages = result['totalPages'] as int?;
 
-      // Determine if there's more data
+      // Sync current page with API's returned page number
+      if (currentPageNo != null && currentPageNo != _currentPage) {
+        log('Page number mismatch: requested $_currentPage, API returned $currentPageNo - syncing');
+        _currentPage = currentPageNo;
+      }
+
+      // If products list is empty, there's definitely no more data
+      // Check this FIRST before determining hasMoreData
+      if (products.isEmpty) {
+        log('⚠️ API returned empty products list - no more data available');
+        // If loading more and got empty, stop pagination
+        if (loadMore) {
+          log('Load more returned empty products - stopping pagination');
+          _updateState(
+            isLoading: false,
+            isLoadingMore: false,
+            hasMoreData: false,
+            totalCount: totalCount,
+          );
+          return;
+        }
+        // If initial load is empty, show empty state
+        _updateState(
+          products: [],
+          filteredProducts: [],
+          isLoading: false,
+          isLoadingMore: false,
+          hasMoreData: false,
+          totalCount: totalCount,
+          brands: !loadMore ? brands : stateNotifier.value.brands,
+        );
+        return;
+      }
+
+      // Determine if there's more data (only if products are not empty)
       bool hasMoreData;
       if (apiHasMore != null) {
         // Use API's has_more field directly (most reliable)
@@ -269,18 +352,6 @@ class UnifiedProductListController {
         log('Using fallback calculation: loaded=${loadMore ? currentProducts.length + products.length : products.length}, total=$totalCount, hasMore=$hasMoreData');
       }
 
-      // Sync current page with API's returned page number
-      if (currentPageNo != null && currentPageNo != _currentPage) {
-        log('Page number mismatch: requested $_currentPage, API returned $currentPageNo - syncing');
-        _currentPage = currentPageNo;
-      }
-
-      // If products list is empty, there's definitely no more data
-      if (products.isEmpty) {
-        hasMoreData = false;
-        log('No products returned - setting hasMoreData to false');
-      }
-
       // If on initial load and we got an invalid page (page_no > total_no_of_pages), reset to page 1
       if (!loadMore &&
           currentPageNo != null &&
@@ -294,59 +365,45 @@ class UnifiedProductListController {
         return;
       }
 
-      if (products.isNotEmpty || loadMore) {
-        // If loading more and got empty products, don't update the list
-        // but still update the state to reflect no more data
-        if (products.isEmpty && loadMore) {
-          log('Load more returned empty products - stopping pagination');
-          _updateState(
-            isLoading: false,
-            isLoadingMore: false,
-            hasMoreData: false,
-            totalCount: totalCount,
-          );
-          return;
-        }
+      // Log product count for debugging
+      log('📦 Loaded ${products.length} products (loadMore: $loadMore, brand_keys: ${stateNotifier.value.selectedBrandKeys})');
 
-        final currentProducts = stateNotifier.value.products;
-        final newProducts =
-            loadMore ? [...currentProducts, ...products] : products;
+      final currentProducts = stateNotifier.value.products;
+      final newProducts =
+          loadMore ? [...currentProducts, ...products] : products;
 
-        // Check if filters are active
-        final isFiltered = isAnyFilterActive();
+      // Check if filters are active
+      final isFiltered = isAnyFilterActive();
+      // If brands are selected, always show products directly (brand filtering is server-side)
+      final hasBrandFilter = stateNotifier.value.selectedBrandKeys.isNotEmpty;
 
-        _updateState(
-          products: newProducts,
-          filteredProducts: isFiltered
-              ? stateNotifier.value.filteredProducts
-              : List.from(newProducts),
-          isLoading: false,
-          isLoadingMore: false,
-          hasMoreData: hasMoreData,
-          totalCount: totalCount,
-        );
+      _updateState(
+        products: newProducts,
+        filteredProducts: (isFiltered && !hasBrandFilter)
+            ? stateNotifier.value.filteredProducts
+            : List.from(newProducts),
+        isLoading: false,
+        isLoadingMore: false,
+        hasMoreData: hasMoreData,
+        totalCount: totalCount,
+        brands: !loadMore
+            ? brands
+            : stateNotifier.value.brands, // Only update brands on initial load
+      );
 
-        if (isFiltered) {
-          log('Filters are active - preserving filtered state during pagination');
-        }
-
-        if (!loadMore) {
-          // Ensure vendor data is loaded immediately for filter menu
-          await _extractVendorData();
-          _calculatePriceRange();
-          log('Vendor data loaded: ${stateNotifier.value.vendorProductCounts.length} vendors available');
-        }
-
-        log('Loaded ${products.length} products (${loadMore ? 'load more' : 'initial'})');
-        log('Total products: ${newProducts.length}, API Total Count: $totalCount, Has more data: $hasMoreData');
-      } else {
-        _updateState(
-          isLoading: false,
-          isLoadingMore: false,
-          hasMoreData: false,
-          totalCount: totalCount,
-        );
+      if (isFiltered && !hasBrandFilter) {
+        log('Filters are active - preserving filtered state during pagination');
       }
+
+      if (!loadMore) {
+        // Ensure vendor data is loaded immediately for filter menu
+        await _extractVendorData();
+        _calculatePriceRange();
+        log('Vendor data loaded: ${stateNotifier.value.vendorProductCounts.length} vendors available');
+      }
+
+      log('✅ Loaded ${products.length} products (${loadMore ? 'load more' : 'initial'})');
+      log('📊 Total products: ${newProducts.length}, API Total Count: $totalCount, Has more data: $hasMoreData');
     } catch (e) {
       log('Error loading products: $e');
       _updateState(
@@ -857,6 +914,8 @@ class UnifiedProductListController {
     bool? onSaleOnly,
     Map<String, int>? vendorProductCounts,
     Map<String, String>? vendorCodes,
+    List<Map<String, dynamic>>? brands,
+    List<String>? selectedBrandKeys,
   }) {
     stateNotifier.value = stateNotifier.value.copyWith(
       products: products,
@@ -879,6 +938,8 @@ class UnifiedProductListController {
       onSaleOnly: onSaleOnly,
       vendorProductCounts: vendorProductCounts,
       vendorCodes: vendorCodes,
+      brands: brands,
+      selectedBrandKeys: selectedBrandKeys,
     );
   }
 
@@ -942,9 +1003,21 @@ class BrandApiStrategy implements ProductListApiStrategy {
         log('Brand API - Page: $currentPageNo, Products: ${products.length}, Total Count: $totalCount, Total Pages: $totalNoOfPages, Has More: $hasMore');
 
         // Determine if there's more data based on API response
-        // If has_more is false OR current page >= total pages, there's no more data
-        final bool hasMoreData =
-            hasMore && (totalNoOfPages == 0 || currentPageNo < totalNoOfPages);
+        // Priority: Check page numbers first, then fallback to has_more flag
+        // If products list is empty, there's definitely no more data
+        bool hasMoreData = false;
+        if (products.isEmpty) {
+          hasMoreData = false;
+          log('No products in response - setting hasMoreData to false');
+        } else if (totalNoOfPages > 0) {
+          // Use page numbers if available (most reliable)
+          hasMoreData = currentPageNo < totalNoOfPages;
+          log('Using page comparison: currentPage=$currentPageNo, totalPages=$totalNoOfPages, hasMore=$hasMoreData');
+        } else {
+          // Fallback to has_more flag if page numbers not available
+          hasMoreData = hasMore;
+          log('Using has_more flag: $hasMore');
+        }
 
         return {
           'products': products,
@@ -1011,33 +1084,52 @@ class BrandApiStrategy implements ProductListApiStrategy {
 /// Category API strategy
 class CategoryApiStrategy implements ProductListApiStrategy {
   final String categoryPath;
+  List<String> selectedBrandKeys; // Store list of brand_keys for API filtering
 
-  CategoryApiStrategy(this.categoryPath);
+  CategoryApiStrategy(this.categoryPath, {List<String>? selectedBrandKeys})
+      : selectedBrandKeys = selectedBrandKeys ?? [];
+
+  void setBrands(List<String> brandKeys) {
+    selectedBrandKeys = brandKeys;
+  }
 
   @override
   Future<Map<String, dynamic>> fetchProducts({
     required int page,
     required BuildContext context,
   }) async {
-    final products = await CategoryService.fetchCategoryProducts(
+    log('📡 CategoryApiStrategy.fetchProducts - categoryPath: $categoryPath, page: $page, selectedBrandKeys: $selectedBrandKeys');
+
+    final response = await CategoryService.fetchCategoryProducts(
       context: context,
       categoryPath: categoryPath,
       pageNumber: page,
+      brandKeys: selectedBrandKeys, // Pass list of brand_keys to API
     );
 
-    if (products != null) {
-      final List<VendorProduct> vendorProducts = products
+    if (response != null) {
+      // Extract products list, productCount, and brands from response
+      final List<dynamic> productsList = response['products'] ?? [];
+      final int productCount = response['productCount'] ?? 0;
+      final List<Map<String, dynamic>> brands =
+          (response['brands'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+      final List<VendorProduct> vendorProducts = productsList
           .map((e) => _convertCategoryProductToVendorProduct(e))
           .toList();
 
-      // For category products, we don't have total count from API
-      // So we'll use the products length as a fallback
+      // Use accurate productCount from API response
       return {
         'products': vendorProducts,
-        'totalCount': vendorProducts.length,
+        'totalCount': productCount > 0 ? productCount : vendorProducts.length,
+        'brands': brands,
       };
     }
-    return {'products': <VendorProduct>[], 'totalCount': 0};
+    return {
+      'products': <VendorProduct>[],
+      'totalCount': 0,
+      'brands': <Map<String, dynamic>>[]
+    };
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:minsellprice/screens/unified_product_list_screen.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
@@ -28,6 +30,7 @@ class ProductListNavigation {
     required String categoryPath,
     required String categoryName,
   }) {
+    log('Navigate to product list');
     Navigator.push(
       context,
       MaterialPageRoute(
