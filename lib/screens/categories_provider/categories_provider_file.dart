@@ -30,7 +30,7 @@ class BrandsProvider extends ChangeNotifier {
       final brandsData = await BrandsApi.fetchAllBrands();
 
       _homeGardenBrands = (
-          brandsData["Home & Garden Brands"] ?? []
+          brandsData["All Brand"] ?? []
       ).whereType<Map<String, dynamic>>()
           .toList();
 
@@ -38,7 +38,7 @@ class BrandsProvider extends ChangeNotifier {
           .whereType<Map<String, dynamic>>()
           .toList();
 
-      log('Brands loaded successfully - Home & Garden: ${_homeGardenBrands.length}, Shoes & Apparels: ${_shoesApparels.length}');
+      log('Brands loaded successfully - : ${_homeGardenBrands.length}, Shoes & Apparels: ${_shoesApparels.length}');
       _setState(BrandsState.loaded);
     } catch (e) {
       log('Error fetching brands: $e');

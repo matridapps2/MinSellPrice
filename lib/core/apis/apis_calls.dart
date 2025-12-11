@@ -66,15 +66,15 @@ class BrandsApi {
 
         // Safely extract lists with null checks
         final homeGardenBrands =
-            jsonData["Home & Garden Brands"] as List<dynamic>? ?? [];
+            jsonData["All Brand"] as List<dynamic>? ?? [];
         final shoesApparels =
             jsonData["Shoes & Apparels"] as List<dynamic>? ?? [];
 
-        log('Home & Garden Brands count: ${homeGardenBrands.length}');
+        log('All Brand count: ${homeGardenBrands.length}');
         log('Shoes & Apparels count: ${shoesApparels.length}');
 
         return {
-          "Home & Garden Brands": homeGardenBrands,
+          "All Brand": homeGardenBrands,
           "Shoes & Apparels": shoesApparels,
         };
       } else {
@@ -87,7 +87,7 @@ class BrandsApi {
         onExceptionResponse(context: context, exception: e.toString());
       }
       return {
-        "Home & Garden Brands": [],
+        "All Brand": [],
         "Shoes & Apparels": [],
       };
     }
@@ -200,7 +200,7 @@ class BrandsApi {
       String uri = '$brandUrl$kSearchProduct$encodedQuery';
 
       log('Fetching Search Product API');
-      log('Search URL: $uri');
+      log(uri);
 
       final response = await retry(
         () async => await http.get(Uri.parse(uri)),

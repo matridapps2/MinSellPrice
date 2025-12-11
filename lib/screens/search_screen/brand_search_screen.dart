@@ -112,17 +112,13 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
       log('Loading brands using centralized API method');
       final brandsData = await BrandsApi.fetchAllBrands(context);
 
-      final homeGardenBrands = (brandsData["Home & Garden Brands"] ?? [])
-          .whereType<Map<String, dynamic>>()
-          .toList();
-
-      final shoesApparels = (brandsData["Shoes & Apparels"] ?? [])
+      final homeGardenBrands = (brandsData["All Brand"] ?? [])
           .whereType<Map<String, dynamic>>()
           .toList();
 
       setState(() {
-        _allBrands = [...homeGardenBrands, ...shoesApparels];
-        _list = [...homeGardenBrands, ...shoesApparels];
+        _allBrands = [...homeGardenBrands];
+        _list = [...homeGardenBrands];
       });
 
       log('Loaded ${_allBrands.length} brands from centralized API');

@@ -5,13 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 class NotificationPermissionService {
-  static final NotificationPermissionService _instance =
-      NotificationPermissionService._internal();
+
+  static final NotificationPermissionService _instance = NotificationPermissionService._internal();
+
   factory NotificationPermissionService() => _instance;
+
   NotificationPermissionService._internal();
 
-  static const String _permissionRequestedKey =
-      'notification_permission_requested';
+  static const String _permissionRequestedKey = 'notification_permission_requested';
 
   Future<bool> hasPermissionBeenRequested() async {
     final prefs = await SharedPreferences.getInstance();

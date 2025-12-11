@@ -118,7 +118,7 @@ class BrandsShimmer extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Home & Garden Section Header Shimmer
+        // Brands Section Header Shimmer
         Container(
           margin: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0),
           child: Shimmer.fromColors(

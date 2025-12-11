@@ -2416,7 +2416,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   Widget _buildBrandsSections(BrandsProvider brandsProvider) {
     log('_buildBrandsSections called with state: ${brandsProvider.state}');
-    log('Home & Garden count: ${brandsProvider.homeGardenBrands.length}');
+    log('Brands count: ${brandsProvider.homeGardenBrands.length}');
     log('Shoes & Apparels count: ${brandsProvider.shoesApparels.length}');
 
     if (brandsProvider.state == BrandsState.loading ||
@@ -2458,7 +2458,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Home & Garden Section
+          // Brands Section
           Container(
             margin: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0),
             child: Row(
@@ -2477,7 +2477,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Home & Garden',
+                        'Brands',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,

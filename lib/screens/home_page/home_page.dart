@@ -38,6 +38,7 @@ class _HomePageState extends State<HomePage>
         TickerProviderStateMixin,
         AutomaticKeepAliveClientMixin,
         NotificationMixin {
+
   int vendorId = 0;
   int _activeIndex = 0;
 

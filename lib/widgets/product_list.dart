@@ -350,7 +350,7 @@ class _ProductCard extends StatelessWidget {
   }
 
   /// Format price with 2 decimal places (no comma separators)
-  String _formatPrice(String price) {
+  static String _formatPrice(String price) {
     try {
       // Remove any existing formatting and parse the number
       final cleanPrice = price.replaceAll(RegExp(r'[^\d.]'), '');

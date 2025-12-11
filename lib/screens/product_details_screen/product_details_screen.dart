@@ -24,6 +24,7 @@ import 'package:minsellprice/core/utils/constants/size.dart';
 import 'package:minsellprice/service_new/comparison_db.dart';
 import 'package:minsellprice/service_new/liked_preference_db.dart';
 import 'package:minsellprice/services/notification_service.dart';
+
 // Commented out - WorkManager no longer needed for auto-notifications
 // import 'package:minsellprice/services/work_manager_service.dart';
 import 'package:minsellprice/services/app_notification_service.dart';
@@ -31,8 +32,10 @@ import 'package:minsellprice/widgets/stylish_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../widgets/brand_image.dart';
+import '../../widgets/product_list.dart';
 import '../loging_page/loging_page.dart';
 import 'all_alert_product.dart';
+import 'package:minsellprice/services/category_service.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final int productId;
@@ -40,6 +43,9 @@ class ProductDetailsScreen extends StatefulWidget {
   final String productMPN;
   final productImage;
   final productPrice;
+  final String?
+      categoryPath; // Optional: category path when navigating from category list
+  final String? categoryName; // Optional: category display name
 
   const ProductDetailsScreen({
     super.key,
@@ -48,6 +54,8 @@ class ProductDetailsScreen extends StatefulWidget {
     required this.productMPN,
     required this.productImage,
     required this.productPrice,
+    this.categoryPath,
+    this.categoryName,
   });
 
   @override
@@ -72,12 +80,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool _canScrollRight = true; // Initially true, will be updated after layout
   bool _isLoadingBrandProducts =
       true; // Separate loading state for brand products
+  bool _isLoadingCategoryProducts =
+      true; // Separate loading state for category products
 
   List<String> filterVendor = [];
   List<String> uniqueVendors = [];
   List<VendorProduct> brandProducts = [];
   List<VendorProduct> tempProductList = [];
   List<VendorProduct> finalList = [];
+  List<VendorProduct> categoryProductsList = []; // Products from category
   List<ProductListModelNew> brandDetails = [];
   List<VendorProductData> vendorProductData = [];
 
@@ -398,6 +409,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     await _fetchProductDetails();
     await _isAlreadySetAlert();
     await _fetchBrandProducts();
+    // Fetch category products if categoryPath is provided
+    if (widget.categoryPath != null && widget.categoryPath!.isNotEmpty) {
+      await _fetchCategoryProducts();
+    }
     await _checkIfLiked();
     await _checkIfInComparison();
   }
@@ -1563,6 +1578,139 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+  Future<void> _fetchCategoryProducts() async {
+    if (widget.categoryPath == null || widget.categoryPath!.isEmpty) {
+      return;
+    }
+
+    log('_fetchCategoryProducts method is running for category: ${widget.categoryPath}');
+    try {
+      // Set loading state to true at the start
+      if (mounted) {
+        setState(() {
+          _isLoadingCategoryProducts = true;
+        });
+      }
+
+      List<VendorProduct> allFetchedProducts = [];
+      int pageNumber = 1;
+      int maxPages = 5;
+      int targetProducts = 20;
+
+      while (pageNumber <= maxPages &&
+          allFetchedProducts.length < targetProducts) {
+        log('Fetching category products page $pageNumber');
+
+        final categoryResponse = await CategoryService.fetchCategoryProducts(
+          context: context,
+          categoryPath: widget.categoryPath!,
+          pageNumber: pageNumber,
+        );
+
+        if (categoryResponse == null) {
+          log('No more products found on page $pageNumber');
+          break;
+        }
+
+        final List<dynamic> productsList = categoryResponse['products'] ?? [];
+
+        if (productsList.isEmpty) {
+          log('No more products found on page $pageNumber');
+          break;
+        }
+
+        final List<VendorProduct> fetchedProducts = productsList.map((e) {
+          // Transform the product data to ensure proper price handling
+          final productData = Map<String, dynamic>.from(e);
+
+          // Get the first vendor price - check multiple possible fields
+          String firstVendorPrice = '';
+          if (productData['firstVendorPrice'] != null) {
+            firstVendorPrice = productData['firstVendorPrice'].toString();
+          } else if (productData['vendorprice_price'] != null) {
+            firstVendorPrice = productData['vendorprice_price'].toString();
+          } else if (productData['lowest_vendor'] != null &&
+              (productData['lowest_vendor'] as List).isNotEmpty) {
+            // Get price from lowest_vendor array
+            final lowestVendor = (productData['lowest_vendor'] as List).first;
+            if (lowestVendor['vendorprice_price'] != null) {
+              firstVendorPrice = lowestVendor['vendorprice_price'].toString();
+            }
+          }
+
+          // If still empty or "--", try to parse from vendorpricePrice
+          if (firstVendorPrice.isEmpty ||
+              firstVendorPrice == '--' ||
+              firstVendorPrice == 'null') {
+            firstVendorPrice =
+                productData['vendorprice_price']?.toString() ?? '0.00';
+          }
+
+          // Calculate discount percentage if we have both prices
+          double discountPercent = 0.0;
+          final msrpValue = double.tryParse(productData['msrp']
+                      ?.toString()
+                      .replaceAll(RegExp(r'[^\d.]'), '') ??
+                  '0') ??
+              0.0;
+          final priceValue = double.tryParse(
+                  firstVendorPrice.replaceAll(RegExp(r'[^\d.]'), '')) ??
+              0.0;
+
+          if (msrpValue > 0 && priceValue > 0 && priceValue < msrpValue) {
+            discountPercent = ((msrpValue - priceValue) / msrpValue) * 100;
+          }
+
+          // Update product data with calculated values
+          if (firstVendorPrice.isNotEmpty &&
+              firstVendorPrice != '--' &&
+              firstVendorPrice != 'null') {
+            productData['vendorprice_price'] = firstVendorPrice;
+          }
+          productData['firstVendorPrice'] = firstVendorPrice;
+          productData['discount_percent'] = discountPercent.toStringAsFixed(0);
+
+          return VendorProduct.fromJson(productData);
+        }).toList();
+
+        allFetchedProducts.addAll(fetchedProducts);
+        log('Page $pageNumber: ${fetchedProducts.length} products, Total: ${allFetchedProducts.length}');
+        if (pageNumber < maxPages &&
+            allFetchedProducts.length < targetProducts) {
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
+
+        pageNumber++;
+      }
+
+      final List<VendorProduct> filteredProducts = allFetchedProducts
+          .where((product) => product.productId != widget.productId)
+          .toList();
+
+      final List<VendorProduct> limitedProducts = filteredProducts.length > 20
+          ? filteredProducts.take(20).toList()
+          : filteredProducts;
+
+      if (mounted) {
+        setState(() {
+          categoryProductsList = limitedProducts;
+          _isLoadingCategoryProducts = false;
+        });
+      }
+
+      log('Total Category Products fetched: ${allFetchedProducts.length}');
+      log('Products after filtering current product: ${filteredProducts.length}');
+      log('Final category products to show: ${limitedProducts.length}');
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingCategoryProducts = false;
+        });
+      }
+      log('Error in fetching Category Product list: $e');
+    }
+  }
+
   Future<void> _refreshProductDetails() async {
     await _fetchProductDetails();
   }
@@ -1701,10 +1849,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   : _buildSubscribeButton(),
               const SizedBox(height: 24),
               _buildProductActionsBar(),
+
+              const SizedBox(height: 16),
+              // Category products section (only show if categoryPath is provided)
+              if (widget.categoryPath != null &&
+                  widget.categoryPath!.isNotEmpty) ...[
+                const SizedBox(height: 32),
+                _buildCategoryMoreName(),
+                const SizedBox(height: 16),
+                _buildCategoryMoreDesign(),
+              ],
+
+              const SizedBox(height: 16),
               _buildMoreName(),
               const SizedBox(height: 16),
               _buildMoreDesign(),
-
               // Debug section
               const SizedBox(height: 24),
               //_buildDebugSection(),
@@ -1818,7 +1977,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       children: [
                         // Main product image
                         Image.network(
-                          apiImages[index],
+                          _getProperImageUrl(apiImages[index]),
                           width: double.infinity,
                           height: double.infinity,
                           fit: BoxFit.cover,
@@ -1867,7 +2026,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 size: 20,
                               ),
                               onPressed: () {
-                                _showImageFullScreen(apiImages[index]);
+                                _showImageFullScreen(
+                                    _getProperImageUrl(apiImages[index]));
                               },
                             ),
                           ),
@@ -1946,7 +2106,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Image.network(
-                          apiImages[index],
+                          _getProperImageUrl(apiImages[index]),
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,
@@ -1992,7 +2152,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           child: Stack(
             children: [
               Image.network(
-                fallbackImage,
+                _getProperImageUrl(fallbackImage?.toString()),
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
@@ -2040,7 +2200,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       size: 18,
                     ),
                     onPressed: () {
-                      _showImageFullScreen(fallbackImage);
+                      _showImageFullScreen(
+                          _getProperImageUrl(fallbackImage?.toString()));
                     },
                   ),
                 ),
@@ -2818,7 +2979,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       children: [
         Text(
           'More From ${widget.brandName}',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
@@ -2851,15 +3012,85 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
 
+    // Use ProductListWidget to display the product list
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 0),
+      child: ProductListWidget(
+        products: finalList,
+        crossAxisCount: 2,
+        childAspectRatio: 0.41,
+        mainAxisSpacing: 12.0,
+        crossAxisSpacing: 1.0,
+        onProductTap: (product) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductDetailsScreen(
+                productId: product.productId,
+                brandName: product.brandName.isNotEmpty
+                    ? product.brandName
+                    : widget.brandName,
+                productMPN: product.productMpn,
+                productImage: product.productImage,
+                productPrice: product.vendorpricePrice,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCategoryMoreName() {
+    final categoryDisplayName = widget.categoryName ??
+        CategoryService.getCategoryDisplayName(widget.categoryPath ?? '');
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'More From $categoryDisplayName',
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryMoreDesign() {
+    log('_buildCategoryMoreDesign method is running');
+    log('categoryProductsList length: ${categoryProductsList.length}, _isLoadingCategoryProducts: $_isLoadingCategoryProducts');
+
+    // Show loader when category products data is being fetched
+    if (_isLoadingCategoryProducts) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        child: const Center(
+          child: StylishLoader(
+            type: LoaderType.wave,
+            size: 60.0,
+            primaryColor: AppColors.primary,
+            text: "Loading category products...",
+            textStyle: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
     // Show empty state only when loading is complete and list is empty
-    if (finalList.isEmpty) {
+    if (categoryProductsList.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'No products available',
+              'No category products available',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -2868,7 +3099,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'More products will appear here when available.',
+              'More products from this category will appear here when available.',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -2879,316 +3110,34 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       );
     }
 
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(), // because parent scrolls
-      shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      itemCount: finalList.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+    // Use ProductListWidget to display the category product list
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 0),
+      child: ProductListWidget(
+        products: categoryProductsList,
         crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio:
-            0.65, // Adjusted to accommodate larger bottom price section
-      ),
-      itemBuilder: (context, index) {
-        final product = finalList[index];
-
-        // Parse prices - handle "--" and invalid values
-        String msrpStr = product.msrp;
-        String vendorPriceStr = product.vendorpricePrice;
-
-        // Clean and validate price strings
-        if (msrpStr == '--' || msrpStr.isEmpty || msrpStr == 'null') {
-          msrpStr = '0';
-        }
-        if (vendorPriceStr == '--' ||
-            vendorPriceStr.isEmpty ||
-            vendorPriceStr == 'null') {
-          vendorPriceStr = '0';
-        }
-
-        final msrp =
-            double.tryParse(msrpStr.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
-        final vendorPrice =
-            double.tryParse(vendorPriceStr.replaceAll(RegExp(r'[^\d.]'), '')) ??
-                0.0;
-
-        // Calculate discount percentage
-        double discountPercent = 0.0;
-        if (msrp > 0 && vendorPrice > 0 && vendorPrice < msrp) {
-          discountPercent = ((msrp - vendorPrice) / msrp) * 100;
-        }
-
-        // Hide MSRP and discount when discount is 0% (or effectively 0%)
-        // Use epsilon for floating point comparison
-        const double discountEpsilon = 0.1; // 0.1% discount threshold - hide if discount is less than 0.1%
-        
-        final discountIsZero = discountPercent.abs() < discountEpsilon;
-        
-        // Hide if discount is 0% or effectively 0%
-        final shouldShowMsrpAndDiscount = !discountIsZero;
-
-        // Log for debugging
-        log('Product ${product.productId}: vendorPrice=$vendorPriceStr (parsed: $vendorPrice), msrp=$msrpStr (parsed: $msrp), discount=$discountPercent%');
-
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProductDetailsScreen(
-                  productId: product.productId,
-                  brandName: product.brandName.isNotEmpty
-                      ? product.brandName
-                      : widget.brandName,
-                  productMPN: product.productMpn,
-                  productImage: product.productImage,
-                  productPrice: product.vendorpricePrice,
-                ),
+        childAspectRatio: 0.41,
+        mainAxisSpacing: 12.0,
+        crossAxisSpacing: 1.0,
+        onProductTap: (product) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductDetailsScreen(
+                productId: product.productId,
+                brandName: product.brandName.isNotEmpty
+                    ? product.brandName
+                    : widget.brandName,
+                productMPN: product.productMpn,
+                productImage: product.productImage,
+                productPrice: product.vendorpricePrice,
+                categoryPath: widget.categoryPath,
+                categoryName: widget.categoryName,
               ),
-            );
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[200]!, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Product Image
-                Container(
-                  height: 90,
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: product.productImage.isEmpty ||
-                            product.productImage.contains('no_image')
-                        ? Container(
-                            color: Colors.grey[100],
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.image_not_supported_outlined,
-                                  size: 40,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'No image',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Image.network(
-                            product.productImage,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[100],
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.image_not_supported_outlined,
-                                      size: 40,
-                                      color: Colors.grey[400],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'No image',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ),
-
-                // Brand Logo
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
-                  child: SizedBox(
-                    height: 30,
-                    width: 70,
-                    child: BrandImageWidget(
-                      brand: {
-                        'brand_name': product.brandName.isNotEmpty
-                            ? product.brandName
-                            : widget.brandName,
-                        'brand_key': product.brandName.isNotEmpty
-                            ? product.brandName
-                                .replaceAll(' ', '-')
-                                .toLowerCase()
-                            : widget.brandName
-                                .replaceAll(' ', '-')
-                                .toLowerCase(),
-                        'brand_id': 0,
-                      },
-                      width: 70,
-                      height: 30,
-                    ),
-                  ),
-                ),
-
-                // Product Details
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        // Model Number
-                        if (product.productMpn.isNotEmpty &&
-                            product.productMpn != '--')
-                          Text(
-                            product.productMpn,
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        if (product.productMpn.isNotEmpty &&
-                            product.productMpn != '--')
-                          const SizedBox(height: 2),
-
-                        // Product Name - Constrained to show 2 lines completely
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              product.productName,
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                height: 1.2,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-
-                        // Spacer to push price section to bottom
-                        const SizedBox(height: 8),
-
-                        // Price Section Container - Fixed at bottom with increased size
-                        Container(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Price Section - Fixed at bottom
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // Current Price (discounted) - on the left
-                                  Flexible(
-                                    child: Text(
-                                      vendorPrice > 0
-                                          ? '\$${_formatPrice(vendorPriceStr)}'
-                                          : '--',
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  // Original Price (strikethrough) - on the right, only show if discounted and not same as current price
-                                  if (discountPercent > 0 &&
-                                      msrp > 0 &&
-                                      shouldShowMsrpAndDiscount)
-                                    Flexible(
-                                      child: Text(
-                                        '\$${_formatPrice(product.msrp)}',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 16,
-                                          decoration:
-                                              TextDecoration.lineThrough,
-                                          decorationColor: Colors.grey[600],
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.right,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              // Discount Badge - only show if there's a discount and not same as MSRP
-                              if (discountPercent > 0 &&
-                                  shouldShowMsrpAndDiscount) ...[
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green[50],
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                        color: Colors.green[200]!, width: 1),
-                                  ),
-                                  child: Text(
-                                    '${discountPercent.toStringAsFixed(0)}% OFF',
-                                    style: TextStyle(
-                                      color: Colors.green[700],
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -3209,8 +3158,79 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+  /// Format discount percentage to round up to nearest integer
+  /// Example: 45.5 -> 46, 45.1 -> 46, 45.0 -> 45
+  String _formatDiscountPercentage(dynamic discount) {
+    try {
+      if (discount == null) {
+        return '0';
+      }
+
+      // Handle different types (String, double, int)
+      double? discountValue;
+      if (discount is String) {
+        discountValue =
+            double.tryParse(discount.replaceAll(RegExp(r'[^\d.]'), ''));
+      } else if (discount is num) {
+        discountValue = discount.toDouble();
+      }
+
+      if (discountValue == null) {
+        return '0';
+      }
+
+      // Round up to nearest integer using ceil()
+      final roundedValue = discountValue.ceil();
+      return roundedValue.toString();
+    } catch (e) {
+      return '0';
+    }
+  }
+
+  /// Format date string to "MMM dd, yyyy" format (e.g., "Dec 09, 2025")
+  /// Handles various input formats like "2025-12-10", "2025-12-09", etc.
+  String _formatVendorDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty || dateString == '--') {
+      return '--';
+    }
+
+    try {
+      // Try to parse common date formats
+      DateTime? date;
+
+      // Try ISO format first (2025-12-10)
+      date = DateTime.tryParse(dateString);
+
+      // If that fails, try other common formats
+      if (date == null) {
+        // Try format with time (2025-12-10 00:00:00)
+        final parts = dateString.split(' ');
+        if (parts.isNotEmpty) {
+          date = DateTime.tryParse(parts[0]);
+        }
+      }
+
+      if (date == null) {
+        // Try parsing with different separators
+        final cleanedDate = dateString.replaceAll(RegExp(r'[^\d-]'), '');
+        date = DateTime.tryParse(cleanedDate);
+      }
+
+      if (date == null) {
+        return dateString; // Return original if parsing fails
+      }
+
+      // Format to "MMM dd, yyyy" (e.g., "Dec 09, 2025")
+      final formatter = DateFormat('MMM dd, yyyy');
+      return formatter.format(date);
+    } catch (e) {
+      // If formatting fails, return original string
+      return dateString;
+    }
+  }
+
   Widget _buyAtName() {
-    return Row(
+    return const Row(
       children: [
         Text(
           'Buy At:',
@@ -3327,11 +3347,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                           product.vendorName ?? ''),
                                     ),
                                   ),
-                                  Divider(
+                                  const Divider(
                                     color: Colors.grey,
                                   ),
                                   const SizedBox(height: 4),
-                                  const Padding(
+                                  /*    const Padding(
                                     padding: EdgeInsets.only(right: 10.0),
                                     child: Column(
                                       children: [
@@ -3374,7 +3394,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                         ),
                                       ],
                                     ),
-                                  ),
+                                  ),*/
+
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 3.0),
@@ -3391,11 +3412,30 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                       ],
                                     ),
                                   ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 3.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '(${_formatDiscountPercentage(product.vendorPriceDiscount)}% OFF)',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.disCountColor,
+                                              fontSize: 18),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${product.vendorpriceDate ?? '--'}',
+                                    _formatVendorDate(product.vendorpriceDate),
                                     style: const TextStyle(
-                                        color: Colors.grey, fontSize: 16),
+                                        color:
+                                            Color.fromARGB(255, 136, 136, 136),
+                                        fontSize: 16),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
@@ -3536,7 +3576,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         'https://growth.matridtech.net/vendor-logo/$vendorName.jpg';
 
     return Image.network(
-      logoPath,
+      _getProperImageUrl(logoPath),
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) {
         return Container(
@@ -3970,4 +4010,344 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
     );
   }
+
+  /// Get proper image URL - processes URLs to ensure they're valid
+  /// Handles cases like URLs starting with //, missing http/https, null/empty strings
+  String _getProperImageUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return 'https://www.minsellprice.com/assets/no_image/no_image.jpg';
+    }
+
+    // Trim whitespace
+    String trimmedUrl = imageUrl.trim();
+
+    // Check for null string
+    if (trimmedUrl.toLowerCase() == 'null' || trimmedUrl.isEmpty) {
+      return 'https://www.minsellprice.com/assets/no_image/no_image.jpg';
+    }
+
+    if (trimmedUrl.startsWith('//')) {
+      return 'https:$trimmedUrl';
+    }
+
+    if (!trimmedUrl.startsWith('http://') &&
+        !trimmedUrl.startsWith('https://')) {
+      return 'https://$trimmedUrl';
+    }
+
+    return trimmedUrl;
+  }
 }
+/*
+return GridView.builder(
+physics: const NeverScrollableScrollPhysics(), // because parent scrolls
+shrinkWrap: true,
+padding: const EdgeInsets.symmetric(horizontal: 12),
+itemCount: finalList.length,
+gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+crossAxisCount: 2,
+crossAxisSpacing: 12,
+mainAxisSpacing: 12,
+childAspectRatio:
+0.65, // Adjusted to accommodate larger bottom price section
+),
+itemBuilder: (context, index) {
+final product = finalList[index];
+
+// Parse prices - handle "--" and invalid values
+String msrpStr = product.msrp;
+String vendorPriceStr = product.vendorpricePrice;
+
+// Clean and validate price strings
+if (msrpStr == '--' || msrpStr.isEmpty || msrpStr == 'null') {
+msrpStr = '0';
+}
+if (vendorPriceStr == '--' ||
+vendorPriceStr.isEmpty ||
+vendorPriceStr == 'null') {
+vendorPriceStr = '0';
+}
+
+final msrp =
+double.tryParse(msrpStr.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+final vendorPrice =
+double.tryParse(vendorPriceStr.replaceAll(RegExp(r'[^\d.]'), '')) ??
+0.0;
+
+// Calculate discount percentage
+double discountPercent = 0.0;
+if (msrp > 0 && vendorPrice > 0 && vendorPrice < msrp) {
+discountPercent = ((msrp - vendorPrice) / msrp) * 100;
+}
+
+// Hide MSRP and discount when discount is 0% (or effectively 0%)
+// Use epsilon for floating point comparison
+const double discountEpsilon =
+0.1; // 0.1% discount threshold - hide if discount is less than 0.1%
+
+final discountIsZero = discountPercent.abs() < discountEpsilon;
+
+// Hide if discount is 0% or effectively 0%
+final shouldShowMsrpAndDiscount = !discountIsZero;
+
+// Log for debugging
+log('Product ${product.productId}: vendorPrice=$vendorPriceStr (parsed: $vendorPrice), msrp=$msrpStr (parsed: $msrp), discount=$discountPercent%');
+
+return GestureDetector(
+onTap: () {
+Navigator.push(
+context,
+MaterialPageRoute(
+builder: (context) => ProductDetailsScreen(
+productId: product.productId,
+brandName: product.brandName.isNotEmpty
+? product.brandName
+    : widget.brandName,
+productMPN: product.productMpn,
+productImage: product.productImage,
+productPrice: product.vendorpricePrice,
+),
+),
+);
+},
+child: Container(
+decoration: BoxDecoration(
+color: Colors.white,
+borderRadius: BorderRadius.circular(16),
+border: Border.all(color: Colors.grey[200]!, width: 1),
+boxShadow: [
+BoxShadow(
+color: Colors.grey.withOpacity(0.1),
+spreadRadius: 1,
+blurRadius: 8,
+offset: const Offset(0, 2),
+),
+],
+),
+child: Column(
+crossAxisAlignment: CrossAxisAlignment.start,
+children: [
+// Product Image
+Container(
+height: 90,
+width: double.infinity,
+padding: const EdgeInsets.all(8),
+decoration: BoxDecoration(
+color: Colors.grey[50],
+borderRadius: const BorderRadius.only(
+topLeft: Radius.circular(16),
+topRight: Radius.circular(16),
+),
+),
+child: ClipRRect(
+borderRadius: BorderRadius.circular(8),
+child: product.productImage.isEmpty ||
+product.productImage.contains('no_image')
+? Container(
+color: Colors.grey[100],
+child: Column(
+mainAxisAlignment: MainAxisAlignment.center,
+children: [
+Icon(
+Icons.image_not_supported_outlined,
+size: 40,
+color: Colors.grey[400],
+),
+const SizedBox(height: 4),
+Text(
+'No image',
+style: TextStyle(
+color: Colors.grey[600],
+fontSize: 10,
+),
+),
+],
+),
+)
+    : Image.network(
+_getProperImageUrl(product.productImage),
+fit: BoxFit.contain,
+errorBuilder: (context, error, stackTrace) {
+return Container(
+color: Colors.grey[100],
+child: Column(
+mainAxisAlignment: MainAxisAlignment.center,
+children: [
+Icon(
+Icons.image_not_supported_outlined,
+size: 40,
+color: Colors.grey[400],
+),
+const SizedBox(height: 4),
+Text(
+'No image',
+style: TextStyle(
+color: Colors.grey[600],
+fontSize: 10,
+),
+),
+],
+),
+);
+},
+),
+),
+),
+
+// Brand Logo
+Padding(
+padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+child: SizedBox(
+height: 30,
+width: 70,
+child: BrandImageWidget(
+brand: {
+'brand_name': product.brandName.isNotEmpty
+? product.brandName
+    : widget.brandName,
+'brand_key': product.brandName.isNotEmpty
+? product.brandName
+    .replaceAll(' ', '-')
+    .toLowerCase()
+    : widget.brandName
+    .replaceAll(' ', '-')
+    .toLowerCase(),
+'brand_id': 0,
+},
+width: 70,
+height: 30,
+),
+),
+),
+
+// Product Details
+Expanded(
+child: Padding(
+padding: const EdgeInsets.symmetric(horizontal: 8),
+child: Column(
+crossAxisAlignment: CrossAxisAlignment.start,
+mainAxisSize: MainAxisSize.max,
+children: [
+// Model Number
+if (product.productMpn.isNotEmpty &&
+product.productMpn != '--')
+Text(
+product.productMpn,
+style: TextStyle(
+color: Colors.grey[700],
+fontSize: 13,
+fontWeight: FontWeight.w600,
+),
+maxLines: 1,
+overflow: TextOverflow.ellipsis,
+),
+if (product.productMpn.isNotEmpty &&
+product.productMpn != '--')
+const SizedBox(height: 2),
+
+// Product Name - Constrained to show 2 lines completely
+Expanded(
+child: Align(
+alignment: Alignment.topLeft,
+child: Text(
+product.productName,
+style: const TextStyle(
+color: Colors.black87,
+fontSize: 13,
+fontWeight: FontWeight.w500,
+height: 1.2,
+),
+maxLines: 2,
+overflow: TextOverflow.ellipsis,
+),
+),
+),
+
+// Spacer to push price section to bottom
+const SizedBox(height: 8),
+
+// Price Section Container - Fixed at bottom with increased size
+Container(
+padding: const EdgeInsets.only(bottom: 8),
+child: Column(
+crossAxisAlignment: CrossAxisAlignment.start,
+mainAxisSize: MainAxisSize.min,
+children: [
+// Price Section - Fixed at bottom
+Row(
+crossAxisAlignment: CrossAxisAlignment.start,
+mainAxisAlignment:
+MainAxisAlignment.spaceBetween,
+children: [
+// Current Price (discounted) - on the left
+Flexible(
+child: Text(
+vendorPrice > 0
+? '\$${_formatPrice(vendorPriceStr)}'
+    : '--',
+style: const TextStyle(
+color: Colors.black87,
+fontSize: 20,
+fontWeight: FontWeight.bold,
+),
+maxLines: 1,
+overflow: TextOverflow.ellipsis,
+),
+),
+// Original Price (strikethrough) - on the right, only show if discounted and not same as current price
+if (discountPercent > 0 &&
+msrp > 0 &&
+shouldShowMsrpAndDiscount)
+Flexible(
+child: Text(
+'\$${_formatPrice(product.msrp)}',
+style: TextStyle(
+color: Colors.grey[600],
+fontSize: 16,
+decoration:
+TextDecoration.lineThrough,
+decorationColor: Colors.grey[600],
+),
+maxLines: 1,
+overflow: TextOverflow.ellipsis,
+textAlign: TextAlign.right,
+),
+),
+],
+),
+// Discount Badge - only show if there's a discount and not same as MSRP
+if (discountPercent > 0 &&
+shouldShowMsrpAndDiscount) ...[
+const SizedBox(height: 6),
+Container(
+padding: const EdgeInsets.symmetric(
+horizontal: 6, vertical: 2),
+decoration: BoxDecoration(
+color: Colors.green[50],
+borderRadius: BorderRadius.circular(4),
+border: Border.all(
+color: Colors.green[200]!, width: 1),
+),
+child: Text(
+'${discountPercent.toStringAsFixed(0)}% OFF',
+style: TextStyle(
+color: Colors.green[700],
+fontSize: 15,
+fontWeight: FontWeight.bold,
+),
+),
+),
+],
+],
+),
+),
+],
+),
+),
+),
+],
+),
+),
+);
+},
+);*/

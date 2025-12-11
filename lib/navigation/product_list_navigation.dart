@@ -68,6 +68,8 @@ class ProductListNavigation {
     required String productMpn,
     required String productImage,
     required double productPrice,
+    String? categoryPath,
+    String? categoryName,
   }) {
     Navigator.push(
       context,
@@ -78,6 +80,8 @@ class ProductListNavigation {
           productMPN: productMpn,
           productImage: productImage,
           productPrice: productPrice,
+          categoryPath: categoryPath,
+          categoryName: categoryName,
         ),
       ),
     );

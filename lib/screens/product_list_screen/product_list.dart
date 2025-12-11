@@ -15,7 +15,6 @@ import 'package:minsellprice/screens/home_page/home_page.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
 import 'package:minsellprice/screens/dashboard_screen/dashboard_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../widgets/brand_image.dart';
 import 'filter_class.dart';
 

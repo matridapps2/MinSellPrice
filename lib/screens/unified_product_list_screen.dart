@@ -136,6 +136,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
       key: _controller.scaffoldKey,
       endDrawer: _buildFilterMenu(),
       appBar: _buildAppBar(),
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           SafeArea(
@@ -161,7 +162,6 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                 if (widget.type == ProductListType.category)
                   const SizedBox(height: 5),
                 _buildProductList(),
-                const SizedBox(height: 10),
               ],
             ),
           ),
@@ -274,7 +274,7 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
                     onChanged: (value) {
                       log('Search text changed: "$value"');
                       if (value.trim().isNotEmpty) {
-                        log('Performing API search for: "$value"');
+                        log('1 Performing API search for: "$value"');
                         _controller.performSearch(value.trim(), context);
                       } else {
                         _controller.clearSearch();
@@ -591,10 +591,9 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
   }
 
   Widget _buildSearchLoadingState() {
-    return Flexible(
+    return Expanded(
       child: Container(
         width: w,
-        height: h / 1.1,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -624,356 +623,368 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
   }
 
   Widget _buildSearchEmptyState() {
-    return Flexible(
-      child: Container(
-        width: w,
-        height: h / 1.1,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: w * 0.3,
-              height: w * 0.3,
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.search_off_rounded,
-                size: w * 0.15,
-                color: AppColors.primary.withOpacity(0.7),
-              ),
-            ),
-            SizedBox(height: h * 0.03),
-            Text(
-              'No Search Results Found',
-              style: TextStyle(
-                fontSize: w * 0.06,
-                fontFamily: 'Futura BdCn BT Bold',
-                fontWeight: FontWeight.w600,
-                color: AppColors.text,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: h * 0.015),
-            Text(
-              'We couldn\'t find any products matching "${_controller.searchController.text}".\nTry searching with different keywords.',
-              style: TextStyle(
-                fontSize: w * 0.035,
-                fontFamily: 'Futura BdCn BT Bold',
-                fontWeight: FontWeight.w300,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: h * 0.04),
-            GestureDetector(
-              onTap: () {
-                _controller.clearSearch();
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: w * 0.06,
-                  vertical: h * 0.018,
-                ),
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Container(
+          width: w,
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height * 0.5,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: w * 0.3,
+                height: w * 0.3,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(25),
+                  color: AppColors.background,
+                  shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      spreadRadius: 1,
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 2,
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.clear_rounded,
-                      size: w * 0.035,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: w * 0.015),
-                    Text(
-                      'Clear Search',
-                      style: TextStyle(
-                        fontSize: w * 0.035,
-                        fontFamily: 'Futura BdCn BT Bold',
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
+                child: Icon(
+                  Icons.search_off_rounded,
+                  size: w * 0.15,
+                  color: AppColors.primary.withOpacity(0.7),
                 ),
               ),
-            ),
-          ],
+              SizedBox(height: h * 0.03),
+              Text(
+                'No Search Results Found',
+                style: TextStyle(
+                  fontSize: w * 0.06,
+                  fontFamily: 'Futura BdCn BT Bold',
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.text,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: h * 0.015),
+              Text(
+                'We couldn\'t find any products matching "${_controller.searchController.text}".\nTry searching with different keywords.',
+                style: TextStyle(
+                  fontSize: w * 0.035,
+                  fontFamily: 'Futura BdCn BT Bold',
+                  fontWeight: FontWeight.w300,
+                  color: Colors.grey[600],
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: h * 0.04),
+              GestureDetector(
+                onTap: () {
+                  _controller.clearSearch();
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: w * 0.06,
+                    vertical: h * 0.018,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        spreadRadius: 1,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.clear_rounded,
+                        size: w * 0.035,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: w * 0.015),
+                      Text(
+                        'Clear Search',
+                        style: TextStyle(
+                          fontSize: w * 0.035,
+                          fontFamily: 'Futura BdCn BT Bold',
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Flexible(
-      child: Container(
-        width: w,
-        height: h / 1.1,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: w * 0.3,
-              height: w * 0.3,
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.search_off_rounded,
-                size: w * 0.15,
-                color: AppColors.primary.withOpacity(0.7),
-              ),
-            ),
-            SizedBox(height: h * 0.03),
-            Text(
-              'No Products Found',
-              style: TextStyle(
-                fontSize: w * 0.06,
-                fontFamily: 'Futura BdCn BT Bold',
-                fontWeight: FontWeight.w600,
-                color: AppColors.text,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: h * 0.015),
-            Text(
-              'We couldn\'t find any products for this ${widget.type.name}.\nPlease try a different search or browse other categories.',
-              style: TextStyle(
-                fontSize: w * 0.035,
-                fontFamily: 'Futura BdCn BT Bold',
-                fontWeight: FontWeight.w300,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: h * 0.04),
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: w * 0.06,
-                  vertical: h * 0.018,
-                ),
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Container(
+          width: w,
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height * 0.5,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: w * 0.3,
+                height: w * 0.3,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(25),
+                  color: AppColors.background,
+                  shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      spreadRadius: 1,
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 2,
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.arrow_back_ios_rounded,
-                      size: w * 0.035,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: w * 0.015),
-                    Text(
-                      'Go Back',
-                      style: TextStyle(
-                        fontSize: w * 0.035,
-                        fontFamily: 'Futura BdCn BT Bold',
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
+                child: Icon(
+                  Icons.search_off_rounded,
+                  size: w * 0.15,
+                  color: AppColors.primary.withOpacity(0.7),
                 ),
               ),
-            ),
-          ],
+              SizedBox(height: h * 0.03),
+              Text(
+                'No Products Found',
+                style: TextStyle(
+                  fontSize: w * 0.06,
+                  fontFamily: 'Futura BdCn BT Bold',
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.text,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: h * 0.015),
+              Text(
+                'We couldn\'t find any products for this ${widget.type.name}.\nPlease try a different search or browse other categories.',
+                style: TextStyle(
+                  fontSize: w * 0.035,
+                  fontFamily: 'Futura BdCn BT Bold',
+                  fontWeight: FontWeight.w300,
+                  color: Colors.grey[600],
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: h * 0.04),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: w * 0.06,
+                    vertical: h * 0.018,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        spreadRadius: 1,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_back_ios_rounded,
+                        size: w * 0.035,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: w * 0.015),
+                      Text(
+                        'Go Back',
+                        style: TextStyle(
+                          fontSize: w * 0.035,
+                          fontFamily: 'Futura BdCn BT Bold',
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildFilteredEmptyState() {
-    return Flexible(
-      child: Container(
-        width: w,
-        height: h / 1.1,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: w * 0.3,
-              height: w * 0.3,
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Container(
+          width: w,
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height * 0.5,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: w * 0.3,
+                height: w * 0.3,
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 2,
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.filter_list_off_rounded,
+                  size: w * 0.15,
+                  color: AppColors.primary.withOpacity(0.7),
+                ),
+              ),
+              SizedBox(height: h * 0.03),
+              Text(
+                'No Products Match Your Filters',
+                style: TextStyle(
+                  fontSize: w * 0.06,
+                  fontFamily: 'Futura BdCn BT Bold',
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.text,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: h * 0.015),
+              Text(
+                'Try adjusting your filters or clear them to see all products.',
+                style: TextStyle(
+                  fontSize: w * 0.035,
+                  fontFamily: 'Futura BdCn BT Bold',
+                  fontWeight: FontWeight.w300,
+                  color: Colors.grey[600],
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: h * 0.04),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      _controller.scaffoldKey.currentState!.openEndDrawer();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: w * 0.06,
+                        vertical: h * 0.018,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            spreadRadius: 1,
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.filter_alt,
+                            size: w * 0.035,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: w * 0.015),
+                          Text(
+                            'Adjust Filters',
+                            style: TextStyle(
+                              fontSize: w * 0.035,
+                              fontFamily: 'Futura BdCn BT Bold',
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: w * 0.03),
+                  GestureDetector(
+                    onTap: () {
+                      _controller.clearAllFilters();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: w * 0.06,
+                        vertical: h * 0.018,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[600],
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 1,
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.clear_all,
+                            size: w * 0.035,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: w * 0.015),
+                          Text(
+                            'Clear Filters',
+                            style: TextStyle(
+                              fontSize: w * 0.035,
+                              fontFamily: 'Futura BdCn BT Bold',
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
-              child: Icon(
-                Icons.filter_list_off_rounded,
-                size: w * 0.15,
-                color: AppColors.primary.withOpacity(0.7),
-              ),
-            ),
-            SizedBox(height: h * 0.03),
-            Text(
-              'No Products Match Your Filters',
-              style: TextStyle(
-                fontSize: w * 0.06,
-                fontFamily: 'Futura BdCn BT Bold',
-                fontWeight: FontWeight.w600,
-                color: AppColors.text,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: h * 0.015),
-            Text(
-              'Try adjusting your filters or clear them to see all products.',
-              style: TextStyle(
-                fontSize: w * 0.035,
-                fontFamily: 'Futura BdCn BT Bold',
-                fontWeight: FontWeight.w300,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: h * 0.04),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    _controller.scaffoldKey.currentState!.openEndDrawer();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: w * 0.06,
-                      vertical: h * 0.018,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.filter_alt,
-                          size: w * 0.035,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: w * 0.015),
-                        Text(
-                          'Adjust Filters',
-                          style: TextStyle(
-                            fontSize: w * 0.035,
-                            fontFamily: 'Futura BdCn BT Bold',
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(width: w * 0.03),
-                GestureDetector(
-                  onTap: () {
-                    _controller.clearAllFilters();
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: w * 0.06,
-                      vertical: h * 0.018,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[600],
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.clear_all,
-                          size: w * 0.035,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: w * 0.015),
-                        Text(
-                          'Clear Filters',
-                          style: TextStyle(
-                            fontSize: w * 0.035,
-                            fontFamily: 'Futura BdCn BT Bold',
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1124,6 +1135,13 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
           productMPN: product.productMpn,
           productImage: product.productImage,
           productPrice: price,
+          // Pass category information if navigating from category list
+          categoryPath: widget.type == ProductListType.category
+              ? widget.identifier
+              : null,
+          categoryName: widget.type == ProductListType.category
+              ? widget.displayName
+              : null,
         ),
       ),
     );
@@ -1149,6 +1167,13 @@ class _UnifiedProductListScreenState extends State<UnifiedProductListScreen> {
           productImage: product.productImage,
           productPrice:
               double.tryParse(product.vendorpricePrice.toString()) ?? 0.0,
+          // Pass category information if navigating from category list
+          categoryPath: widget.type == ProductListType.category
+              ? widget.identifier
+              : null,
+          categoryName: widget.type == ProductListType.category
+              ? widget.displayName
+              : null,
         );
       },
       child: Container(

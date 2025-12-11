@@ -217,6 +217,7 @@ class VendorProductData {
   final String? msrp;
   final String? productImage;
   final int? vendorProductId;
+  final double? vendorPriceDiscount;
   final String? vendorSku;
   final String? vk11;
   final String? source;
@@ -267,6 +268,7 @@ class VendorProductData {
     this.vendorWebsite,
     this.vendorUrl,
     this.vendorRawUrl,
+    this.vendorPriceDiscount
   });
 
   factory VendorProductData.fromJson(Map<String, dynamic> json) {
@@ -302,6 +304,7 @@ class VendorProductData {
         vendorWebsite: json['vendor_website'] as String?,
         vendorUrl: json['vendor_url'] as String?,
         vendorRawUrl: json['vendor_raw_url'] as String?,
+        vendorPriceDiscount: json['price_difference_percent'] as double?
       );
       log('Successfully parsed vendor: ${vendorProduct.vendorName} with price: ${vendorProduct.vendorpricePrice}');
       return vendorProduct;
@@ -341,6 +344,7 @@ class VendorProductData {
       'vendor_website': vendorWebsite,
       'vendor_url': vendorUrl,
       'vendor_raw_url': vendorRawUrl,
+      'price_difference_percent': vendorPriceDiscount
     };
   }
 

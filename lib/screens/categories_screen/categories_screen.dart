@@ -22,7 +22,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   final List<Map<String, dynamic>> categories = [
     {
-      'name': 'Home & Garden',
+      'name': 'Brands',
       'icon': Icons.home,
       'color': AppColors.primary,
       'subcategories': []
@@ -44,7 +44,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
       categories[0]['subcategories'] =
           brandsProvider.homeGardenBrands.map((brand) {
-        log('Processing Home & Garden brand: ${brand['brand_name']} with key: ${brand['brand_key']}');
+        log('Processing  brand: ${brand['brand_name']} with key: ${brand['brand_key']}');
         return {
           'name': brand['brand_name'] ?? 'Unknown Brand',
           'icon': Icons.home,
