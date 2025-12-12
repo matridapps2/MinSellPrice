@@ -10,8 +10,7 @@ import 'package:minsellprice/core/utils/toast_messages/common_toasts.dart';
 import 'package:minsellprice/screens/categories_provider/categories_provider_file.dart';
 import 'package:minsellprice/navigation/product_list_navigation.dart';
 import 'package:minsellprice/screens/product_details_screen/product_details_screen.dart';
-import 'package:minsellprice/screens/search_screen/brand_search_screen.dart';
-import 'package:minsellprice/screens/search_screen/product_search_screen.dart';
+import 'package:minsellprice/screens/search_screen/unified_search_screen.dart';
 import 'package:minsellprice/widgets/category_shimmer.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -38,12 +37,8 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
 
   final _scrollController = ScrollController();
 
-  /// Visibility states for expanded sections
-  bool _showAllOutdoorDeals = false;
-  bool _showAllFaucetDeals = false;
-  bool _showAllSinkDeals = false;
-  bool _showAllRestaurantDeals = false;
-  bool _showAllFurnitureDeals = false;
+  /// Visibility states for expanded sections - dynamic based on category titles
+  Map<String, bool> _expandedSections = {};
 
   /// Home slider products deals from API
   List<Map<String, dynamic>> _homeSliderDeals = [];
@@ -131,229 +126,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
         });
       }
     }
-  }
-
-  /// Get products for a specific category from home slider deals
-  List<Map<String, dynamic>> _getProductsForCategory(String categoryTitle) {
-    if (_homeSliderDeals.isEmpty) {
-      log('Home slider deals is empty');
-      return [];
-    }
-
-    // Log all available categories for debugging
-    log('🔍 Searching for category: $categoryTitle');
-    log('📋 Available categories:');
-    for (var deal in _homeSliderDeals) {
-      final title = deal['HomePageCategoryTitle']?.toString() ?? '';
-      final route = deal['SectionRoute']?.toString() ?? '';
-      log('  - Title: "$title" | Route: "$route"');
-    }
-
-    // Map of search terms to possible category title variations
-    final categoryMapping = {
-      'Ranges, Cooktops, Microwaves': [
-        'ranges',
-        'cooktops',
-        'microwaves',
-        'range',
-        'cooktop',
-        'microwave',
-      ],
-      'Outdoor Kitchen': [
-        'outdoor',
-        'kitchen',
-        'grill',
-        'outdoor kitchen',
-        'outdoor kitchen deals',
-      ],
-      'Kitchen Faucet': [
-        'faucet',
-        'kitchen faucet',
-        'faucets',
-        'kitchen faucets',
-      ],
-      'Kitchen Sinks': [
-        'sink',
-        'sinks',
-        'kitchen sink',
-        'kitchen sinks',
-      ],
-    };
-
-    // Get search terms for the category
-    final searchTerms = categoryMapping[categoryTitle] ??
-        categoryTitle
-            .toLowerCase()
-            .split(' ')
-            .where((t) => t.length > 2)
-            .toList();
-    final searchPattern = categoryTitle.toLowerCase();
-
-    for (var deal in _homeSliderDeals) {
-      final title = deal['HomePageCategoryTitle']?.toString() ?? '';
-      final route = deal['SectionRoute']?.toString() ?? '';
-      final titleLower = title.toLowerCase();
-      final routeLower = route.toLowerCase();
-
-      // Try exact match in title
-      if (titleLower.contains(searchPattern)) {
-        log('✅ Found exact category match: "$title" for search: "$categoryTitle"');
-        final productData = deal['product_data'] as List<dynamic>? ?? [];
-        log('📦 Found ${productData.length} products for category: $title');
-        return productData
-            .map((product) => product as Map<String, dynamic>)
-            .toList();
-      }
-
-      // Try matching with route
-      if (routeLower.contains(searchPattern) ||
-          searchPattern.contains(routeLower)) {
-        log('✅ Found route match: "$route" for search: "$categoryTitle"');
-        final productData = deal['product_data'] as List<dynamic>? ?? [];
-        log('📦 Found ${productData.length} products for category: $title');
-        return productData
-            .map((product) => product as Map<String, dynamic>)
-            .toList();
-      }
-
-      // Try matching with search terms
-      bool matches = false;
-      for (var term in searchTerms) {
-        if (titleLower.contains(term) || routeLower.contains(term)) {
-          matches = true;
-          break;
-        }
-      }
-
-      if (matches) {
-        log('✅ Found category match: "$title" (route: "$route") for search: "$categoryTitle"');
-        final productData = deal['product_data'] as List<dynamic>? ?? [];
-        log('📦 Found ${productData.length} products for category: $title');
-        return productData
-            .map((product) => product as Map<String, dynamic>)
-            .toList();
-      }
-    }
-
-    log('⚠️ No category match found for: "$categoryTitle"');
-    return [];
-  }
-
-  /// Get category title for a specific category
-  String? _getCategoryTitle(String categoryTitle) {
-    if (_homeSliderDeals.isEmpty) return null;
-
-    // Map of search terms to possible category title variations
-    final categoryMapping = {
-      'Ranges, Cooktops, Microwaves': [
-        'ranges',
-        'cooktops',
-        'microwaves',
-        'range',
-        'cooktop',
-        'microwave',
-      ],
-      'Outdoor Kitchen': [
-        'outdoor',
-        'kitchen',
-        'grill',
-        'outdoor kitchen',
-        'outdoor kitchen deals',
-      ],
-      'Kitchen Faucet': [
-        'faucet',
-        'kitchen faucet',
-        'faucets',
-        'kitchen faucets',
-      ],
-      'Kitchen Sinks': [
-        'sink',
-        'sinks',
-        'kitchen sink',
-        'kitchen sinks',
-      ],
-    };
-
-    // Get search terms for the category
-    final searchTerms = categoryMapping[categoryTitle] ??
-        categoryTitle
-            .toLowerCase()
-            .split(' ')
-            .where((t) => t.length > 2)
-            .toList();
-    final searchPattern = categoryTitle.toLowerCase();
-
-    for (var deal in _homeSliderDeals) {
-      final title = deal['HomePageCategoryTitle']?.toString() ?? '';
-      final route = deal['SectionRoute']?.toString() ?? '';
-      final titleLower = title.toLowerCase();
-      final routeLower = route.toLowerCase();
-
-      // Try exact match in title
-      if (titleLower.contains(searchPattern)) {
-        return title;
-      }
-
-      // Try matching with route
-      if (routeLower.contains(searchPattern) ||
-          searchPattern.contains(routeLower)) {
-        return title;
-      }
-
-      // Try matching with search terms
-      bool matches = false;
-      for (var term in searchTerms) {
-        if (titleLower.contains(term) || routeLower.contains(term)) {
-          matches = true;
-          break;
-        }
-      }
-
-      if (matches) {
-        return title;
-      }
-    }
-    return null;
-  }
-
-  /// Check if Outdoor Kitchen section has data
-  bool _hasOutdoorKitchenData() {
-    if (_isHomeSliderDealsLoading) return false;
-    final products = _getProductsForCategory('Outdoor Kitchen');
-    final categoryTitle = _getCategoryTitle('Outdoor Kitchen');
-    return products.isNotEmpty && categoryTitle != null;
-  }
-
-  /// Check if Kitchen Faucet section has data
-  bool _hasKitchenFaucetData() {
-    if (_isHomeSliderDealsLoading) return false;
-    final products = _getProductsForCategory('Kitchen Faucet');
-    final categoryTitle = _getCategoryTitle('Kitchen Faucet');
-    return products.isNotEmpty && categoryTitle != null;
-  }
-
-  /// Check if Kitchen Sinks section has data
-  bool _hasKitchenSinksData() {
-    if (_isHomeSliderDealsLoading) return false;
-    final products = _getProductsForCategory('Kitchen Sinks');
-    final categoryTitle = _getCategoryTitle('Kitchen Sinks');
-    return products.isNotEmpty && categoryTitle != null;
-  }
-
-  /// Check if Restaurant Equipment section has data
-  bool _hasRestaurantEquipmentData() {
-    if (_isHomeSliderDealsLoading) return false;
-    final products = _getProductsForCategory('Restaurant Equipment');
-    final categoryTitle = _getCategoryTitle('Restaurant Equipment');
-    return products.isNotEmpty && categoryTitle != null;
-  }
-
-  /// Check if Furniture section has data
-  bool _hasFurnitureData() {
-    if (_isHomeSliderDealsLoading) return false;
-    final products = _getProductsForCategory('Furniture');
-    final categoryTitle = _getCategoryTitle('Furniture');
-    return products.isNotEmpty && categoryTitle != null;
   }
 
   /// Check if Home Box Products section has data
@@ -500,8 +272,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    const ProductSearchScreen(),
+                                builder: (context) => const UnifiedSearchScreen(
+                                  initialSearchType: SearchType.product,
+                                ),
                               ),
                             );
                           },
@@ -597,7 +370,9 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const BrandSearchScreen(),
+                                builder: (context) => const UnifiedSearchScreen(
+                                  initialSearchType: SearchType.brand,
+                                ),
                               ),
                             );
                           },
@@ -673,28 +448,24 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
                       children: [
                         const SizedBox(height: 20),
 
-                        // Outdoor Kitchen Deals Horizontal Section
-                        _buildOutdoorKitchenSection(),
-                        if (_hasOutdoorKitchenData())
-                          const SizedBox(height: 25),
+                        // Dynamic Slider Sections - iterate through API data
+                        if (_isHomeSliderDealsLoading)
+                          ...List.generate(
+                              3, (index) => const ProductSectionShimmer())
+                        else
+                          ..._homeSliderDeals.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final deal = entry.value;
+                            return Column(
+                              children: [
+                                _buildDynamicSliderSection(deal),
+                                if (index < _homeSliderDeals.length - 1)
+                                  const SizedBox(height: 25),
+                              ],
+                            );
+                          }).toList(),
 
-                        // Kitchen Faucet Deals Section
-                        _buildKitchenFaucetDealsSection(),
-                        if (_hasKitchenFaucetData()) const SizedBox(height: 25),
-
-                        // Kitchen Sinks Sale Section
-                        _buildKitchenSinksSaleSection(),
-                        if (_hasKitchenSinksData()) const SizedBox(height: 25),
-
-                        // Restaurant Equipment Deals Section
-                        _buildRestaurantEquipmentDealsSection(),
-                        if (_hasRestaurantEquipmentData())
-                          const SizedBox(height: 25),
-
-                        // Furniture Deals Section
-                        _buildFurnitureDealsSection(),
-                        if (_hasFurnitureData()) const SizedBox(height: 25),
-
+                        const SizedBox(height: 25),
                         // Home Box Products Deals Section
                         _buildHomeBoxProductsDealsSection(),
                         if (_hasHomeBoxProductsData())
@@ -1214,21 +985,30 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
     );
   }
 
-  /// Outdoor Kitchen Deals Horizontal Section Widget
-  Widget _buildOutdoorKitchenSection() {
-    // Get products from API - search for outdoor kitchen related categories
-    final products = _getProductsForCategory('Outdoor Kitchen');
-    final categoryTitle = _getCategoryTitle('Outdoor Kitchen');
+  /// Generic Dynamic Section Builder - uses HomePageCategoryTitle from API
+  Widget _buildDynamicSliderSection(Map<String, dynamic> deal) {
+    // Get category title and products directly from API deal
+    final categoryTitle = deal['HomePageCategoryTitle']?.toString() ?? '';
+    final productData = deal['product_data'] as List<dynamic>? ?? [];
+    final products =
+        productData.map((product) => product as Map<String, dynamic>).toList();
 
-    // Show shimmer when loading (Outdoor Kitchen uses height 400)
+    // Show shimmer when loading
     if (_isHomeSliderDealsLoading) {
-      return const ProductSectionShimmer(height: 400);
+      return const ProductSectionShimmer();
     }
 
     // Hide section when no products or when no category title
-    if (products.isEmpty || categoryTitle == null) {
+    if (products.isEmpty || categoryTitle.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    // Initialize expanded state for this category if not exists
+    if (!_expandedSections.containsKey(categoryTitle)) {
+      _expandedSections[categoryTitle] = false;
+    }
+
+    final isExpanded = _expandedSections[categoryTitle] ?? false;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -1289,11 +1069,11 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               GestureDetector(
                 onTap: () {
                   setState(() {
-                    _showAllOutdoorDeals = !_showAllOutdoorDeals;
+                    _expandedSections[categoryTitle] = !isExpanded;
                   });
                 },
                 child: Text(
-                  _showAllOutdoorDeals ? 'Show Less' : 'View All Deals',
+                  isExpanded ? 'Show Less' : 'View All Deals',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1307,7 +1087,7 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
           const SizedBox(height: 20),
 
           // Products - Show horizontal scroll or grid based on visibility
-          if (!_showAllOutdoorDeals)
+          if (!isExpanded)
             SizedBox(
               height: 410,
               child: ListView.builder(
@@ -1321,495 +1101,6 @@ class _DashboardScreenWidgetState extends State<DashboardScreenWidget>
               ),
             )
           else
-
-            // Expanded Grid View
-            //  _buildExpandedApiProductGrid(products),
-
-            ProductListWidget(
-              products: _convertMapToVendorProducts(products),
-              onProductTap: (product) {
-                _navigateToProductDetailsFromVendorProduct(product);
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Kitchen Faucet Deals Section Widget
-  Widget _buildKitchenFaucetDealsSection() {
-    // Get products from API - search for kitchen faucet related categories
-    final products = _getProductsForCategory('Kitchen Faucet');
-    final categoryTitle = _getCategoryTitle('Kitchen Faucet');
-
-    // Show shimmer when loading
-    if (_isHomeSliderDealsLoading) {
-      return const ProductSectionShimmer();
-    }
-
-    // Hide section when no products or when no category title
-    if (products.isEmpty || categoryTitle == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Enhanced Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        categoryTitle,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          letterSpacing: 1.0,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black12,
-                              offset: Offset(0, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showAllFaucetDeals = !_showAllFaucetDeals;
-                  });
-                },
-                child: Text(
-                  _showAllFaucetDeals ? 'Show Less' : 'View All Deals',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Products - Show horizontal scroll or grid based on visibility
-          if (!_showAllFaucetDeals)
-            SizedBox(
-              height: 410,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return _buildApiProductCard(product);
-                },
-              ),
-            )
-          else
-            // Expanded Grid View
-            // _buildExpandedApiProductGrid(products),
-
-            ProductListWidget(
-              products: _convertMapToVendorProducts(products),
-              onProductTap: (product) {
-                _navigateToProductDetailsFromVendorProduct(product);
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Kitchen Sinks Sale Section Widget
-  Widget _buildKitchenSinksSaleSection() {
-    // Get products from API - search for kitchen sinks related categories
-    final products = _getProductsForCategory('Kitchen Sinks');
-    final categoryTitle = _getCategoryTitle('Kitchen Sinks');
-
-    // Show shimmer when loading
-    if (_isHomeSliderDealsLoading) {
-      return const ProductSectionShimmer();
-    }
-
-    // Hide section when no products or when no category title
-    if (products.isEmpty || categoryTitle == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Enhanced Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        categoryTitle,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          letterSpacing: 1.0,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black12,
-                              offset: Offset(0, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showAllSinkDeals = !_showAllSinkDeals;
-                  });
-                },
-                child: Text(
-                  _showAllSinkDeals ? 'Show Less' : 'View All Deals',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Products - Show horizontal scroll or grid based on visibility
-          if (!_showAllSinkDeals)
-            SizedBox(
-              height: 410,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return _buildApiProductCard(product);
-                },
-              ),
-            )
-          else
-            // Expanded Grid View
-            //  _buildExpandedApiProductGrid(products),
-            ProductListWidget(
-              products: _convertMapToVendorProducts(products),
-              onProductTap: (product) {
-                _navigateToProductDetailsFromVendorProduct(product);
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Restaurant Equipment Deals Section Widget
-  Widget _buildRestaurantEquipmentDealsSection() {
-    // Get products from API - search for kitchen sinks related categories
-    final products = _getProductsForCategory('Restaurant Equipment');
-    final categoryTitle = _getCategoryTitle('Restaurant Equipment');
-
-    // Show shimmer when loading
-    if (_isHomeSliderDealsLoading) {
-      return const ProductSectionShimmer();
-    }
-
-    // Hide section when no products or when no category title
-    if (products.isEmpty || categoryTitle == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Enhanced Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    SizedBox(
-                      // color: Colors.red,
-                      width: 220,
-                      height: 50,
-                      child: Text(
-                        categoryTitle,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          letterSpacing: 1.0,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black12,
-                              offset: Offset(0, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                        maxLines: 2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showAllRestaurantDeals = !_showAllRestaurantDeals;
-                  });
-                },
-                child: Text(
-                  _showAllRestaurantDeals ? 'Show Less' : 'View All Deals',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Products - Show horizontal scroll or grid based on visibility
-          if (!_showAllRestaurantDeals)
-            SizedBox(
-              height: 410,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return _buildApiProductCard(product);
-                },
-              ),
-            )
-          else
-            // Expanded Grid View
-            // _buildExpandedApiProductGrid(products),
-            ProductListWidget(
-              products: _convertMapToVendorProducts(products),
-              onProductTap: (product) {
-                _navigateToProductDetailsFromVendorProduct(product);
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Furniture Deals Section Widget
-  Widget _buildFurnitureDealsSection() {
-    // Get products from API - search for kitchen sinks related categories
-    final products = _getProductsForCategory('Furniture');
-    final categoryTitle = _getCategoryTitle('Furniture');
-
-    // Show shimmer when loading
-    if (_isHomeSliderDealsLoading) {
-      return const ProductSectionShimmer();
-    }
-
-    // Hide section when no products or when no category title
-    if (products.isEmpty || categoryTitle == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Enhanced Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        categoryTitle,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          letterSpacing: 1.0,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black12,
-                              offset: Offset(0, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showAllFurnitureDeals = !_showAllFurnitureDeals;
-                  });
-                },
-                child: Text(
-                  _showAllFurnitureDeals ? 'Show Less' : 'View All Deals',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Products - Show horizontal scroll or grid based on visibility
-          if (!_showAllFurnitureDeals)
-            SizedBox(
-              height: 410,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  return _buildApiProductCard(product);
-                },
-              ),
-            )
-          else
-            // Expanded Grid View
-            // _buildExpandedApiProductGrid(products),
             ProductListWidget(
               products: _convertMapToVendorProducts(products),
               onProductTap: (product) {

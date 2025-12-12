@@ -32,6 +32,10 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   void initState() {
     super.initState();
     _loadRecentSearches();
+    // Add listener to update UI when text changes
+    _searchController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -179,6 +183,17 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   /// Perform search using the API with the given query
   /// This method searches by product MPN, name, brand name, or any other relevant field
   Future<void> _performApiSearch(String query) async {
+    // Only perform search if query has at least 3 characters
+    if (query.length < 3) {
+      if (mounted) {
+        setState(() {
+          _searchResults = [];
+          _isSearching = false;
+        });
+      }
+      return;
+    }
+
     if (query.trim().isEmpty) {
       // If query is empty, load all products
       await _loadSearchProduct(query);
@@ -412,7 +427,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
     try {
       // Perform API search for the query
-      await _performApiSearch(query);
+      //await _performApiSearch(query);
 
       if (_searchResults.isNotEmpty) {
         // Navigate to the first result
@@ -577,18 +592,17 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                           // Product Name
                           Expanded(
                             child: Text(
-                                product['product_name']?.toString() ?? '',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                              product['product_name']?.toString() ?? '',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
                               ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-
                         ],
                       ),
                     ),
@@ -666,15 +680,23 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                       textInputAction: TextInputAction.search,
                       onChanged: (value) {
                         log('Search text changed: "$value"');
-                        if (value.trim().isNotEmpty) {
-                          log('Performing API search for: "$value"');
-                          _performApiSearch(value.trim());
-                        } else {
+                        final trimmedValue = value.trim();
+                        if (trimmedValue.isEmpty) {
                           setState(() {
                             _searchResults.clear();
                             _isSearching = false;
                           });
                           log('Cleared search results');
+                        } else if (trimmedValue.length >= 3) {
+                          log('Performing API search for: "$trimmedValue"');
+                          _performApiSearch(trimmedValue);
+                        } else {
+                          // Clear results if less than 3 characters
+                          setState(() {
+                            _searchResults.clear();
+                            _isSearching = false;
+                          });
+                          log('Search query too short (${trimmedValue.length} characters), cleared results');
                         }
                       },
                       onFieldSubmitted: (value) {
@@ -694,19 +716,21 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.w400,
                         ),
-                        prefixIcon: Container(
-                          margin: const EdgeInsets.all(8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.search_rounded,
-                            color: AppColors.primary,
-                            size: 24,
-                          ),
-                        ),
+                        prefixIcon: _searchController.text.length >= 3
+                            ? null
+                            : Container(
+                                margin: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.search_rounded,
+                                  color: AppColors.primary,
+                                  size: 24,
+                                ),
+                              ),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? Container(
                                 margin: const EdgeInsets.all(8),
@@ -748,8 +772,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                           borderRadius: BorderRadius.circular(25),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: AppColors.primary, width: 2),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 2),
                           borderRadius: BorderRadius.circular(25),
                         ),
                         disabledBorder: OutlineInputBorder(

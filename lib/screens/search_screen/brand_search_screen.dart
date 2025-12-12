@@ -39,6 +39,10 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
     super.initState();
     _loadAllBrands();
     _loadRecentSearches();
+    // Add listener to update UI when text changes
+    _searchController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -150,6 +154,17 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
   }
 
   Future<void> _performSearch(String query) async {
+    // Only perform search if query has at least 3 characters
+    if (query.length < 3) {
+      if (mounted) {
+        setState(() {
+          _searchResults = [];
+          _isSearching = false;
+        });
+      }
+      return;
+    }
+
     _currentSearchQuery = query;
 
     setState(() {
@@ -430,15 +445,24 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                       textInputAction: TextInputAction.search,
                       onChanged: (value) {
                         log('Search text changed: "$value"');
-                        if (value.trim().isNotEmpty) {
-                          _performSearch(value.trim());
-                        } else {
+                        final trimmedValue = value.trim();
+                        if (trimmedValue.isEmpty) {
                           _currentSearchQuery = '';
                           setState(() {
                             _searchResults.clear();
                             _isSearching = false;
                           });
                           log('Cleared search results');
+                        } else if (trimmedValue.length >= 3) {
+                          _performSearch(trimmedValue);
+                        } else {
+                          // Clear results if less than 3 characters
+                          _currentSearchQuery = '';
+                          setState(() {
+                            _searchResults.clear();
+                            _isSearching = false;
+                          });
+                          log('Search query too short (${trimmedValue.length} characters), cleared results');
                         }
                       },
                       onFieldSubmitted: (value) {
@@ -458,19 +482,21 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.w400,
                         ),
-                        prefixIcon: Container(
-                          margin: const EdgeInsets.all(8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.search_rounded,
-                            color: AppColors.primary,
-                            size: 24,
-                          ),
-                        ),
+                        prefixIcon: _searchController.text.length >= 3
+                            ? null
+                            : Container(
+                                margin: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.search_rounded,
+                                  color: AppColors.primary,
+                                  size: 24,
+                                ),
+                              ),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? Container(
                                 margin: const EdgeInsets.all(8),
@@ -512,8 +538,8 @@ class _BrandSearchScreenState extends State<BrandSearchScreen> {
                           borderRadius: BorderRadius.circular(25),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: AppColors.primary, width: 2),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 2),
                           borderRadius: BorderRadius.circular(25),
                         ),
                         disabledBorder: OutlineInputBorder(

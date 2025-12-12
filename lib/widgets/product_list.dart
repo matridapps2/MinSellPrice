@@ -20,7 +20,7 @@ class ProductListWidget extends StatelessWidget {
     required this.products,
     this.onProductTap,
     this.crossAxisCount = 2,
-    this.childAspectRatio = 0.41,
+    this.childAspectRatio = 0.42,
     this.mainAxisSpacing = 16.0,
     this.crossAxisSpacing = 1.0,
   });
@@ -195,7 +195,7 @@ class _ProductCard extends StatelessWidget {
           // Product Name/Description
           _buildProductName(),
           //const Spacer(),
-          const SizedBox(height: 15),
+          const SizedBox(height: 6),
 
           // Price Section
           _buildPriceSection(firstVendorPrice, msrp, discountPercent),

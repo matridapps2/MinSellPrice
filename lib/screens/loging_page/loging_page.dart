@@ -182,10 +182,15 @@ class _LoginPageState extends State<LoginPage> {
                           //     size: w * .06,
                           //   ),
                           // ),
-                            Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.black,
-                              size: w * .06,
+                            GestureDetector(
+                              onTap : () {
+                                Navigator.pop(context);
+                              },
+                              child: const Icon(
+                                Icons.arrow_back,
+                                color: AppColors.primary,
+                                size: 25,
+                              ),
                             ),
                           const SizedBox(width: 12),
                           Expanded(

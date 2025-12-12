@@ -3017,10 +3017,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: ProductListWidget(
         products: finalList,
-        crossAxisCount: 2,
-        childAspectRatio: 0.41,
-        mainAxisSpacing: 12.0,
-        crossAxisSpacing: 1.0,
         onProductTap: (product) {
           Navigator.push(
             context,
